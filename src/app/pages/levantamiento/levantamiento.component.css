@@ -1,0 +1,134 @@
+/* Importamos los estilos de la tarjeta que ya usas en el home para mantener la consistencia */
+@import url('../home/home.component.css');
+
+/* --------------------------------------------------------
+   Estilos del Formulario Principal
+   -------------------------------------------------------- */
+.card-header {
+  background-color: var(--ifm-color-primary);
+  border-bottom: 0;
+}
+
+.form-label {
+  color: var(--ifm-color-primary-darkest);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--ifm-color-primary-light);
+  box-shadow: 0 0 0 0.25rem rgba(213, 159, 15, 0.25);
+}
+
+.text-start {
+  text-align: left !important;
+}
+
+/* --------------------------------------------------------
+   Estilos del Historial de Levantamientos (Acordeón)
+   -------------------------------------------------------- */
+.historial-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.historial-item:hover {
+  background-color: #e9ecef;
+}
+
+/* Esta clase permite diferenciar el item expandido del resto */
+.historial-item.expanded {
+    background-color: #e2eaf2;
+    border-color: #c9d2d9;
+}
+
+.reporte-info {
+  display: flex;
+  flex-grow: 1;
+  gap: 1rem;
+  align-items: center;
+}
+
+.reporte-centro {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.reporte-fecha {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.reporte-equipos {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #555;
+}
+
+.historial-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/*
+  Estilos del ícono de expansión.
+  Usa 'transform' para girar la flecha.
+*/
+.expand-icon {
+  font-size: 1.2rem;
+  transition: transform 0.2s ease;
+  min-width: 1rem; /* Asegura que el espacio no cambie */
+  text-align: right;
+  margin-left: 1rem;
+}
+
+.historial-item.expanded .expand-icon {
+    transform: rotate(90deg);
+}
+
+/*
+  Contenedor de los equipos.
+  Inicialmente tiene altura 0 y está oculto.
+  La clase 'expanded-panel' es opcional para una animación de altura.
+*/
+.animated-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.expanded-panel {
+  max-height: 500px; /* Un valor alto para asegurar que se muestre todo el contenido */
+}
+
+/* ... (tus estilos existentes) ... */
+
+.historial-item {
+  display: flex;
+  align-items: center;
+  /* ... (otros estilos que ya tenías) ... */
+}
+
+/* ✅ Estilos para el contenedor del checkbox */
+.reporte-selector {
+  padding-right: 15px; /* Espacio entre el checkbox y la información */
+  display: flex;
+  align-items: center;
+}
+
+.reporte-selector .form-check-input {
+  width: 1.25em; /* Tamaño del checkbox */
+  height: 1.25em;
+}
+
+.reporte-info {
+  flex-grow: 1; /* Hace que la info ocupe el espacio restante */
+  /* ... (otros estilos que ya tenías) ... */
+}

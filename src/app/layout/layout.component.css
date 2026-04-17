@@ -1,0 +1,12 @@
+
+.main-container {
+  display: flex;
+  flex-grow: 1;
+  min-height: calc(100vh - 120px);
+}
+
+.content-wrapper {
+  flex-grow: 1; /* Hace que el contenido principal ocupe todo el espacio restante*/
+  padding: 20px;
+  overflow-y: auto; /* Añade scroll si el contenido es muy largo*/
+}

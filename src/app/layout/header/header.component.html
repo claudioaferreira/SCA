@@ -1,0 +1,27 @@
+<header class="main-header navbar navbar-expand-lg py-1 shadow-sm">
+    <div class="container-fluid">
+        <div class="logo-container">
+            <img src="assets/logo.png" alt="Logo" class="logo">
+        </div>
+        
+        <a class="navbar-brand main-title" routerLink="/home">SCA - Control de Asignaciones</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#headerNav">
+            <span class="navbar-toggler-icon" style="transform: scale(0.7);"></span> 
+        </button>
+
+        <div class="collapse navbar-collapse" id="headerNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/home">Inicio</a>
+                </li>
+                <li class="nav-item ms-lg-2">
+                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/asignaciones">Asignaciones</a>
+                </li>
+                <li class="nav-item ms-lg-2">
+                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/disponibilidad">Disponibilidad</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

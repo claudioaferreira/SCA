@@ -1,0 +1,11 @@
+<app-header></app-header>
+
+<div class="main-container" [class.sidebar-collapsed]="isSidebarCollapsed">
+  <!-- <app-sidebar (sidebarToggle)="toggleSidebar()"></app-sidebar> -->
+  
+  <main class="content-wrapper py-4">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<app-footer></app-footer>

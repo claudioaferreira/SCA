@@ -1,0 +1,15 @@
+.custom-card {
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 8px var(--shadow-color) !important;
+}
+
+.btn-primary-custom {
+  background-color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary-dark);
+  color: white;
+
+  &:hover {
+    background-color: var(--ifm-color-primary-dark);
+    border-color: var(--ifm-color-primary-darker);
+  }
+}

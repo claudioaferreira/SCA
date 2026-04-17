@@ -1,0 +1,19 @@
+.main-header {
+    background-color: #1e40af; // Azul sólido profesional
+    min-height: 45px;
+    padding: 0.2rem 1rem !important;
+
+    .logo { height: 28px; width: auto; }
+
+    .main-title {
+        font-size: 0.95rem !important;
+        color: #f0f7ff !important;
+        margin-left: 0.5rem;
+    }
+
+    .nav-link {
+        color: #cbd5e1 !important;
+        font-size: 0.85rem;
+        &:hover, &.active { color: white !important; }
+    }
+}

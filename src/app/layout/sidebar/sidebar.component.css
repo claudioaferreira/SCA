@@ -1,0 +1,69 @@
+/* --- ESTILOS GENERALES DEL SIDEBAR --- */
+.sidebar-container {
+  width: 100%;
+  background-color: var(--ifm-color-primary-darkest);
+  color: #fff;
+  padding: 1rem;
+}
+
+/* El nuevo contenedor para el scroll */
+.sidebar-nav-scroll {
+  flex-grow: 1; /* Ocupa el espacio vertical disponible */
+  overflow-y: auto; /* El scroll SOLO afecta a esta zona */
+  overflow-x: hidden;
+}
+
+/* --- SECCIÓN DEL HEADER DEL SIDEBAR Y BOTÓN TOGGLE --- */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Alinea el botón a la derecha */
+  padding-bottom: 0.75rem;
+}
+.btn-toggle {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.btn-toggle:hover {
+  background-color: var(--ifm-color-primary-dark);
+  border-color: var(--ifm-color-primary-darker);
+}
+.sidebar-divider {
+  border-color: rgba(255, 255, 255, 0.15);
+  margin: 1rem 0;
+}
+.sidebar-divider.mt-auto {
+  margin-top: auto !important;
+}
+
+/* --- ENLACES DE NAVEGACIÓN --- */
+.nav-category-title { padding: 0 1rem 0.5rem; font-size: 0.7rem; font-weight: bold; color: var(--ifm-color-primary-light); text-transform: uppercase; letter-spacing: 0.08em; transition: opacity 0.2s ease-in-out, width 0.3s ease-in-out; white-space: nowrap; }
+.nav-link { color: #e0e0e0; display: flex; align-items: center; justify-content: flex-start; padding: 0.75rem 1rem; margin: 0.2rem 0; border-radius: 6px; position: relative; transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, justify-content 0.3s ease-in-out; }
+.nav-link i { font-size: 1.25rem; width: 30px; text-align: center; }
+.nav-link span { transition: opacity 0.2s ease-in-out, width 0.3s ease-in-out; white-space: nowrap; }
+.nav-link:hover { background-color: var(--ifm-color-primary-dark); color: #fff; }
+.nav-link.active { background-color: var(--ifm-color-primary); color: #fff; font-weight: 600; }
+.nav-link.active::before { content: ''; position: absolute; left: 0; top: 5px; bottom: 5px; width: 4px; background-color: var(--ifm-color-primary-lightest); border-radius: 0 4px 4px 0; }
+
+/* --- DROPDOWN DE USUARIO --- */
+.dropup { position: relative; }
+.dropup > a { border-radius: 6px; transition: background-color 0.2s ease-in-out; }
+.dropup > a:hover { background-color: var(--ifm-color-primary-dark); }
+.dropup strong { transition: opacity 0.2s ease-in-out, width 0.3s ease-in-out; white-space: nowrap; }
+
+/* --- ESTILOS PARA CUANDO EL SIDEBAR ESTÁ COLAPSADO --- */
+:host-context(.sidebar-collapsed) .sidebar-container { padding: 1rem 0; }
+:host-context(.sidebar-collapsed) .sidebar-header { justify-content: center; }
+:host-context(.sidebar-collapsed) .nav-link,
+:host-context(.sidebar-collapsed) .dropup > a {
+  justify-content: center;
+}
+:host-context(.sidebar-collapsed) .nav-link span,
+:host-context(.sidebar-collapsed) .nav-category-title,
+:host-context(.sidebar-collapsed) .dropup strong {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}

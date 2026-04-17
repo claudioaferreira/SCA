@@ -1,1 +1,57 @@
-/* You can add global styles to this file, and also import other style files */
+
+/* Definición de la paleta de colores del proyecto */
+/* :root {
+  --ifm-color-primary: #d59f0f;
+  --ifm-color-primary-dark: #bd8e0d;
+  --ifm-color-primary-darker: #a37c0c;
+  --ifm-color-primary-darkest: #896b0a;
+  --ifm-color-primary-light: #e0b638;
+  --ifm-color-primary-lighter: #ebcb6a;
+  --ifm-color-primary-lightest: #f6e09c;
+  --background-color: #f4f7f6;
+  --text-color: #333;
+  --border-color: #ddd;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+} */
+
+:root {
+  --ifm-color-primary: #3b82f6;
+  --ifm-color-primary-dark: #2563eb;
+  --ifm-color-primary-darker: #1d4ed8;
+  --ifm-color-primary-darkest: #1e40af;
+  --ifm-color-primary-light: #60a5fa;
+  --ifm-color-primary-lighter: #93c5fd;
+  --ifm-color-primary-lightest: #dbeafe;
+  --background-color: #f8fafc; /* Un blanco ligeramente azulado para complementar */
+  --text-color: #1e293b;       /* Un gris oscuro azulado para el texto */
+  --border-color: #e2e8f0;     /* Un borde gris claro */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos globales para el cuerpo de la página */
+
+html, body {
+  height: 100%; /* Le da altura a toda la página */
+  margin: 0;
+  font-family: var(--font-sans); /* O tu fuente principal */
+}
+
+body {
+  margin: 0; /* Buena práctica para eliminar márgenes por defecto.*/
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+app-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /*Hace que el layout crezca para ocupar el espacio de app-root.*/
+}
+

@@ -1,0 +1,46 @@
+/* --- ESTRUCTURA --- */
+.main-dashboard { background-color: #f8fafc; }
+.table-responsive { 
+    max-height: 78vh; 
+    scrollbar-width: thin; 
+}
+
+/* --- COLUMNAS STICKY --- */
+.sticky-col-1 { position: sticky; left: 0; z-index: 10; min-width: 220px; border-right: 1px solid #e2e8f0; }
+.sticky-col-2 { position: sticky; left: 220px; z-index: 9; min-width: 100px; }
+
+/* --- COMPACTACIÓN DE TEXTOS --- */
+.tiny-text { font-size: 0.65rem; font-weight: 500; }
+.badge-mini { font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; background: #f1f5f9; }
+
+/* --- AVATAR Y STATS --- */
+.avatar-circle-sm {
+    width: 28px; height: 28px; background: #6366f1; color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: bold; flex-shrink: 0;
+}
+
+.stats-grid-mini {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;
+}
+
+.stat-mini {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1px 4px; border-radius: 3px; font-size: 0.7rem;
+    span { font-weight: 400; opacity: 0.7; margin-right: 3px; }
+    strong { font-weight: 900; }
+    &.sede { background: #eff6ff; color: #1d4ed8; }
+    &.interior { background: #f0fdf4; color: #15803d; }
+    &.metro { background: #fffbeb; color: #b45309; }
+    &.exterior { background: #fdf2f8; color: #be185d; }
+}
+
+/* --- INPUTS COMPACTOS --- */
+.compact-select, .form-control-xs {
+    height: 24px !important; padding: 0 4px !important; 
+    font-size: 0.7rem !important; border-radius: 4px !important;
+}
+
+.assignment-cell { min-width: 140px; }
+
+.extra-info-row { display: flex; align-items: center; margin-top: 2px; border-top: 1px solid #f1f5f9; }
