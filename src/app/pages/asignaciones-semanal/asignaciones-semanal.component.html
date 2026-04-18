@@ -1,4 +1,6 @@
 <div class="main-dashboard p-2 bg-light">
+
+  <!-- TOPBAR -->
   <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-white shadow-sm border-0 rounded-3">
     <div>
       <h5 class="fw-bold text-dark mb-0">Gestión Técnica</h5>
@@ -12,6 +14,7 @@
     </button>
   </div>
 
+  <!-- BUSCADOR -->
   <div class="search-container mb-2">
     <div class="input-group input-group-sm shadow-sm rounded-2 overflow-hidden">
       <span class="input-group-text bg-white border-0 text-muted">🔍</span>
@@ -20,78 +23,208 @@
     </div>
   </div>
 
-  <div class="table-card bg-white shadow-sm rounded-3 overflow-hidden border">
-    <div class="table-responsive">
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="bg-dark text-white">
-          <tr>
-            <th class="p-2 sticky-col-1">Técnico / Datos</th>
-            <th class="text-center p-2 sticky-col-2 border-end">Historial</th>
-            @for (dia of diasSemana; track dia) {
-              <th class="text-center p-1 day-header">
-                <div class="text-uppercase tiny-text opacity-75">{{ dia | date: 'EEEE' }}</div>
-                <div class="fw-bold text-primary" style="font-size: 0.85rem;">{{ dia | date: 'dd MMM' }}</div>
-              </th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (emp of filtrarEmpleados(); track emp.id) {
+  <!-- LOADING -->
+  @if (loading) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+      Cargando asignaciones...
+    </div>
+  }
+
+  <!-- TABLA -->
+  @if (!loading) {
+    <div class="table-card bg-white shadow-sm rounded-3 overflow-hidden border">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0 table-fixed-layout">
+
+          <thead class="bg-dark text-white">
             <tr>
-              <td class="ps-2 py-2 sticky-col-1 bg-white">
-                <div class="d-flex align-items-start">
-                  <div class="avatar-circle-sm me-2">{{ emp.nombre.substring(0,3) }}</div>
-                  <div class="info-container">
-                    <div class="fw-bold text-dark mb-0" style="font-size: 0.85rem; line-height: 1.1;">{{ emp.nombre }}</div>
-                    <div class="d-flex gap-1 my-1">
-                       <span class="badge-mini text-primary border">{{ emp.codigo }}</span>
-                       <span class="badge-mini text-secondary border">📍 {{ emp.ubicacion }}</span>
-                       <span class="badge-mini text-secondary border">🗺️ {{ emp.localidad }}</span>
-                    </div>
-                    <div class="extra-info-row">
-                      <span class="tiny-text text-muted">💼 {{ emp.posicion || 'Téc II' }}</span>
-                      <span class="tiny-text text-primary ms-2">📱 {{ emp.telefonoFlota }}</span>
-                       <span class="tiny-text text-primary ms-2">☎️ {{ emp.telefonoPersonal }}</span>
-                    </div>
-                  </div>
-                </div>
-              </td>
-
-              <td class="px-1 sticky-col-2 bg-white border-end">
-                <div class="stats-grid-mini">
-                  <div class="stat-mini sede"><span>S</span><strong>{{ emp.stats.totalSede }}</strong></div>
-                  <div class="stat-mini interior"><span>I</span><strong>{{ emp.stats.totalInterior }}</strong></div>
-                  <div class="stat-mini metro"><span>M</span><strong>{{ emp.stats.metroMes }}</strong></div>
-                  <div class="stat-mini exterior"><span>E</span><strong>0</strong></div>
-                </div>
-              </td>
-
+              <th class="p-2 sticky-col-1" style="width: 250px;">Técnico / Datos</th>
+              <th class="text-center p-2 sticky-col-2 border-end" style="width: 100px;">Historial</th>
               @for (dia of diasSemana; track dia) {
-                <td [ngClass]="getClaseColor(emp.id, dia)" class="p-1 border-start text-center assignment-cell">
-                  <select class="form-select form-select-sm compact-select mb-1" (change)="manejarCambioTipo(emp.id, dia, $event)">
-                    <option value="0">- Tipo -</option>
-                    @for (t of tipos; track t.idTipo) { <option [value]="t.idTipo">{{ t.nombre }}</option> }
-                  </select>
-                  
-                  <div class="input-group-compact">
-                    @if (obtenerTipoSeleccionado(emp.id, dia) === 1) {
-                      <input type="number" class="form-control form-control-xs text-center" placeholder="Cant" (input)="actualizarDataExtra(emp.id, dia, 'cantidad', $event)">
-                    }
-                    @if (obtenerTipoSeleccionado(emp.id, dia) === 3) {
-                      <div class="d-flex gap-1">
-                        <input type="number" class="form-control form-control-xs w-50" placeholder="D" (input)="actualizarDataExtra(emp.id, dia, 'dias', $event)">
-                        <select class="form-select form-select-xs w-50" (change)="actualizarDataExtra(emp.id, dia, 'zona', $event)">
-                          <option value="">Z</option><option value="Norte">N</option><option value="Sur">S</option><option value="Este">E</option>
-                        </select>
-                      </div>
-                    }
-                  </div>
-                </td>
+                <th class="text-center p1 day-header day-cell">
+                  <div class="text-uppercase tiny-text opacity-75">{{ dia | date: 'EEEE' }}</div>
+                  <div class="fw-bold text-primary" style="font-size: 0.85rem;">{{ dia | date: 'dd MMM' }}</div>
+                </th>
               }
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            @for (emp of filtrarEmpleados(); track emp.id) {
+              <tr>
+
+                <!-- TÉCNICO -->
+                <td class="ps-2 py-2 sticky-col-1 bg-white">
+                  <div class="d-flex align-items-start">
+                    <div class="avatar-circle-sm me-2 text-uppercase">{{ emp.nombre.substring(0,3) }}</div>
+                    <div class="info-container">
+                      <div class="fw-bold text-dark mb-0" style="font-size: 0.85rem; line-height: 1.1;">{{ emp.nombre }}</div>
+                      <div class="d-flex gap-1 my-1">
+                        <span class="badge-mini text-primary border">{{ emp.codigo }}</span>
+                        <span class="badge-mini text-secondary border">📍 {{ emp.ubicacion }}</span>
+                        <span class="badge-mini text-secondary border">🗺️ {{ emp.localidad }}</span>
+                      </div>
+                      <div class="extra-info-row">
+                        <span class="tiny-text text-muted">💼 {{ emp.posicion || 'Téc II' }}</span>
+                        <span class="tiny-text text-primary ms-2">📱 {{ emp.telefonoFlota }}</span>
+                        <span class="tiny-text text-primary ms-2">☎️ {{ emp.telefonoPersonal }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- HISTORIAL -->
+                <td class="px-1 sticky-col-2 bg-white border-end text-center">
+                  <div class="stats-grid-mini d-flex flex-column align-items-center gap-1">
+                    <div class="d-flex gap-1">
+                      <div class="stat-mini sede"    title="Sede Central"><span>S</span><strong>{{ emp.stats.totalSede     || 0 }}</strong></div>
+                      <div class="stat-mini interior" title="Interior">    <span>I</span><strong>{{ emp.stats.totalInterior || 0 }}</strong></div>
+                    </div>
+                    <div class="d-flex gap-1">
+                      <div class="stat-mini metro"   title="Metro">       <span>M</span><strong>{{ emp.stats.metroMes      || 0 }}</strong></div>
+                      <div class="stat-mini exterior" title="Exterior">    <span>E</span><strong>0</strong></div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- DÍAS -->
+                @for (dia of diasSemana; track dia) {
+                  @let key = generarLlave(emp.id, dia);
+                  @let items = dataTemporal[key] ?? [];
+
+                  <td [ngClass]="getClaseColor(key, dia)"
+                      class="border-start assignment-cell day-cell position-relative align-top">
+
+                    <!-- LISTA DE ASIGNACIONES EXISTENTES -->
+                    @for (item of items; track $index) {
+                      <div class="asignacion-item mb-1 rounded border"
+                           [class.border-success]="item.idEstado === 3"
+                           [class.border-danger]="item.idEstado !== 3 && item.tipoId !== 0"
+                           [class.bg-success-subtle]="item.idEstado === 3"
+                           style="font-size: 0.65rem; padding: 3px 5px;">
+
+                        <!-- Cabecera: tipo + botón eliminar -->
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                          <span class="fw-bold" style="font-size: 0.68rem;">
+                            {{ getNombreTipo(item.tipoId) }}
+                          </span>
+                          <button class="btn-icon-xs text-danger"
+                                  title="Eliminar asignación"
+                                  (click)="eliminarAsignacion(emp.id, dia, $index)">✕</button>
+                        </div>
+
+                        <!-- Detalle según tipo (solo lectura si ya está guardada) -->
+                        @if (!item.esNueva) {
+                          <div class="text-muted" style="font-size: 0.62rem; line-height: 1.4;">
+                            @if (item.tipoId === 1 && item.cantidad)       { <span>Cant: {{ item.cantidad }}</span> }
+                            @if (item.tipoId === 2 && item.cantidadMetro)  { <span>🚇 {{ item.cantidadMetro }} rutas</span> }
+                            @if (item.tipoId === 3 || item.tipoId === 4)   { <span>{{ item.dias }}d · {{ item.zona }}</span> }
+                          </div>
+                        }
+
+                        <!-- Formulario si es nueva (aún no guardada) -->
+                        @if (item.esNueva) {
+
+                          <select class="form-select compact-select w-100 mb-1 shadow-none"
+                                  [(ngModel)]="item.tipoId"
+                                  (ngModelChange)="marcarModificado(item)">
+                            <option [ngValue]="0">- Tipo -</option>
+                            @for (t of tipos; track t.idTipo) {
+                              <option [ngValue]="t.idTipo">{{ t.nombre }}</option>
+                            }
+                          </select>
+
+                          @if (item.tipoId === 1) {
+                            <input type="number" min="0" class="form-control form-control-xs text-center border-primary w-100 mb-1"
+                                   placeholder="Cant." [(ngModel)]="item.cantidad">
+                          }
+                          @if (item.tipoId === 2) {
+                            <div class="input-group input-group-sm w-100 mb-1">
+                              <span class="input-group-text bg-secondary text-white border-0 px-1" style="font-size: 0.6rem;">🚇</span>
+                              <input type="number" min="0" class="form-control form-control-xs text-center border-0"
+                                     placeholder="Rutas" [(ngModel)]="item.cantidadMetro">
+                            </div>
+                          }
+                          @if (item.tipoId === 3 || item.tipoId === 4) {
+                            <div class="d-flex gap-1 w-100 mb-1">
+                              <input type="number" min="0" class="form-control form-control-xs w-50 border-warning px-1 text-center"
+                                     placeholder="D" [(ngModel)]="item.dias">
+                              <select class="form-select form-select-xs w-50 border-warning px-1 text-center"
+                                      [(ngModel)]="item.zona">
+                                <option value="">Z</option>
+                                <option value="Norte">N</option>
+                                <option value="Sur">S</option>
+                                <option value="Este">E</option>
+                              </select>
+                            </div>
+                          }
+
+                          <!-- Botón guardar (solo visible en formularios nuevos) -->
+                          @if (item.tipoId !== 0) {
+                            <button class="btn btn-primary btn-xs w-100 py-0"
+                                    style="font-size: 0.62rem; height: 18px;"
+                                    (click)="guardarCelda(emp.id, dia, $index)">
+                              Guardar
+                            </button>
+                          }
+                        }
+
+                        <!-- Confirmación tras guardar -->
+                        @if (item.guardadoOk) {
+                          <div class="text-success text-center fw-bold" style="font-size: 0.62rem;">✅ Guardado</div>
+                        }
+
+                        <!-- Estado: Ocupado / Disponible (solo para rutas Metro, Interior, Exterior) -->
+                        @if (!item.esNueva && item.tipoId !== 0 && item.tipoId !== 1) {
+                          <div class="d-flex justify-content-between align-items-center mt-1 pt-1 border-top">
+
+                            @if (item.idEstado !== 3) {
+                              <span class="text-danger fw-bold" style="font-size: 0.6rem;">
+                                <i class="bi bi-lock-fill"></i> Ocup
+                              </span>
+                              <button class="btn btn-link p-0 text-success fw-bold text-decoration-none"
+                                      style="font-size: 0.6rem;"
+                                      title="Marcar como disponible"
+                                      (click)="marcarComoDisponible(emp.id, dia, $index)">
+                                Liberar
+                              </button>
+                            }
+
+                            @if (item.idEstado === 3) {
+                              <span class="text-success fw-bold" style="font-size: 0.6rem;">
+                                <i class="bi bi-check2-all"></i> Libre
+                              </span>
+                              <button class="btn btn-link p-0 text-danger fw-bold text-decoration-none"
+                                      style="font-size: 0.6rem;"
+                                      title="Volver a marcar como ocupado"
+                                      (click)="marcarComoOcupado(emp.id, dia, $index)">
+                                Ocupar
+                              </button>
+                            }
+
+                          </div>
+                        }
+
+                      </div>
+                    }
+
+                    <!-- BOTÓN AGREGAR NUEVA ASIGNACIÓN -->
+                    <button class="btn btn-outline-secondary btn-xs w-100 mt-1"
+                            style="font-size: 0.62rem; height: 20px; line-height: 1; border-style: dashed;"
+                            (click)="agregarAsignacion(emp.id, dia)"
+                            title="Agregar asignación para este día">
+                      + Agregar
+                    </button>
+
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  }
+
 </div>

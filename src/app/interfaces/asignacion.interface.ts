@@ -1,20 +1,25 @@
 export interface Empleado {
   id: number;
-  codigo: string;
   nombre: string;
+  codigo: string;
   cedula?: string;     // Opcional por ahora
-  ubicacion?: string;  // Opcional
-  localidad: string;
   telefonoFlota?: string;
   telefonoPersonal?: string;
+  ubicacion: string;  // Opcional
+  localidad: string;
   posicion?: string;
+  estado: boolean;
+  TieneData: boolean;
+  TieneOutlook: boolean;
+  TieneTeams: boolean;
+  tieneUSB: boolean;
   stats: {
-    totalInterior: number;
-    metroMes: number;
-    totalSede: number;
-    diasNorte: number;
-    diasSur: number;
-    diasEste: number;
+    totalInterior?: number;
+    totalSede?: number;
+    metroMes?: number;
+    diasNorte?: number;
+    diasSur?: number;
+    diasEste?: number;
   };
 }
 
@@ -31,3 +36,15 @@ export interface Asignacion {
 }
 
 
+export interface AsignacionCelda {
+  idAsignacion: number | null; // null = aún no guardada en BD
+  tipoId: number;
+  cantidad: string;
+  cantidadMetro: string;
+  dias: string;
+  zona: string;
+  idEstado: number | null;     // 1=Ocupado, 3=Completado/Disponible
+  modificado: boolean;         // true = hay cambios pendientes de guardar
+  guardadoOk: boolean;         // true = se acaba de guardar (feedback visual)
+  esNueva: boolean;            // true = formulario abierto, aún sin guardar
+}
