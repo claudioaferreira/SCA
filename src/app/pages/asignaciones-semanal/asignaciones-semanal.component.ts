@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Empleado, TipoAsignacion, AsignacionCelda } from '../../interfaces/asignacion.interface';
 import { EmpleadosService } from '../../services/empleados.service';
 import { HttpClientModule } from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-asignaciones-semanal',
@@ -27,8 +28,6 @@ export class AsignacionesSemanalComponent implements OnInit {
     { idTipo: 4, nombre: 'Exterior'     },
   ];
 
-  // NUEVO MODELO: cada clave tiene un ARRAY de asignaciones
-  // dataTemporal['empId-fecha'] = [ AsignacionCelda, AsignacionCelda, ... ]
   dataTemporal: Record<string, AsignacionCelda[]> = {};
 
   constructor(private _empleadosService: EmpleadosService) {}
@@ -72,6 +71,7 @@ export class AsignacionesSemanalComponent implements OnInit {
         this.ordenarListaAlfabeticamente();
         this.inicializarDataTemporal();
         this.cargarAsignacionesSemana();
+        this.cargarHistorialDesdeBD();
       },
       error: (err) => {
         console.error('Error al cargar empleados:', err);
@@ -80,7 +80,6 @@ export class AsignacionesSemanalComponent implements OnInit {
     });
   }
 
-  /** Inicializa cada clave con un array vacío */
   private inicializarDataTemporal() {
     this.empleadosMaster.forEach((emp) => {
       this.diasSemana.forEach((dia) => {
@@ -89,7 +88,6 @@ export class AsignacionesSemanalComponent implements OnInit {
     });
   }
 
-  /** Hidrata dataTemporal con los registros reales de la BD */
   private cargarAsignacionesSemana() {
     const { inicio, fin } = this.getRangoSemana();
     this._empleadosService.getAsignacionesSemana(inicio, fin).subscribe({
@@ -99,7 +97,6 @@ export class AsignacionesSemanalComponent implements OnInit {
           const key = `${a.IdEmpleado}-${a.Fecha}`;
           if (this.dataTemporal[key] !== undefined) {
             this.dataTemporal[key].push(this.mapearDesdeAPI(a));
-            this.recalcularStats(a.IdEmpleado);
           }
         });
         this.loading = false;
@@ -108,6 +105,46 @@ export class AsignacionesSemanalComponent implements OnInit {
         console.error('Error al cargar asignaciones de la semana:', err);
         this.loading = false;
       },
+    });
+  }
+
+  private cargarHistorialDesdeBD() {
+    this._empleadosService.getHistorialEmpleados().subscribe({
+      next: (res: any) => {
+        const rows: any[] = res.body ?? [];
+
+        this.empleadosMaster.forEach((emp) => {
+          if (emp.stats) {
+            emp.stats.totalSede = 0; emp.stats.metroMes  = 0;
+            emp.stats.diasNorte = 0; emp.stats.diasSur   = 0;
+            emp.stats.diasEste  = 0; emp.stats.totalInterior = 0;
+          }
+        });
+
+        rows.forEach((row) => {
+          const emp = this.empleadosMaster.find(e => e.id === row.IdEmpleado);
+          if (!emp?.stats) return;
+          const cantidad = Number(row.TotalCantidad) || 0;
+          const dias     = Number(row.TotalDias)     || 0;
+          switch (row.IdTipo) {
+            case 1: emp.stats.totalSede = (emp.stats.totalSede || 0) + cantidad; break;
+            case 2: emp.stats.metroMes  = (emp.stats.metroMes  || 0) + cantidad; break;
+            case 3:
+              if (row.ZonaGeografica === 'Norte') emp.stats.diasNorte = (emp.stats.diasNorte || 0) + dias;
+              if (row.ZonaGeografica === 'Sur')   emp.stats.diasSur   = (emp.stats.diasSur   || 0) + dias;
+              if (row.ZonaGeografica === 'Este')  emp.stats.diasEste  = (emp.stats.diasEste  || 0) + dias;
+              break;
+          }
+        });
+
+        this.empleadosMaster.forEach((emp) => {
+          if (emp.stats) {
+            emp.stats.totalInterior =
+              (emp.stats.diasNorte || 0) + (emp.stats.diasSur || 0) + (emp.stats.diasEste || 0);
+          }
+        });
+      },
+      error: (err) => console.error('Error al cargar historial:', err),
     });
   }
 
@@ -141,22 +178,56 @@ export class AsignacionesSemanalComponent implements OnInit {
     };
   }
 
+  // ─── TIPOS DISPONIBLES PARA AGREGAR EN UNA CELDA ──────────────
+  // Devuelve solo los tipos que aún no existen en esa celda (máx 1 por tipo por día)
+  tiposDisponibles(empId: number, dia: Date): TipoAsignacion[] {
+    const key   = this.generarLlave(empId, dia);
+    const items = this.dataTemporal[key] ?? [];
+    // tiposId ya usados (incluyendo los formularios nuevos pendientes)
+    const usados = new Set(items.map(i => i.tipoId));
+    return this.tipos.filter(t => !usados.has(t.idTipo));
+  }
+
   // ─── AGREGAR / GUARDAR / ELIMINAR ──────────────────────────────
 
-  /** Abre un nuevo formulario vacío en la celda */
   agregarAsignacion(empId: number, dia: Date) {
+    const disponibles = this.tiposDisponibles(empId, dia);
+    if (disponibles.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Todos los tipos asignados',
+        text: 'Este técnico ya tiene los 4 tipos cubiertos para este día.',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      return;
+    }
     const key = this.generarLlave(empId, dia);
     this.dataTemporal[key].push(this.nuevaCeldaVacia());
   }
 
-  /** Guarda (INSERT) una asignación nueva en la BD */
   guardarCelda(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
 
     if (!item || item.tipoId === 0) return;
 
-    const fechaStr      = key.substring(key.indexOf('-') + 1);
+    // ─── VALIDACIÓN DUPLICADO: no permitir mismo tipo ya guardado ─
+    const duplicado = this.dataTemporal[key].some(
+      (i, idx) => idx !== index && i.tipoId === item.tipoId && !i.esNueva
+    );
+    if (duplicado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tipo duplicado',
+        text: `Ya existe una asignación de tipo "${this.getNombreTipo(item.tipoId)}" para este día.`,
+        timer: 2500,
+        showConfirmButton: false
+      });
+      return;
+    }
+
+    const fechaStr      = dia.toISOString().split('T')[0];
     const cantidadFinal = item.tipoId === 2 ? item.cantidadMetro : item.cantidad;
 
     const payload = {
@@ -172,93 +243,92 @@ export class AsignacionesSemanalComponent implements OnInit {
 
     this._empleadosService.guardarAsignacionCelda(payload).subscribe({
       next: (res: any) => {
-        // Guardamos el IdAsignacion que devuelve el backend (OUTPUT INSERTED)
         item.idAsignacion = res.body?.idAsignacion ?? null;
         item.modificado   = false;
         item.esNueva      = false;
         item.guardadoOk   = true;
-
-        this.recalcularStats(empId);
-
+        this.cargarHistorialDesdeBD();
         setTimeout(() => { item.guardadoOk = false; }, 2000);
       },
       error: (err) => {
         console.error('Error al guardar:', err);
-        alert('Error al guardar. Revisa tu conexión e intenta de nuevo.');
+        Swal.fire({ icon: 'error', title: 'Error al guardar', text: 'Revisa tu conexión e intenta de nuevo.', timer: 3000, showConfirmButton: false });
       }
     });
   }
 
-  /** Elimina una asignación (de la BD si ya fue guardada, o solo del array si es nueva) */
   eliminarAsignacion(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
 
-    if (item.idAsignacion) {
-      // Ya está en la BD → llamamos al DELETE
-      this._empleadosService.eliminarAsignacion(item.idAsignacion).subscribe({
-        next: () => {
+    Swal.fire({
+      title: '¿Eliminar asignación?',
+      text: 'Esta acción no se puede deshacer',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        if (item.idAsignacion) {
+          this._empleadosService.eliminarAsignacion(item.idAsignacion).subscribe({
+            next: () => {
+              this.dataTemporal[key].splice(index, 1);
+              this.cargarHistorialDesdeBD();
+              Swal.fire({ icon: 'success', title: 'Eliminado', text: 'La asignación fue eliminada correctamente', timer: 1500, showConfirmButton: false });
+            },
+            error: (err) => {
+              console.error('Error al eliminar:', err);
+              Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la asignación' });
+            }
+          });
+        } else {
           this.dataTemporal[key].splice(index, 1);
-          this.recalcularStats(empId);
-        },
-        error: (err) => {
-          console.error('Error al eliminar:', err);
-          alert('Error al eliminar. Intenta de nuevo.');
+          Swal.fire({ icon: 'success', title: 'Eliminado', text: 'Asignación eliminada localmente', timer: 1200, showConfirmButton: false });
         }
-      });
-    } else {
-      // Aún no está en la BD → solo quitamos del array local
-      this.dataTemporal[key].splice(index, 1);
-    }
-  }
-
-  // ─── ESTADO (OCUPADO / DISPONIBLE) ─────────────────────────────
-
-  /**
-   * Libera al técnico marcando esa asignación como Completada (idEstado=3).
-   * No toca las demás asignaciones del mismo día.
-   * Después de liberar, puede seguir agregando nuevas asignaciones.
-   */
-  marcarComoDisponible(empId: number, dia: Date, index: number) {
-    const key  = this.generarLlave(empId, dia);
-    const item = this.dataTemporal[key][index];
-
-    if (!item.idAsignacion) {
-      // Si no está en BD todavía, solo cambiamos el estado local
-      item.idEstado = 3;
-      return;
-    }
-
-    // Optimistic update
-    item.idEstado = 3;
-
-    this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 3).subscribe({
-      error: (err) => {
-        console.error('Error al liberar técnico:', err);
-        item.idEstado = 1; // revertimos
-        alert('Error al liberar el técnico. Intenta de nuevo.');
       }
     });
   }
 
-  /** Vuelve a marcar como Ocupado (permite editar o re-asignar) */
+  // ─── ESTADO ────────────────────────────────────────────────────
+
+  marcarComoDisponible(empId: number, dia: Date, index: number) {
+    const key  = this.generarLlave(empId, dia);
+    const item = this.dataTemporal[key][index];
+    if (!item.idAsignacion) { item.idEstado = 3; return; }
+    item.idEstado = 3;
+    this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 3).subscribe({
+      error: (err) => {
+        console.error('Error al liberar técnico:', err);
+        item.idEstado = 1;
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo liberar al técnico.', timer: 3000, showConfirmButton: false });
+      }
+    });
+  }
+
   marcarComoOcupado(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
-
-    if (!item.idAsignacion) {
-      item.idEstado = 1;
-      return;
-    }
-
+    if (!item.idAsignacion) { item.idEstado = 1; return; }
     item.idEstado = 1;
-
     this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 1).subscribe({
       error: (err) => {
         console.error('Error al marcar ocupado:', err);
         item.idEstado = 3;
-        alert('Error al actualizar el estado. Intenta de nuevo.');
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo marcar como ocupado.', timer: 3000, showConfirmButton: false });
       }
+    });
+  }
+
+  // ─── ESTADO DE LA FILA COMPLETA ────────────────────────────────
+
+  /** True si el técnico tiene AL MENOS UNA asignación activa (idEstado !== 3) en CUALQUIER día de la semana */
+  empleadoEstaOcupado(empId: number): boolean {
+    return this.diasSemana.some((dia) => {
+      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+      return items.some(i => i.idEstado !== 3 && i.tipoId !== 0 && i.tipoId !== 1);
     });
   }
 
@@ -282,11 +352,9 @@ export class AsignacionesSemanalComponent implements OnInit {
 
   // ─── COLOR DE CELDA ────────────────────────────────────────────
 
-  /** El color de la celda se basa en si hay alguna asignación activa (idEstado !== 3) */
   getClaseColor(key: string, fecha: Date): string {
     const items = this.dataTemporal[key] ?? [];
     const tieneOcupado = items.some(i => i.idEstado !== 3 && i.tipoId !== 0 && (i.tipoId === 2 || i.tipoId === 3 || i.tipoId === 4));
-
     let clases = '';
     if (this.esDiaPasado(fecha))  clases += 'bg-dia-pasado ';
     if (tieneOcupado)             clases += 'bg-warning-subtle ';
@@ -295,33 +363,6 @@ export class AsignacionesSemanalComponent implements OnInit {
 
   getNombreTipo(tipoId: number): string {
     return this.tipos.find(t => t.idTipo === tipoId)?.nombre ?? '';
-  }
-
-  // ─── STATS ─────────────────────────────────────────────────────
-
-  recalcularStats(empId: number) {
-    const emp = this.empleadosMaster.find(e => e.id === empId);
-    if (!emp?.stats) return;
-
-    const s = emp.stats;
-    s.totalSede = 0; s.metroMes = 0;
-    s.diasNorte = 0; s.diasSur  = 0; s.diasEste = 0;
-
-    this.diasSemana.forEach((dia) => {
-      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-      items.forEach((data) => {
-        if (data.tipoId === 1 && data.cantidad)      s.totalSede!++;
-        if (data.tipoId === 2 && data.cantidadMetro) s.metroMes = (s.metroMes || 0) + (Number(data.cantidadMetro) || 0);
-        if (data.tipoId === 3 && data.dias && data.zona) {
-          const n = parseInt(data.dias) || 0;
-          if (data.zona === 'Norte') s.diasNorte = (s.diasNorte || 0) + n;
-          if (data.zona === 'Sur')   s.diasSur   = (s.diasSur   || 0) + n;
-          if (data.zona === 'Este')  s.diasEste  = (s.diasEste  || 0) + n;
-        }
-      });
-    });
-
-    s.totalInterior = (s.diasNorte || 0) + (s.diasSur || 0) + (s.diasEste || 0);
   }
 
   // ─── HELPERS ───────────────────────────────────────────────────

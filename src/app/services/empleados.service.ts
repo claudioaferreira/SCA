@@ -13,25 +13,29 @@ export class EmpleadosService {
   constructor(private http: HttpClient) { }
 
   getEmpleados(): Observable<Empleado[]> {
-     return this.http.get<Empleado[]>(`${this.apiUrl}/empleados`);
+    return this.http.get<Empleado[]>(`${this.apiUrl}/empleados`);
   }
 
   guardarAsignacionCelda(payload: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/asignaciones/guardar-celda`, payload);
   }
+
   getAsignacionesSemana(inicio: string, fin: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/asignaciones/semana`, {
       params: { inicio, fin }
     });
   }
-  actualizarEstadoAsignacion(idAsignacion: number, idEstado: number): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/asignaciones/estado`, {
-      idAsignacion,
-      idEstado
-    });
+
+  // ← nuevo: historial acumulado sin filtro de fecha
+  getHistorialEmpleados(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/asignaciones/historial`);
   }
 
-   eliminarAsignacion(idAsignacion: number): Observable<any> {
+  actualizarEstadoAsignacion(idAsignacion: number, idEstado: number): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/asignaciones/estado`, { idAsignacion, idEstado });
+  }
+
+  eliminarAsignacion(idAsignacion: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/asignaciones/${idAsignacion}`);
   }
 }
