@@ -102,7 +102,7 @@
                 <!-- DÍAS -->
                 @for (dia of diasSemana; track dia) {
                   @let key   = generarLlave(emp.id, dia);
-                  @let items = dataTemporal[key] ?? [];
+                  @let items = dataTemporal[key];
 
                   <td [ngClass]="getClaseColor(key, dia)"
                       class="border-start assignment-cell day-cell position-relative align-top">
@@ -117,22 +117,25 @@
 
                         <!-- Cabecera: tipo + botón eliminar -->
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                          <span class="fw-bold" style="font-size: 0.68rem;">
-                            {{ getNombreTipo(item.tipoId) }}
-                          </span>
-                          <button class="btn-icon-xs text-danger"
+                          
+                          <div class="text-truncate" style="line-height: 1.2;">
+                            <span class="fw-bold" style="font-size: 0.68rem;">
+                              {{ getNombreTipo(item.tipoId) }}
+                            </span>
+                            
+                            @if (!item.esNueva && item.tipoId !== 0) {
+                              <span class="text-muted ms-1" style="font-size: 0.62rem;">
+                                @if (item.tipoId === 1 && item.cantidad)       { | Cant: {{ item.cantidad }} }
+                                @if (item.tipoId === 2 && item.cantidadMetro)  { | 🚇 {{ item.cantidadMetro }} }
+                                @if (item.tipoId === 3 || item.tipoId === 4)   { | {{ item.dias }}d · {{ item.zona }} }
+                              </span>
+                            }
+                          </div>
+
+                          <button class="btn-icon-xs text-danger flex-shrink-0 ms-1"
                                   title="Eliminar asignación"
                                   (click)="eliminarAsignacion(emp.id, dia, $index)">✕</button>
                         </div>
-
-                        <!-- Detalle (solo lectura si ya está guardada) -->
-                        @if (!item.esNueva) {
-                          <div class="text-muted" style="font-size: 0.62rem; line-height: 1.4;">
-                            @if (item.tipoId === 1 && item.cantidad)       { <span>Cant: {{ item.cantidad }}</span> }
-                            @if (item.tipoId === 2 && item.cantidadMetro)  { <span>🚇 {{ item.cantidadMetro }} rutas</span> }
-                            @if (item.tipoId === 3 || item.tipoId === 4)   { <span>{{ item.dias }}d · {{ item.zona }}</span> }
-                          </div>
-                        }
 
                         <!-- Formulario si es nueva -->
                         @if (item.esNueva) {
@@ -218,7 +221,7 @@
                     }
 
                     <!-- BOTÓN AGREGAR — oculto si ya se usaron los 4 tipos -->
-                    @if (tiposDisponibles(emp.id, dia).length > 0 || (dataTemporal[key] ?? []).some(i => i.esNueva)) {
+                    @if (tiposDisponibles(emp.id, dia).length > 0 || tieneAsignacionNueva(emp.id, dia)) {
                       <button class="btn btn-outline-secondary btn-xs w-100 mt-1"
                               style="font-size: 0.62rem; height: 20px; line-height: 1; border-style: dashed;"
                               (click)="agregarAsignacion(emp.id, dia)"

@@ -188,6 +188,12 @@ export class AsignacionesSemanalComponent implements OnInit {
     return this.tipos.filter(t => !usados.has(t.idTipo));
   }
 
+  tieneAsignacionNueva(empId: number, dia: Date): boolean {
+    const key = this.generarLlave(empId, dia);
+    const items = this.dataTemporal[key];
+    return items ? items.some(i => i.esNueva) : false;
+  }
+
   // ─── AGREGAR / GUARDAR / ELIMINAR ──────────────────────────────
 
   agregarAsignacion(empId: number, dia: Date) {
