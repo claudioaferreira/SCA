@@ -1,0 +1,116 @@
+// ─── VARIABLES — mismos colores que asignaciones y empleados ──────────────
+$azul:   #2563eb;
+$oscuro: #1a1a2e;
+$fondo:  #f0f2f5;
+$blanco: #ffffff;
+$borde:  #e5e7eb;
+$texto:  #1a1a1a;
+$muted:  #6b7280;
+
+// ─── PÁGINA ────────────────────────────────────────────────────────────────
+.page-container {
+  padding: 20px;
+  background: $fondo;
+  min-height: auto;
+}
+
+// ─── ENCABEZADO ────────────────────────────────────────────────────────────
+.page-header {
+  background: $blanco;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $texto;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+    color: $muted;
+  }
+}
+
+// ─── GRID ──────────────────────────────────────────────────────────────────
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+// ─── CARD ──────────────────────────────────────────────────────────────────
+.card {
+  background: $blanco;
+  border-radius: 12px;
+  border: 1px solid $borde;
+  padding: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  text-decoration: none;  // para que routerLink no subraye
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+    border-color: $azul;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Círculo con el icono de cada módulo
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i {
+    font-size: 1.4rem;
+    color: $azul;
+  }
+}
+
+// Texto de la card
+.card-body {
+  flex: 1;
+
+  h3 {
+    margin: 0 0 3px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $texto;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $muted;
+    line-height: 1.4;
+  }
+}
+
+// Flecha al lado derecho
+.card-arrow {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.card:hover .card-arrow {
+  color: $azul;
+  transform: translateX(3px);
+}

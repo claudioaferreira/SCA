@@ -1,17 +1,144 @@
-<div class="container">
-  <section class="text-center mb-5">
-    <h1 class="display-4">Bienvenido a SCA</h1>
-    <p class="lead text-muted">Sistema de Control de Asignaciones (SCA)</p>
-  </section>
+<div class="main-dashboard p-3 bg-light" style="min-height: 100vh;">
+  
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+      <h3 class="fw-bold text-dark mb-0">Sistema de Control de Asignaciones</h3>
+      <p class="text-muted mb-0" style="font-size: 0.85rem;">Resumen general de gestión técnica y rutas</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary-custom d-flex align-items-center gap-2 shadow-sm" routerLink="/asignaciones">
+    <i class="bi bi-calendar-week"></i>
+    <span>Ir a Asignaciones</span>
+  </button>
+      <button class="btn btn-outline-custom d-flex align-items-center shadow-sm">
+  <i class="bi bi-download me-2"></i> Reporte
+</button>
+    </div>
+  </div>
 
-  <section>
-    <h2 class="mb-4">Trabajos Recientes</h2>
-    <div class="card shadow-sm custom-card">
-      <div class="card-body">
-        <h5 class="card-title">Mantenimiento en Centro de Villa Mella</h5>
-        <p class="card-text">Se realizó el checklist de mantenimiento preventivo de equipos de captura.</p>
-        <a href="#" class="btn btn-primary-custom">Ver Detalles</a>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+    
+    <div class="col">
+      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Tickets Activos</span>
+          <div class="icon-shape bg-light text-dark rounded-circle">
+            <i class="bi bi-ticket-detailed"></i>
+          </div>
+        </div>
+        <h2 class="fw-bold mb-0 text-dark">42</h2>
+        <div class="mt-2 text-success fw-bold" style="font-size: 0.75rem;">
+          <i class="bi bi-arrow-up-short"></i> 12% esta semana
+        </div>
       </div>
     </div>
-  </section>
+
+    <div class="col">
+      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #2563eb !important;">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Sede Central</span>
+          <div class="icon-shape text-primary rounded-circle" style="background: #eff6ff;">
+            <i class="bi bi-building"></i>
+          </div>
+        </div>
+        <h2 class="fw-bold mb-0 text-dark">18</h2>
+        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+          Tareas asignadas hoy
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #d97706 !important;">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Rutas Metro</span>
+          <div class="icon-shape text-warning rounded-circle" style="background: #fffbeb;">
+            <i class="bi bi-train-front"></i>
+          </div>
+        </div>
+        <h2 class="fw-bold mb-0 text-dark">8</h2>
+        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+          Estaciones en recorrido
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #16a34a !important;">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Interior (Zonas)</span>
+          <div class="icon-shape text-success rounded-circle" style="background: #f0fdf4;">
+            <i class="bi bi-map"></i>
+          </div>
+        </div>
+        <h2 class="fw-bold mb-0 text-dark">16</h2>
+        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+          Despliegues en municipios
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    
+    <div class="col-12 col-lg-7">
+      <div class="card border-0 shadow-sm rounded-3 h-100">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold text-dark mb-0">Distribución Semanal</h6>
+        </div>
+        <div class="card-body d-flex flex-column justify-content-center align-items-center text-muted" style="min-height: 250px;">
+          <i class="bi bi-bar-chart-line" style="font-size: 3rem; opacity: 0.2;"></i>
+          <p class="mt-2" style="font-size: 0.85rem;">Espacio para gráfico de barras (Asignaciones vs Completadas)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+      <div class="card border-0 shadow-sm rounded-3 h-100">
+        <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold text-dark mb-0">Trabajos Recientes</h6>
+          <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;">Ver todo</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            
+            <div class="list-group-item border-0 border-bottom py-3 hover-bg">
+              <div class="d-flex w-100 justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Mantenimiento en Centro de Villa Mella</h6>
+                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Checklist preventivo de equipos de captura.</p>
+                </div>
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-size: 0.65rem;">Completado</span>
+              </div>
+              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i> Hace 2 horas</small>
+            </div>
+
+            <div class="list-group-item border-0 border-bottom py-3 hover-bg">
+              <div class="d-flex w-100 justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Ruta Noroeste III</h6>
+                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Soporte técnico y actualización de software.</p>
+                </div>
+                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill" style="font-size: 0.65rem;">En progreso</span>
+              </div>
+              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i> Hoy, 08:30 AM</small>
+            </div>
+
+             <div class="list-group-item border-0 py-3 hover-bg">
+              <div class="d-flex w-100 justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Sede: Revisión de Servidores</h6>
+                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Mantenimiento físico y limpieza de racks.</p>
+                </div>
+                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill" style="font-size: 0.65rem;">Pendiente</span>
+              </div>
+              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-calendar-event me-1"></i> Programado para mañana</small>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>

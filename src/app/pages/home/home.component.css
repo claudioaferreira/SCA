@@ -1,15 +1,84 @@
-.custom-card {
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 8px var(--shadow-color) !important;
+/* Fondo general */
+.main-dashboard {
+  background-color: #f8fafc;
 }
 
+/* Efectos para las tarjetas KPI */
+.kpi-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  }
+}
+
+/* Círculos para los iconos de los KPIs */
+.icon-shape {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* Efecto hover sutil para la lista de trabajos recientes */
+.hover-bg {
+  transition: background-color 0.15s ease;
+  &:hover {
+    background-color: #f1f5f9;
+    cursor: pointer;
+  }
+}
+
+/* Ajustes de botones para un look más corporativo */
+.btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  
+  &:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+}
+
+.btn-outline-secondary {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+}
+
+/* Tu clase personalizada consumiendo las variables de :root */
 .btn-primary-custom {
-  background-color: var(--ifm-color-primary);
+  background-color: var(--ifm-color-primary); /* El color base: #d59f0f */
   border-color: var(--ifm-color-primary-dark);
   color: white;
+  transition: all 0.2s ease;
+
+  /* El estado hover cuando pasas el mouse */
+  &:hover {
+    background-color: var(--ifm-color-primary-dark); /* Se oscurece a #bd8e0d */
+    border-color: var(--ifm-color-primary-darker);
+    color: white;
+  }
+}
+
+.btn-outline-custom {
+  background-color: white;
+  color: var(--text-color); /* Usa tu color oscuro #333 */
+  border: 1px solid var(--border-color); /* Borde gris clarito #ddd */
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: var(--ifm-color-primary-dark);
-    border-color: var(--ifm-color-primary-darker);
+    color: var(--ifm-color-primary-dark); /* El texto se vuelve dorado oscuro */
+    border-color: var(--ifm-color-primary); /* El borde se vuelve dorado */
+    background-color: white; 
+    /* Opcional: si quieres que el botón "flote" un poquito más */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px var(--shadow-color) !important;
   }
 }

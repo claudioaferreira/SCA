@@ -1,0 +1,488 @@
+// ─── VARIABLES — mismos colores que asignaciones ──────────────────────────
+$azul:       #2563eb;
+$azul-hover: #1d4ed8;
+$oscuro:     #1a1a2e;
+$fondo:      #f0f2f5;
+$blanco:     #ffffff;
+$borde:      #e5e7eb;
+$texto:      #1a1a1a;
+$muted:      #6b7280;
+
+// ─── PÁGINA ────────────────────────────────────────────────────────────────
+.page-container {
+  padding: 16px;
+  background: var(--background-color); /* 🔥 mismo que asignaciones */
+  min-height: 100vh;
+}
+
+// ─── ENCABEZADO ────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $blanco;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+
+  h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: $texto;
+  }
+
+  p {
+    margin: 2px 0 0;
+    font-size: 0.82rem;
+    color: $muted;
+  }
+}
+
+.btn-nuevo {
+  background: $azul;
+  color: $blanco;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+
+  &:hover { background: $azul-hover; }
+}
+
+// ─── FILTROS ───────────────────────────────────────────────────────────────
+.filtros-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: $blanco;
+  border: 1px solid $borde;
+  border-radius: 8px;
+  padding: 7px 12px;
+  flex: 1;
+  min-width: 200px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+  i { color: $muted; font-size: 0.85rem; }
+
+  input {
+    border: none;
+    outline: none;
+    font-size: 0.87rem;
+    width: 100%;
+    color: $texto;
+    background: transparent;
+
+    &::placeholder { color: #adb5bd; }
+  }
+}
+
+.select-filtro {
+  background: $blanco;
+  border: 1px solid $borde;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.87rem;
+  color: $texto;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  outline: none;
+}
+
+.contador {
+  font-size: 0.8rem;
+  color: $muted;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+// ─── TABLA ─────────────────────────────────────────────────────────────────
+.tabla-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--border-color); /* 🔥 */
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: var(--text-color); /* 🔥 más consistente */
+
+  th {
+    padding: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+  }
+}
+
+tbody {
+  tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.1s;
+
+    &:last-child { border-bottom: none; }
+    &:hover {  background: #f8fafc; }
+  }
+.badge-mini {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+}
+
+.badge-mini.si {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-mini.no {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+  td {
+    padding: 12px 14px;
+    font-size: 0.87rem;
+    color: $texto;
+    vertical-align: middle;
+  }
+}
+
+.text-center { text-align: center; }
+.text-muted   { color: $muted; font-size: 0.78rem; }
+
+// ─── EMPLEADO: avatar + nombre ─────────────────────────────────────────────
+.empleado-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ifm-color-primary); /* 🔥 */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nombre {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+// ─── BADGES ────────────────────────────────────────────────────────────────
+.badge-codigo {
+  background: #eff6ff;
+  color: $azul;
+  border: 1px solid #bfdbfe;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.badge-cedula {
+  background: #f5ffef;
+  color: $azul;
+  border: 1px solid #98ffc6;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+.badge-activo {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-inactivo {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+// ─── TELÉFONOS ─────────────────────────────────────────────────────────────
+.telefonos {
+  div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: $texto;
+    line-height: 1.6;
+
+    i { color: $azul; font-size: 0.75rem; }
+  }
+}
+
+// ─── BOTONES DE ACCIÓN ─────────────────────────────────────────────────────
+.btn-accion {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+   width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
+  margin: 0 2px;
+
+  &.editar {
+    color: $azul;
+    &:hover { background: #eff6ff; }
+  }
+
+  &.eliminar {
+    color: #dc2626;
+    &:hover { background: #fee2e2; }
+  }
+}
+
+// ─── SIN RESULTADOS ────────────────────────────────────────────────────────
+.sin-resultados {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: $muted;
+
+  i    { font-size: 2rem; display: block; margin-bottom: 8px; }
+  p    { margin: 0; font-size: 0.9rem; }
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;                           // cubre toda la pantalla
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-card {
+  background: $blanco;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: $oscuro;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $blanco;
+  }
+}
+
+.btn-cerrar {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px;
+  transition: color 0.15s;
+
+  &:hover { color: $blanco; }
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// Una fila con dos campos lado a lado
+.fila-doble {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+// Cada campo del formulario
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  input, select {
+    border: 1px solid $borde;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 0.87rem;
+    color: $texto;
+    outline: none;
+    transition: border-color 0.15s;
+    background: $blanco;
+
+    &:focus { border-color: $azul; }
+    &::placeholder { color: #adb5bd; }
+  }
+}
+
+.campo select {
+  width: 100%;              /* Obliga al select a no salirse de su contenedor */
+  max-width: 100%;          /* Límite estricto */
+  white-space: nowrap;      /* Evita que el texto salte a una segunda línea */
+  overflow: hidden;         /* Oculta lo que se salga de la caja */
+  text-overflow: ellipsis;  /* Pone los "..." mágicos al final del texto largo */
+}
+
+/* Opcional: Para asegurar que las opciones por dentro tampoco se desborden en algunos navegadores */
+.campo select option {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid $borde;
+  background: #f9fafb;
+}
+
+.btn-cancelar {
+  background: $blanco;
+  border: 1px solid $borde;
+  color: $muted;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.87rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #f3f4f6; }
+}
+
+.btn-guardar {
+  background: $azul;
+  border: none;
+  color: $blanco;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+
+  &:hover { background: $azul-hover; }
+}
+
+.btn-primary-custom {
+  background-color: var(--ifm-color-primary); /* El color base: #d59f0f */
+  border-color: var(--ifm-color-primary-dark);
+  color: white;
+  transition: all 0.2s ease;
+
+  /* El estado hover cuando pasas el mouse */
+  &:hover {
+    background-color: var(--ifm-color-primary-dark); /* Se oscurece a #bd8e0d */
+    border-color: var(--ifm-color-primary-darker);
+    color: white;
+  }
+}
+
+.grid-checks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.grid-checks div {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.grid-checks span {
+  margin-bottom: 2px;
+  opacity: 0.8;
+}
+
+/* Diseño de los botones interactivos de equipos */
+.equipo-chip {
+  border: 1px solid #dce0e4;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f8f9fa;
+  color: #5c636a;
+  user-select: none; /* Evita que el texto se sombree al hacer doble clic */
+}
+
+.equipo-chip:hover {
+  background-color: #e9ecef;
+}
+
+/* Estado cuando el usuario hace clic */
+.equipo-chip.seleccionado {
+  background-color: #0d6efd; /* Color azul primario, cámbialo si tu tema es otro */
+  color: #ffffff;
+  border-color: #0d6efd;
+  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+}

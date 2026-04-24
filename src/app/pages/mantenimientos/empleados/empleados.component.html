@@ -1,0 +1,210 @@
+<div class="page-container">
+
+  <div class="page-header">
+    <div class="header-info">
+      <h1>Empleados</h1>
+      <p>Gestión del personal del sistema</p>
+    </div>
+    <button class="btn btn-primary-custom d-flex align-items-center gap-2 shadow-sm" (click)="abrirNuevo()">
+      <i class="bi bi-plus-lg"></i> Nuevo empleado
+    </button>
+  </div>
+
+  <div class="filtros-bar">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" placeholder="Buscar por nombre o código..."
+             [(ngModel)]="textoBusqueda" />
+    </div>
+    <select [(ngModel)]="filtroDepartamento" class="select-filtro">
+      <option value="">Todos los departamentos</option>
+      <option value="Soporte Técnico">Soporte Técnico</option>
+      <option value="IT">IT</option>
+    </select>
+  </div>
+
+  <div class="tabla-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Empleado</th>
+          <th>Código</th>
+          <th>Cedula</th>
+          <th>Teléfonos</th>
+          <th>Departamento</th>
+          <th>Posición</th>
+          <th>Equipamiento</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (emp of empleadosFiltrados(); track emp.id) {
+          <tr>
+            <td>
+              <div class="empleado-info">
+                <div class="avatar">{{ emp.nombre.substring(0, 2).toUpperCase() }}</div>
+                <span class="nombre">{{ emp.nombre }}</span>
+              </div>
+            </td>
+
+            <td><span class="badge-codigo">{{ emp.codigo }}</span></td>
+            <td><span class="badge-cedula">{{ emp.cedula }}</span></td>
+
+            <td class="telefonos">
+              <div><i class="bi bi-phone"></i> Flota: {{ emp.telefonoFlota || 'No Tiene' }}</div>
+              <div class="text-muted"><i class="bi bi-telephone"></i> {{ emp.telefonoPersonal || '—' }}</div>
+            </td>
+
+            <td>{{ emp.departamento }}</td>
+            <td>{{ emp.posicion }}</td>
+
+            <td style="max-width: 250px;">
+              <div class="d-flex flex-wrap gap-1">
+                @for (eq of emp.equipos; track eq.IdEquipo) {
+                  <span class="badge-mini border"
+                        [ngClass]="eq.categoria === 'Hardware' ? 'bg-primary text-white' : 'bg-success text-white'">
+                    {{ eq.nombreEquipo }}
+                  </span>
+                } @empty {
+                  <span class="tiny-text text-muted fst-italic">Sin equipos asignados</span>
+                }
+              </div>
+            </td>
+
+            <td class="text-center">
+              @if (emp.estado) {
+                <span class="badge-activo">Activo</span>
+              } @else {
+                <span class="badge-inactivo">Inactivo</span>
+              }
+            </td>
+
+            <td class="text-center">
+              <button class="btn-accion editar" title="Editar" (click)="abrirEditar(emp)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn-accion eliminar" title="Eliminar" (click)="eliminar(emp.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        }
+
+        @if (empleadosFiltrados().length === 0) {
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">
+              <i class="bi bi-inbox fs-2"></i>
+              <p>No se encontraron empleados</p>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+@if (mostrarModal) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>{{ editando ? 'Editar empleado' : 'Nuevo empleado' }}</h3>
+        <button class="btn-cerrar" (click)="cerrarModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="campo">
+          <label>Nombre completo</label>
+          <input [(ngModel)]="form.nombre" placeholder="Ej: Juan Pérez" [disabled]="editando" />
+        </div>
+
+        <div class="campo">
+          <label>Código</label>
+          <input [(ngModel)]="form.codigo" placeholder="Ej: 20261150"  [disabled]="editando"/>
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Teléfono flota</label>
+            <input [(ngModel)]="form.telefonoFlota" placeholder="829-000-0000" />
+          </div>
+          <div class="campo">
+            <label>Teléfono personal</label>
+            <input [(ngModel)]="form.telefonoPersonal" placeholder="809-000-0000" />
+          </div>
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Departamento</label>
+            <select [(ngModel)]="form.departamento">
+              <option value="">Seleccionar...</option>
+              @for (depto of departamentosCatalogo; track depto.IdDepartamento) {
+                <option [value]="depto.descripcion">{{ depto.descripcion }}</option>
+              } @empty {
+                <option>Cargando catálogo...</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label>Posición</label>
+            <select [(ngModel)]="form.posicion">
+              <option value="">Seleccionar...</option>
+             @for (cargo of cargosCatalogo; track cargo.IdCargo) {
+                <option [value]="cargo.descripcion">{{ cargo.descripcion }}</option>
+              } @empty {
+                <option>Cargando catálogo...</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <!-- ── CHECKBOXES DE EQUIPOS ── -->
+        <div class="campo mt-3">
+          <label class="mb-2">Equipamiento Asignado <span class="text-muted fw-normal" style="font-size: 0.8rem;">(Haz clic para asignar/quitar)</span></label>
+          
+          <div class="d-flex flex-wrap gap-2">
+            @for (item of equiposDisponibles; track item.IdEquipo) {
+              
+              <div class="equipo-chip" 
+                   [class.seleccionado]="verificarSiTieneEquipo(item.IdEquipo)"
+                   (click)="toggleEquipoManual(item.IdEquipo)">
+                   
+                <i class="bi" [ngClass]="verificarSiTieneEquipo(item.IdEquipo) ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                <span>{{ item.descripcion }}</span>
+                
+              </div>
+
+            } @empty {
+              <div class="text-muted tiny-text">Cargando catálogo...</div>
+            }
+          </div>
+        </div>
+
+        <div class="campo mt-3">
+          <label>Estado</label>
+          <select [(ngModel)]="form.estado">
+            <option [ngValue]="true">Activo</option>
+            <option [ngValue]="false">Inactivo</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-guardar btn-primary-custom d-flex align-items-center gap-2 shadow-sm" (click)="guardar()">
+          <i class="bi bi-check-lg"></i>
+          {{ editando ? 'Guardar cambios' : 'Crear empleado' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

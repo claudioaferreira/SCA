@@ -14,12 +14,19 @@ import Swal from 'sweetalert2';
   styleUrls: ['./asignaciones-semanal.component.scss'],
 })
 export class AsignacionesSemanalComponent implements OnInit {
-
+  chipExpandido = new Set<string>();
   empleadosMaster: Empleado[] = [];
   loading = false;
 
   terminoBusqueda = '';
   diasSemana: Date[] = [];
+
+  
+
+  filtroActivo: string = 'ninguno';
+
+  // Lunes de la semana que está en pantalla (se mueve con las flechas)
+  private lunesActual!: Date;
 
   tipos: TipoAsignacion[] = [
     { idTipo: 1, nombre: 'Sede Central' },
@@ -28,22 +35,41 @@ export class AsignacionesSemanalComponent implements OnInit {
     { idTipo: 4, nombre: 'Exterior'     },
   ];
 
+  private readonly TIPOS_CON_LIMITE: number[] = [2, 3, 4];
+
   dataTemporal: Record<string, AsignacionCelda[]> = {};
+  private uidCounter = 0;
 
   constructor(private _empleadosService: EmpleadosService) {}
 
+  toggleChip(uid: string) {
+  if (this.chipExpandido.has(uid)) {
+    this.chipExpandido.delete(uid);
+  } else {
+    this.chipExpandido.add(uid);
+  }
+}
+
   ngOnInit() {
-    this.generarCalendarioSemanal();
+    this.irASemanaActual();
     this.cargarEmpleadosDeAPI();
   }
 
-  // ─── CALENDARIO ────────────────────────────────────────────────
+  // ─── NAVEGACIÓN DE SEMANA ──────────────────────────────────────
 
-  generarCalendarioSemanal() {
-    const hoy = new Date();
-    const lunes = new Date(
-      hoy.setDate(hoy.getDate() - hoy.getDay() + (hoy.getDay() === 0 ? -6 : 1))
-    );
+  /** Calcula el lunes de la semana que contiene "hoy" */
+  private getLunesDe(fecha: Date): Date {
+    const d = new Date(fecha);
+    const dia = d.getDay(); // 0=Dom, 1=Lun...
+    const diff = dia === 0 ? -6 : 1 - dia;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  /** Inicializa diasSemana a partir del lunes dado */
+  private setSemana(lunes: Date) {
+    this.lunesActual = new Date(lunes);
     this.diasSemana = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lunes);
       d.setDate(lunes.getDate() + i);
@@ -51,18 +77,35 @@ export class AsignacionesSemanalComponent implements OnInit {
     });
   }
 
-  private getRangoSemana() {
-    return {
-      inicio: this.diasSemana[0].toISOString().split('T')[0],
-      fin:    this.diasSemana[6].toISOString().split('T')[0],
-    };
+  irASemanaActual() {
+    this.setSemana(this.getLunesDe(new Date()));
   }
 
-  // ─── CARGA INICIAL ─────────────────────────────────────────────
+  /** +1 = siguiente semana, -1 = semana anterior */
+  navegarSemana(direccion: 1 | -1) {
+    const nuevoLunes = new Date(this.lunesActual);
+    nuevoLunes.setDate(nuevoLunes.getDate() + direccion * 7);
+    this.setSemana(nuevoLunes);
+    this.recargarSemana();
+  }
+
+  esSemanaActual(): boolean {
+    const lunesHoy = this.getLunesDe(new Date());
+    return this.lunesActual.toISOString().split('T')[0] === lunesHoy.toISOString().split('T')[0];
+  }
+
+  // ─── CARGA ─────────────────────────────────────────────────────
+
+  /** Recarga solo las asignaciones de la semana en pantalla (los empleados ya están cargados) */
+  private recargarSemana() {
+    this.loading = true;
+    this.inicializarDataTemporal();
+    this.cargarAsignacionesSemana();
+  }
 
   cargarEmpleadosDeAPI() {
     this.loading = true;
-    this._empleadosService.getEmpleados().subscribe({
+    this._empleadosService.getEmpleadosActivos().subscribe({
       next: (data) => {
         this.empleadosMaster = data;
         this.empleadosMaster.forEach((emp) => {
@@ -78,6 +121,13 @@ export class AsignacionesSemanalComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  private getRangoSemana() {
+    return {
+      inicio: this.diasSemana[0].toISOString().split('T')[0],
+      fin:    this.diasSemana[6].toISOString().split('T')[0],
+    };
   }
 
   private inicializarDataTemporal() {
@@ -102,7 +152,7 @@ export class AsignacionesSemanalComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error al cargar asignaciones de la semana:', err);
+        console.error('Error al cargar asignaciones:', err);
         this.loading = false;
       },
     });
@@ -148,8 +198,11 @@ export class AsignacionesSemanalComponent implements OnInit {
     });
   }
 
+  // ─── MAPEO ─────────────────────────────────────────────────────
+
   private mapearDesdeAPI(a: any): AsignacionCelda {
     return {
+      uid:           `saved-${a.IdAsignacion}`,
       idAsignacion:  a.IdAsignacion,
       tipoId:        a.IdTipo         ?? 0,
       cantidad:      a.IdTipo !== 2   ? (a.CantidadTareas?.toString() ?? '') : '',
@@ -164,7 +217,9 @@ export class AsignacionesSemanalComponent implements OnInit {
   }
 
   private nuevaCeldaVacia(): AsignacionCelda {
+    this.uidCounter++;
     return {
+      uid:           `new-${this.uidCounter}`,
       idAsignacion:  null,
       tipoId:        0,
       cantidad:      '',
@@ -178,39 +233,104 @@ export class AsignacionesSemanalComponent implements OnInit {
     };
   }
 
-  // ─── TIPOS DISPONIBLES PARA AGREGAR EN UNA CELDA ──────────────
-  // Devuelve solo los tipos que aún no existen en esa celda (máx 1 por tipo por día)
-  tiposDisponibles(empId: number, dia: Date): TipoAsignacion[] {
+  // ─── TIPOS DISPONIBLES ─────────────────────────────────────────
+
+  tiposDisponibles(empId: number, dia: Date, itemActual?: AsignacionCelda): TipoAsignacion[] {
     const key   = this.generarLlave(empId, dia);
     const items = this.dataTemporal[key] ?? [];
-    // tiposId ya usados (incluyendo los formularios nuevos pendientes)
-    const usados = new Set(items.map(i => i.tipoId));
-    return this.tipos.filter(t => !usados.has(t.idTipo));
+
+    const tiposLimitadosUsados = new Set(
+      items
+        .filter(i => !i.esNueva && i.uid !== itemActual?.uid && this.TIPOS_CON_LIMITE.includes(i.tipoId))
+        .map(i => i.tipoId)
+    );
+
+    return this.tipos.filter(t => {
+      if (!this.TIPOS_CON_LIMITE.includes(t.idTipo)) return true;
+      return !tiposLimitadosUsados.has(t.idTipo);
+    });
   }
 
-  tieneAsignacionNueva(empId: number, dia: Date): boolean {
-    const key = this.generarLlave(empId, dia);
-    const items = this.dataTemporal[key];
-    return items ? items.some(i => i.esNueva) : false;
-  }
-
-  // ─── AGREGAR / GUARDAR / ELIMINAR ──────────────────────────────
+  // ─── AGREGAR ───────────────────────────────────────────────────
 
   agregarAsignacion(empId: number, dia: Date) {
-    const disponibles = this.tiposDisponibles(empId, dia);
-    if (disponibles.length === 0) {
+  const key   = this.generarLlave(empId, dia);
+  const items = this.dataTemporal[key] ?? [];
+
+
+  // ─── VALIDACIÓN: revisar TODA la semana ───────────────────────
+  for (const diaSemana of this.diasSemana) {
+    const keySemana    = this.generarLlave(empId, diaSemana);
+    const itemsSemana  = this.dataTemporal[keySemana] ?? [];
+    const asigOcupada  = itemsSemana.find(
+      i => !i.esNueva && i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId)
+    );
+
+    if (asigOcupada) {
+      const nombreDia  = diaSemana.toLocaleDateString('es-DO', { weekday: 'long', day: '2-digit', month: 'short' });
+      const nombreTipo = this.getNombreTipo(asigOcupada.tipoId);
+
+      // Construir detalle extra según el tipo
+      let detalle = '';
+      if (asigOcupada.tipoId === 1 && asigOcupada.cantidad)
+        detalle = ` · ${asigOcupada.cantidad} tareas`;
+      else if (asigOcupada.tipoId === 2 && asigOcupada.cantidadMetro)
+        detalle = ` · 🚇 ${asigOcupada.cantidadMetro} rutas`;
+      else if ((asigOcupada.tipoId === 3 || asigOcupada.tipoId === 4) && asigOcupada.zona)
+        detalle = ` · ${asigOcupada.dias}d — ${asigOcupada.zona}`;
+
       Swal.fire({
-        icon: 'info',
-        title: 'Todos los tipos asignados',
-        text: 'Este técnico ya tiene los 4 tipos cubiertos para este día.',
-        timer: 2000,
-        showConfirmButton: false
+        icon: 'warning',
+        title: 'Técnico ocupado',
+        html: `
+          <div style="font-size: 0.9rem; line-height: 1.8;">
+            <div>Este técnico tiene una asignación activa:</div>
+            <div class="mt-2">
+              <span style="background:#fef3c7; padding:2px 8px; border-radius:4px; font-weight:600;">
+                📅 ${nombreDia}
+              </span>
+            </div>
+            <div class="mt-1">
+              <span style="background:#fee2e2; padding:2px 8px; border-radius:4px; font-weight:600;">
+                🗂️ ${nombreTipo}${detalle}
+              </span>
+            </div>
+            <div class="mt-2 text-muted" style="font-size:0.78rem;">
+              Libéralo primero para poder agregar una nueva asignación.
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#2563eb',
       });
       return;
     }
-    const key = this.generarLlave(empId, dia);
-    this.dataTemporal[key].push(this.nuevaCeldaVacia());
   }
+  // ──────────────────────────────────────────────────────────────
+
+  const tiposLimitadosGuardados = items
+    .filter(i => !i.esNueva && this.TIPOS_CON_LIMITE.includes(i.tipoId))
+    .map(i => i.tipoId);
+
+  const todosLimitadosUsados = this.TIPOS_CON_LIMITE.every(t =>
+    tiposLimitadosGuardados.includes(t)
+  );
+
+  if (todosLimitadosUsados && this.tiposDisponibles(empId, dia).length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Todos los tipos asignados',
+      text: 'Este técnico ya tiene todos los tipos cubiertos para este día.',
+      timer: 2000,
+      showConfirmButton: false
+    });
+    return;
+  }
+
+  this.dataTemporal[key].push(this.nuevaCeldaVacia());
+}
+
+  // ─── GUARDAR ───────────────────────────────────────────────────
 
   guardarCelda(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
@@ -218,19 +338,20 @@ export class AsignacionesSemanalComponent implements OnInit {
 
     if (!item || item.tipoId === 0) return;
 
-    // ─── VALIDACIÓN DUPLICADO: no permitir mismo tipo ya guardado ─
-    const duplicado = this.dataTemporal[key].some(
-      (i, idx) => idx !== index && i.tipoId === item.tipoId && !i.esNueva
-    );
-    if (duplicado) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Tipo duplicado',
-        text: `Ya existe una asignación de tipo "${this.getNombreTipo(item.tipoId)}" para este día.`,
-        timer: 2500,
-        showConfirmButton: false
-      });
-      return;
+    if (this.TIPOS_CON_LIMITE.includes(item.tipoId)) {
+      const duplicado = this.dataTemporal[key].some(
+        (i) => i.uid !== item.uid && i.tipoId === item.tipoId && !i.esNueva
+      );
+      if (duplicado) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Tipo duplicado',
+          text: `Ya existe una asignación de tipo "${this.getNombreTipo(item.tipoId)}" guardada para este día.`,
+          timer: 2500,
+          showConfirmButton: false
+        });
+        return;
+      }
     }
 
     const fechaStr      = dia.toISOString().split('T')[0];
@@ -250,6 +371,7 @@ export class AsignacionesSemanalComponent implements OnInit {
     this._empleadosService.guardarAsignacionCelda(payload).subscribe({
       next: (res: any) => {
         item.idAsignacion = res.body?.idAsignacion ?? null;
+        item.uid          = `saved-${item.idAsignacion}`;
         item.modificado   = false;
         item.esNueva      = false;
         item.guardadoOk   = true;
@@ -262,6 +384,8 @@ export class AsignacionesSemanalComponent implements OnInit {
       }
     });
   }
+
+  // ─── ELIMINAR ──────────────────────────────────────────────────
 
   eliminarAsignacion(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
@@ -277,23 +401,19 @@ export class AsignacionesSemanalComponent implements OnInit {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6'
     }).then((result) => {
-      if (result.isConfirmed) {
-        if (item.idAsignacion) {
-          this._empleadosService.eliminarAsignacion(item.idAsignacion).subscribe({
-            next: () => {
-              this.dataTemporal[key].splice(index, 1);
-              this.cargarHistorialDesdeBD();
-              Swal.fire({ icon: 'success', title: 'Eliminado', text: 'La asignación fue eliminada correctamente', timer: 1500, showConfirmButton: false });
-            },
-            error: (err) => {
-              console.error('Error al eliminar:', err);
-              Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la asignación' });
-            }
-          });
-        } else {
-          this.dataTemporal[key].splice(index, 1);
-          Swal.fire({ icon: 'success', title: 'Eliminado', text: 'Asignación eliminada localmente', timer: 1200, showConfirmButton: false });
-        }
+      if (!result.isConfirmed) return;
+
+      if (item.idAsignacion) {
+        this._empleadosService.eliminarAsignacion(item.idAsignacion).subscribe({
+          next: () => {
+            this.dataTemporal[key].splice(index, 1);
+            this.cargarHistorialDesdeBD();
+            Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1500, showConfirmButton: false });
+          },
+          error: () => Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la asignación' })
+        });
+      } else {
+        this.dataTemporal[key].splice(index, 1);
       }
     });
   }
@@ -303,11 +423,10 @@ export class AsignacionesSemanalComponent implements OnInit {
   marcarComoDisponible(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
-    if (!item.idAsignacion) { item.idEstado = 3; return; }
     item.idEstado = 3;
+    if (!item.idAsignacion) return;
     this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 3).subscribe({
-      error: (err) => {
-        console.error('Error al liberar técnico:', err);
+      error: () => {
         item.idEstado = 1;
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo liberar al técnico.', timer: 3000, showConfirmButton: false });
       }
@@ -317,53 +436,36 @@ export class AsignacionesSemanalComponent implements OnInit {
   marcarComoOcupado(empId: number, dia: Date, index: number) {
     const key  = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
-    if (!item.idAsignacion) { item.idEstado = 1; return; }
+     if (item.tipoId === 1) return;
+
+  item.idEstado = 1;
     item.idEstado = 1;
+    if (!item.idAsignacion) return;
     this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 1).subscribe({
-      error: (err) => {
-        console.error('Error al marcar ocupado:', err);
+      error: () => {
         item.idEstado = 3;
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo marcar como ocupado.', timer: 3000, showConfirmButton: false });
       }
     });
   }
 
-  // ─── ESTADO DE LA FILA COMPLETA ────────────────────────────────
-
-  /** True si el técnico tiene AL MENOS UNA asignación activa (idEstado !== 3) en CUALQUIER día de la semana */
   empleadoEstaOcupado(empId: number): boolean {
     return this.diasSemana.some((dia) => {
       const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-      return items.some(i => i.idEstado !== 3 && i.tipoId !== 0 && i.tipoId !== 1);
+      return items.some(i => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId));
     });
   }
 
-  // ─── GUARDAR TODO ──────────────────────────────────────────────
-
-  guardarTodo() {
-    let pendientes = 0;
-    this.empleadosMaster.forEach((emp) => {
-      this.diasSemana.forEach((dia) => {
-        const key = this.generarLlave(emp.id, dia);
-        this.dataTemporal[key].forEach((item, index) => {
-          if (item.esNueva && item.tipoId !== 0) {
-            pendientes++;
-            this.guardarCelda(emp.id, dia, index);
-          }
-        });
-      });
-    });
-    if (pendientes === 0) alert('No hay asignaciones nuevas pendientes de guardar.');
-  }
-
-  // ─── COLOR DE CELDA ────────────────────────────────────────────
+  // ─── COLOR ─────────────────────────────────────────────────────
 
   getClaseColor(key: string, fecha: Date): string {
     const items = this.dataTemporal[key] ?? [];
-    const tieneOcupado = items.some(i => i.idEstado !== 3 && i.tipoId !== 0 && (i.tipoId === 2 || i.tipoId === 3 || i.tipoId === 4));
+    const tieneOcupado = items.some(
+      i => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId)
+    );
     let clases = '';
-    if (this.esDiaPasado(fecha))  clases += 'bg-dia-pasado ';
-    if (tieneOcupado)             clases += 'bg-warning-subtle ';
+    if (this.esDiaPasado(fecha)) clases += 'bg-dia-pasado ';
+    if (tieneOcupado)            clases += 'bg-warning-subtle ';
     return clases;
   }
 
@@ -380,15 +482,91 @@ export class AsignacionesSemanalComponent implements OnInit {
   ordenarListaAlfabeticamente() {
     this.empleadosMaster.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
+  
+ 
+setFiltro(filtro: string) {
+  this.filtroActivo = filtro;
+}
 
   filtrarEmpleados(): Empleado[] {
-    const b = this.terminoBusqueda.toLowerCase();
-    return this.empleadosMaster.filter(e =>
-      e.nombre.toLowerCase().includes(b) ||
-      e.localidad.toLowerCase().includes(b) ||
-      e.codigo.includes(b)
-    );
+
+  const b = this.terminoBusqueda.toLowerCase();
+
+  // 🔥 1. FILTRAS NORMAL
+  let lista = this.empleadosMaster.filter(e =>
+    e.nombre.toLowerCase().includes(b) ||
+    e.localidad?.toLowerCase().includes(b) ||
+    e.codigo.includes(b)
+  );
+
+  // 🔥 2. CLONAS PARA NO MUTAR EL ORIGINAL
+  lista = [...lista];
+
+  // 🔥 3. HELPERS (evita repetir lógica)
+  const esAux = (e: Empleado) =>
+    e.posicion?.toUpperCase().includes('AUXILIAR') ? 1 : 0;
+
+  const esSoporte = (e: Empleado) =>
+    e.posicion?.toUpperCase().includes('SOPORTE') ? 1 : 0;
+
+  switch (this.filtroActivo) {
+
+    case 'auxiliar':
+  lista.sort((a, b) => {
+    const aVal = esAux(a) ? 0 : 1;
+    const bVal = esAux(b) ? 0 : 1;
+    return aVal - bVal;
+  });
+  break;
+
+    case 'soporte':
+      lista.sort((a, b) => {
+        const aVal = esSoporte(a) ? 0 : 1;
+        const bVal = esSoporte(b) ? 0 : 1;
+        return aVal - bVal;
+      });
+      break;
+
+    case 'metro':
+  lista.sort((a, b) => {
+    const aVal = a.stats.metroMes ?? 0;
+    const bVal = b.stats.metroMes ?? 0;
+
+    // prioridad principal (menos primero)
+    const diff = aVal - bVal;
+
+    // desempate → nombre
+    return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+  });
+  break;
+
+case 'interior':
+  lista.sort((a, b) => {
+    const aVal = a.stats.totalInterior ?? 0;
+    const bVal = b.stats.totalInterior ?? 0;
+
+    const diff = aVal - bVal;
+    return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+  });
+  break;
+
+case 'sede':
+  lista.sort((a, b) => {
+    const aVal = a.stats.totalSede ?? 0;
+    const bVal = b.stats.totalSede ?? 0;
+
+    const diff = aVal - bVal;
+    return diff !== 0 ? diff : a.nombre.localeCompare(b.nombre);
+  });
+  break;
+
+    default:
+      lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      break;
   }
+
+  return lista;
+}
 
   private esDiaPasado(fecha: Date): boolean {
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -399,4 +577,8 @@ export class AsignacionesSemanalComponent implements OnInit {
   marcarModificado(item: AsignacionCelda) {
     item.modificado = true;
   }
+
+  limpiarTelefono(numero: string): string {
+  return numero.replace(/\D/g, '');
+}
 }

@@ -1,6 +1,6 @@
 
 /* Definición de la paleta de colores del proyecto */
-/* :root {
+:root {
   --ifm-color-primary: #d59f0f;
   --ifm-color-primary-dark: #bd8e0d;
   --ifm-color-primary-darker: #a37c0c;
@@ -12,21 +12,21 @@
   --text-color: #333;
   --border-color: #ddd;
   --shadow-color: rgba(0, 0, 0, 0.1);
-} */
+} 
 
-:root {
-  --ifm-color-primary: #3b82f6;
-  --ifm-color-primary-dark: #2563eb;
-  --ifm-color-primary-darker: #1d4ed8;
-  --ifm-color-primary-darkest: #1e40af;
-  --ifm-color-primary-light: #60a5fa;
-  --ifm-color-primary-lighter: #93c5fd;
-  --ifm-color-primary-lightest: #dbeafe;
-  --background-color: #f8fafc; /* Un blanco ligeramente azulado para complementar */
-  --text-color: #1e293b;       /* Un gris oscuro azulado para el texto */
-  --border-color: #e2e8f0;     /* Un borde gris claro */
-  --shadow-color: rgba(0, 0, 0, 0.1);
-}
+// :root {
+//   --ifm-color-primary: #3b82f6;
+//   --ifm-color-primary-dark: #2563eb;
+//   --ifm-color-primary-darker: #1d4ed8;
+//   --ifm-color-primary-darkest: #1e40af;
+//   --ifm-color-primary-light: #60a5fa;
+//   --ifm-color-primary-lighter: #93c5fd;
+//   --ifm-color-primary-lightest: #dbeafe;
+//   --background-color: #f8fafc; /* Un blanco ligeramente azulado para complementar */
+//   --text-color: #1e293b;       /* Un gris oscuro azulado para el texto */
+//   --border-color: #e2e8f0;     /* Un borde gris claro */
+//   --shadow-color: rgba(0, 0, 0, 0.1);
+// }
 
 /* Estilos globales para el cuerpo de la página */
 

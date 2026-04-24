@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
+
 
 @Injectable({
   providedIn: 'root'
@@ -10,14 +12,15 @@ export class DisponibilidadService {
 
   // Función para marcar como ocupado o libre
   marcarEstado(idEmpleado: number, fecha: string, estaEnRuta: boolean) {
-    const key = `${idEmpleado}-${fecha}`;
-    this.tecnicosOcupados[key] = estaEnRuta;
-  }
+  const key = `${idEmpleado}-${fecha}`;
+  this.tecnicosOcupados[key] = estaEnRuta;
+}
 
   // Función para consultar si alguien puede trabajar
-  estaDisponible(idEmpleado: number, fecha: string): boolean {
-    const key = `${idEmpleado}-${fecha}`;
-    // Si no está en el objeto o es false, está disponible
-    return !this.tecnicosOcupados[key];
-  }
+estaDisponible(idEmpleado: number, fecha: string): boolean {
+  const key = `${idEmpleado}-${fecha}`;
+  
+  // Si no existe o es false → disponible
+  return !this.tecnicosOcupados[key];
+}
 }

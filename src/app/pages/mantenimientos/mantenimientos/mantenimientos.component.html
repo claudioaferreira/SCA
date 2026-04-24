@@ -1,0 +1,40 @@
+<div class="page-container">
+
+  <!-- ── ENCABEZADO ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1>Mantenimientos</h1>
+      <p>Administra los datos base del sistema</p>
+    </div>
+  </div>
+
+  <!-- ── GRID DE MÓDULOS ─────────────────────────────────────────────────── -->
+  <!-- @for recorre el arreglo "modulos" del TS y crea una card por cada uno -->
+  <div class="cards-grid">
+    @for (mod of modulos; track mod.ruta) {
+      <div class="card" [routerLink]="mod.ruta">
+
+        <!-- Icono con color de fondo propio -->
+        <div class="card-icon" [style.background]="mod.color">
+          <i class="bi {{ mod.icono }}"></i>
+        </div>
+
+        <!-- Texto -->
+        <div class="card-body">
+          <h3>{{ mod.titulo }}</h3>
+          <p>{{ mod.descripcion }}</p>
+        </div>
+
+        <!-- Flecha indicadora -->
+        <div class="card-arrow">
+          <i class="bi bi-chevron-right"></i>
+        </div>
+
+      </div>
+    }
+  </div>
+
+  <!-- Aquí se renderizan los componentes hijos (empleados, departamentos, etc.) -->
+  <!-- <router-outlet /> -->
+
+</div>

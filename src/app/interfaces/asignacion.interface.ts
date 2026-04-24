@@ -2,17 +2,15 @@ export interface Empleado {
   id: number;
   nombre: string;
   codigo: string;
-  cedula?: string;     // Opcional por ahora
+  cedula?: string;
   telefonoFlota?: string;
   telefonoPersonal?: string;
-  ubicacion: string;  // Opcional
+  departamento: string;
+  ubicacion: string;
   localidad: string;
   posicion?: string;
   estado: boolean;
-  TieneData: boolean;
-  TieneOutlook: boolean;
-  TieneTeams: boolean;
-  tieneUSB: boolean;
+equipos?: EquipoAsignado[];
   stats: {
     totalInterior?: number;
     totalSede?: number;
@@ -22,7 +20,11 @@ export interface Empleado {
     diasEste?: number;
   };
 }
-
+export interface EquipoAsignado {
+  nombreEquipo: string;
+  categoria: string;
+  IdEquipo: number; // Opcional, pero útil para cuando vayas a editar
+}
 export interface TipoAsignacion {
   idTipo: number;
   nombre: string;
@@ -32,19 +34,19 @@ export interface Asignacion {
   idAsignacion?: number;
   idEmpleado: number;
   idTipo: number;
-  fecha: string; // Formato ISO YYYY-MM-DD para fácil manejo
+  fecha: string;
 }
 
-
 export interface AsignacionCelda {
-  idAsignacion: number | null; // null = aún no guardada en BD
+  uid: string;             // ID único local para que Angular trackee correctamente el DOM
+  idAsignacion: number | null;
   tipoId: number;
   cantidad: string;
   cantidadMetro: string;
   dias: string;
   zona: string;
-  idEstado: number | null;     // 1=Ocupado, 3=Completado/Disponible
-  modificado: boolean;         // true = hay cambios pendientes de guardar
-  guardadoOk: boolean;         // true = se acaba de guardar (feedback visual)
-  esNueva: boolean;            // true = formulario abierto, aún sin guardar
+  idEstado: number | null;
+  modificado: boolean;
+  guardadoOk: boolean;
+  esNueva: boolean;
 }

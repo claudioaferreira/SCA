@@ -1,44 +1,92 @@
 /* --- ESTRUCTURA --- */
-.main-dashboard { background-color: #f8fafc; }
-.table-responsive { 
-    max-height: 78vh; 
-    scrollbar-width: thin; 
+.main-dashboard { 
+  background-color: var(--background-color); /* NUEVO: Usa tu #f4f7f6 */
+}
+/* --- NAVEGACIÓN DE SEMANA --- */
+.btn-nav-semana {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: #f1f5f9; 
+  border: 1px solid var(--border-color); /* NUEVO: Usa tu color de borde */
+  border-radius: 6px; cursor: pointer;
+  font-size: 0.75rem; 
+  color: var(--text-color); /* NUEVO: Usa tu color de texto */
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  
+  &:hover { 
+    background: var(--ifm-color-primary); /* NUEVO: Hover dorado */
+    color: #fff; 
+    border-color: var(--ifm-color-primary-dark); 
+  }
+  &:active { transform: scale(0.93); }
 }
 
-/* --- COLUMNAS STICKY --- */
-.sticky-col-1 { position: sticky; left: 0; z-index: 10; min-width: 220px; border-right: 1px solid #e2e8f0; }
+.semana-label {
+  font-size: 0.78rem; 
+  color: var(--text-color); /* NUEVO */
+  user-select: none;
+}
+
+.btn-hoy {
+  font-size: 0.68rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 5px;
+  border: 1px solid var(--ifm-color-primary); /* NUEVO: Borde dorado */
+  color: var(--ifm-color-primary); /* NUEVO: Texto dorado */
+  background: transparent; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  
+  &:hover { 
+    background: var(--ifm-color-primary); /* NUEVO: Fondo dorado al hover */
+    color: #fff; 
+  }
+}
+.table-responsive { 
+    max-height: 70vh; 
+    scrollbar-width: thin; 
+}/* --- COLUMNAS STICKY --- */
+.sticky-col-1 { position: sticky; left: 0; z-index: 10; min-width: 220px; border-right: 1px solid var(--border-color); } /* NUEVO */
 .sticky-col-2 { position: sticky; left: 220px; z-index: 9; min-width: 100px; }
 
 /* --- COMPACTACIÓN DE TEXTOS --- */
-.tiny-text { font-size: 0.65rem; font-weight: 500; }
-.badge-mini { font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; background: #f1f5f9; }
+.tiny-text { font-size: 0.68rem; font-weight: 400; }
+.badge-mini { font-size: 0.8rem; padding: 1px 4px; border-radius: 3px; background: #f1f5f9; }
 
 /* --- AVATAR Y STATS --- */
 .avatar-circle-sm {
-    width: 28px; height: 28px; background: #6366f1; color: white;
+    width: 28px; height: 28px; 
+    background: var(--ifm-color-primary); /* NUEVO: Avatar en tu color principal */
+    color: white;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 0.75rem; font-weight: bold; flex-shrink: 0;
     transition: background 0.2s;
 }
-
-/* Avatar cambia a rojo cuando el técnico está ocupado */
-.avatar-ocupado {
-    background: #dc2626 !important;
-}
+.avatar-ocupado { background: #dc2626 !important; } /* Rojo se mantiene para alertas */
 
 .stats-grid-mini {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
 }
 
 .stat-mini {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1px 4px; border-radius: 3px; font-size: 0.7rem;
-    span { font-weight: 400; opacity: 0.7; margin-right: 3px; }
-    strong { font-weight: 900; }
-    &.sede     { background: #eff6ff; color: #1d4ed8; }
-    &.interior { background: #f0fdf4; color: #15803d; }
-    &.metro    { background: #fffbeb; color: #b45309; }
-    &.exterior { background: #fdf2f8; color: #be185d; }
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 6px 4px; border-radius: 6px; font-size: 0.7rem; text-align: center;
+  transition: all 0.2s ease;
+
+  span { font-size: 0.65rem; opacity: 0.7; font-weight: 500; }
+  strong { font-size: 0.9rem; font-weight: 700; line-height: 1; }
+  &:hover { transform: scale(1.05); filter: brightness(1.05); }
+
+  /* NUEVO: Sede ahora usa la gama de tu color primario */
+  &.sede {
+    background: var(--ifm-color-primary-lightest);
+    color: var(--ifm-color-primary-darkest);
+  }
+
+  &.interior { background: #f0fdf4; color: #15803d; }
+  &.metro { background: #fffbeb; color: #b45309; }
+  &.exterior { background: #fdf2f8; color: #be185d; }
 }
 
 /* --- INPUTS COMPACTOS --- */
@@ -46,15 +94,12 @@
     height: 24px !important; padding: 0 4px !important; 
     font-size: 0.7rem !important; border-radius: 4px !important;
 }
-
 .form-select-xs {
     height: 24px !important; padding: 0 4px !important;
     font-size: 0.7rem !important; border-radius: 4px !important;
 }
 
-.assignment-cell { min-width: 130px; }
-
-.extra-info-row { display: flex; align-items: center; margin-top: 2px; border-top: 1px solid #f1f5f9; }
+.extra-info-row { display: flex; align-items: center; margin-top: 2px; border-top: 1px solid #bed6ee; }
 
 /* --- TABLA FIJA --- */
 .table-fixed-layout {
@@ -63,13 +108,42 @@
   min-width: 1100px;
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   CELDA DE DÍA — altura fija + scroll interno
+   La fila nunca crece más allá de MAX_CELL_HEIGHT.
+   El contenido de la celda hace scroll verticalmente.
+───────────────────────────────────────────────────────────────── */
 .day-cell {
-  width: 120px !important;
-  max-width: 120px !important;
-  min-width: 120px !important;
-  overflow: hidden;
+  width: 90px !important;
+  max-width: 90px !important;
+  min-width: 90px !important;
+  // Altura fija de la celda — la fila nunca supera esto
+  height: 110px !important;
+  max-height: 110px !important;
+  overflow: hidden;      // la <td> no crece
   vertical-align: top !important;
-  padding: 4px !important;
+  padding: 0 !important; // el padding lo maneja .cell-scroll-inner
+}
+
+// Contenedor interno que hace scroll
+.cell-scroll-inner {
+  height: 110px;         // mismo valor que .day-cell height
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #94b3da transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
 }
 
 .day-cell .form-control,
@@ -95,70 +169,187 @@
   background: #fff;
   transition: box-shadow 0.15s ease;
 
-  &:hover {
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  }
-
-  &.border-success {
-    background: #f0fdf4;
-  }
+  &:hover { box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  &.border-success { background: #f0fdf4; }
 }
 
-/* --- BOTÓN ICONO XS (el ✕ para eliminar) --- */
+/* --- BOTÓN ICONO XS --- */
 .btn-icon-xs {
-  background: none;
-  border: none;
-  padding: 0 2px;
-  font-size: 0.7rem;
-  cursor: pointer;
-  line-height: 1;
-  opacity: 0.6;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 1;
-  }
+  background: none; border: none;
+  padding: 0 2px; font-size: 0.7rem;
+  cursor: pointer; line-height: 1;
+  opacity: 0.6; transition: opacity 0.15s;
+  &:hover { opacity: 1; }
 }
 
 /* --- DÍA PASADO --- */
 .bg-dia-pasado {
-  background-color: #f8fafc !important;
+  background-color: #fcefef !important;
   opacity: 0.75;
 }
 
-/* ─── FILA OCUPADA ────────────────────────────────────────────────
-   Se aplica al <tr> completo cuando empleadoEstaOcupado() === true
-   Borde izquierdo rojo + fondo naranja muy suave en todas las celdas
-   Las sticky-col mantienen su propio fondo para no perder legibilidad
-─────────────────────────────────────────────────────────────────── */
+/* ─── FILA OCUPADA ──────────────────────────────────────────────── */
 .fila-ocupada {
-  td {
-    background-color: #fff7ed !important;   /* naranja muy suave */
-  }
-
-  /* Las columnas sticky necesitan un fondo sólido para no transparentarse
-     al hacer scroll horizontal — usamos el mismo naranja suave */
+  td { background-color: #fff7ed !important; }
   td.sticky-col-1,
-  td.sticky-col-2 {
-    background-color: #fff7ed !important;
-  }
-
-  /* Borde izquierdo rojo en la primera celda como indicador visual claro */
-  td:first-child {
-    border-left: 3px solid #dc2626 !important;
-  }
+  td.sticky-col-2 { background-color: #fff7ed !important; }
+  td:first-child  { border-left: 3px solid #dc2626 !important; }
 }
 
-/* --- BADGE OCUPADO (junto al nombre del técnico) --- */
+/* --- BADGE OCUPADO --- */
 .badge-ocupado {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.58rem;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: #fee2e2;
-  color: #b91c1c;
-  white-space: nowrap;
-  line-height: 1.4;
+  display: inline-flex; align-items: center;
+  font-size: 0.58rem; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px;
+  background: #fee2e2; color: #b91c1c;
+  white-space: nowrap; line-height: 1.4;
 }
+
+/* --- ASSIGNMENT CELL (ancho mínimo para td sin clase day-cell) --- */
+.assignment-cell { min-width: 90px; }
+
+
+/* ─── CHIPS DE ASIGNACIÓN ──────────────────────────────────────── */
+.asig-chip {
+  display: flex; flex-direction: column; padding: 3px 5px;
+  border-radius: 5px; border: 1px solid transparent; cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  font-size: 0.65rem; background: #f8fafc;
+
+  &:hover { box-shadow: 0 1px 4px var(--shadow-color); } /* NUEVO */
+
+  &.chip-ocupado { background: #fff7ed; border-color: #fcd34d; }
+  &.chip-libre { background: #f0fdf4; border-color: #86efac; }
+  
+  &.chip-expanded {
+    border-color: var(--ifm-color-primary-light); /* NUEVO */
+    box-shadow: 0 1px 6px var(--shadow-color); /* NUEVO */
+  }
+}
+
+.chip-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chip-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+
+  &.dot-sede     { background: var(--ifm-color-primary); } /* NUEVO: Punto Sede usa tu color principal */
+  &.dot-metro    { background: #d97706; }
+  &.dot-interior { background: #16a34a; }
+  &.dot-exterior { background: #be185d; }
+}
+
+.chip-label { font-weight: 600; font-size: 0.63rem; color: var(--text-color); flex: 1; min-width: 0; }
+.chip-estado { font-size: 0.6rem; }
+.chip-detail { font-size: 0.6rem; }
+
+
+.toolbar-card {
+  background: white;
+  border: 0.5px solid #e2e0d8;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.toolbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+
+// ── Navegación semana ──────────────────────────────
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.btn-nav {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 0.5px solid #d0cec6;
+  background: #f5f4f0;
+  color: #666;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: #e8e6e0; color: #1a1a1a; }
+}
+
+.week-label {
+  font-size: 13px;
+  color: #666;
+  display: flex; align-items: center; gap: 5px;
+  background: #f5f4f0;
+  border: 0.5px solid #e2e0d8;
+  border-radius: 20px;
+  padding: 4px 12px;
+
+  strong { color: #1a1a1a; font-weight: 500; }
+  .separador { color: #aaa; }
+  i { font-size: 11px; color: #aaa; }
+}
+
+.btn-hoy {
+  font-size: 11px; font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 0.5px solid #378ADD;
+  background: #E6F1FB;
+  color: #185FA5;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #B5D4F4; }
+}
+
+// ── Chips de filtro ────────────────────────────────
+.filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-size: 12px; font-weight: 500;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 0.5px solid transparent;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.15s;
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+// Color por tipo — inactivo / activo
+.chip-metro   { background: #E6F1FB; color: #185FA5; border-color: #B5D4F4; .dot { background: #378ADD; }
+  &.active    { background: #185FA5; color: #E6F1FB; .dot { background: #85B7EB; } } }
+
+.chip-interior{ background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; .dot { background: #639922; }
+  &.active    { background: #3B6D11; color: #EAF3DE; .dot { background: #97C459; } } }
+
+.chip-sede    { background: #EEEDFE; color: #3C3489; border-color: #CECBF6; .dot { background: #7F77DD; }
+  &.active    { background: #534AB7; color: #EEEDFE; .dot { background: #AFA9EC; } } }
+
+.chip-auxiliar{ background: #FAEEDA; color: #854F0B; border-color: #FAC775; .dot { background: #BA7517; }
+  &.active    { background: #854F0B; color: #FAEEDA; .dot { background: #EF9F27; } } }
+
+.chip-soporte { background: #FAECE7; color: #993C1D; border-color: #F5C4B3; .dot { background: #D85A30; }
+  &.active    { background: #993C1D; color: #FAECE7; .dot { background: #F0997B; } } }
+
+.chip-reset   { background: #f5f4f0; color: #666; border-color: #d0cec6;
+  &:hover     { background: #e8e6e0; color: #1a1a1a; } }
