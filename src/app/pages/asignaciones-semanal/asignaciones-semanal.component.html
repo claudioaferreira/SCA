@@ -1,15 +1,55 @@
 <div class="main-dashboard p-2 bg-light">
   <!-- TOPBAR -->
   <div class="toolbar-card">
-    <div class="toolbar-left">
-      <p class="toolbar-title">Gestión Técnica</p>
 
-      <div class="week-nav">
+    <!-- FILA 1: Título + Buscador + Badges de estado -->
+    <div class="toolbar-row-top">
+      <div class="toolbar-brand">
+        <i class="bi bi-grid-3x3-gap-fill toolbar-icon"></i>
+        <span class="toolbar-title">Gestión Técnica</span>
+      </div>
+
+      <div class="toolbar-search">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar técnico, código o localidad…"
+          [(ngModel)]="terminoBusqueda"
+        />
+      </div>
+
+      <div class="toolbar-status-badges">
         <button
-          class="btn-nav"
-          title="Semana anterior"
-          (click)="navegarSemana(-1)"
+          class="status-badge status-badge-ocupado"
+          [class.active]="filtrosActivos.has('ocupados')"
+          (click)="setFiltro('ocupados')"
+          title="Ver solo ocupados"
         >
+          <span class="status-dot dot-red"></span>
+          Ocupados
+          <span class="status-count">{{ contarOcupados() }}</span>
+        </button>
+        <button
+          class="status-badge status-badge-disponible"
+          [class.active]="filtrosActivos.has('disponibles')"
+          (click)="setFiltro('disponibles')"
+          title="Ver solo disponibles"
+        >
+          <span class="status-dot dot-green"></span>
+          Disponibles
+          <span class="status-count">{{ contarDisponibles() }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SEPARADOR -->
+    <div class="toolbar-divider"></div>
+
+    <!-- FILA 2: Navegación de semana + Chips de filtro -->
+    <div class="toolbar-row-bottom">
+      <div class="week-nav">
+        <button class="btn-nav" title="Semana anterior" (click)="navegarSemana(-1)">
           <i class="bi bi-chevron-left"></i>
         </button>
         <span class="week-label">
@@ -18,83 +58,48 @@
           <span class="separador">—</span>
           <strong>{{ diasSemana[6] | date: "dd MMM yyyy" }}</strong>
         </span>
-        <button
-          class="btn-nav"
-          title="Semana siguiente"
-          (click)="navegarSemana(1)"
-        >
+        <button class="btn-nav" title="Semana siguiente" (click)="navegarSemana(1)">
           <i class="bi bi-chevron-right"></i>
         </button>
         @if (!esSemanaActual()) {
           <button class="btn-hoy" (click)="irASemanaActual()">Hoy</button>
         }
+      </div>
 
-        <!-- Separador visual -->
-        <span class="nav-divider"></span>
+      <span class="nav-divider"></span>
 
-        <!-- Chips inline -->
-        <button
-          class="chip chip-metro"
-          [class.active]="filtrosActivos.has('metro')"
-          (click)="setFiltro('metro')"
-        >
+      <!-- Chips de filtro -->
+      <div class="chips-filtro-group">
+        <span class="chips-label">Ordenar por</span>
+        <button class="chip chip-metro"    [class.active]="filtrosActivos.has('metro')"    (click)="setFiltro('metro')">
           <span class="dot"></span>Metro
         </button>
-        <button
-          class="chip chip-interior"
-          [class.active]="filtrosActivos.has('interior')"
-          (click)="setFiltro('interior')"
-        >
+        <button class="chip chip-interior" [class.active]="filtrosActivos.has('interior')" (click)="setFiltro('interior')">
           <span class="dot"></span>Interior
         </button>
-        <button
-          class="chip chip-sede"
-          [class.active]="filtrosActivos.has('sede')"
-          (click)="setFiltro('sede')"
-        >
+        <button class="chip chip-sede"     [class.active]="filtrosActivos.has('sede')"     (click)="setFiltro('sede')">
           <span class="dot"></span>Sede
         </button>
-        <button
-          class="chip chip-auxiliar"
-          [class.active]="filtrosActivos.has('auxiliar')"
-          (click)="setFiltro('auxiliar')"
-        >
+      </div>
+
+      <span class="nav-divider"></span>
+
+      <div class="chips-filtro-group">
+        <span class="chips-label">Tipo</span>
+        <button class="chip chip-auxiliar" [class.active]="filtrosActivos.has('auxiliar')" (click)="setFiltro('auxiliar')">
           <span class="dot"></span>Auxiliares
         </button>
-        <button
-          class="chip chip-soporte"
-          [class.active]="filtrosActivos.has('soporte')"
-          (click)="setFiltro('soporte')"
-        >
+        <button class="chip chip-soporte"  [class.active]="filtrosActivos.has('soporte')"  (click)="setFiltro('soporte')">
           <span class="dot"></span>Soporte
         </button>
-        <button class="chip chip-reset" (click)="setFiltro('ninguno')">
-          <i class="bi bi-arrow-counterclockwise"></i> Reset
-        </button>
-        <button class="btn-filtro" (click)="setFiltro('ocupados')">
-          Ocupados 
-          <span class="badge">{{ contarOcupados() }}</span>
-        </button>
-         <button class="btn-filtro" (click)="setFiltro('disponibles')">
-          Disponibles 
-          <span class="badge">{{ contarDisponibles() }}</span>
-        </button>
       </div>
-    </div>
-  </div>
 
-  <!-- BUSCADOR -->
-  <div class="search-container mb-2">
-    <div class="input-group input-group-sm shadow-sm rounded-2 overflow-hidden">
-      <span class="input-group-text bg-white border-0 text-muted">🔍</span>
-      <input
-        type="text"
-        class="form-control border-0 ps-1"
-        style="height: 32px"
-        placeholder="Buscar técnico..."
-        [(ngModel)]="terminoBusqueda"
-      />
+      <button class="btn-reset ms-auto" (click)="setFiltro('ninguno')" title="Limpiar filtros">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span>Limpiar</span>
+      </button>
     </div>
+
   </div>
 
   @if (loading) {
@@ -162,7 +167,7 @@
                           {{ emp.nombre }}
                         </div>
                         @if (empleadoEstaOcupado(emp.id)) {
-                          <span class="badge-ocupado">⛔Ocup</span>
+                          <span class="badge-ocupado">⛔Ocupado</span>
                         }
                       </div>
                       <div class="d-flex gap-1 my-0">
@@ -178,7 +183,7 @@
                       </div>
                       <div class="extra-info-row">
                         <span class="tiny-text text-muted"
-                          >💼 {{ abreviarPosicion(emp.posicion) }}</span
+                          >💼 {{ abreviarPosicion(emp.cargo) }}</span
                         >
 
                         <span class="tiny-text text-primary ms-2">

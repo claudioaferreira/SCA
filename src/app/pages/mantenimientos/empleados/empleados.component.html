@@ -1,35 +1,45 @@
 <div class="page-container">
 
-  <div class="page-header">
-    <div class="header-info">
-      <h1>Empleados</h1>
-      <p>Gestión del personal del sistema</p>
+  <!-- HEADER — mismo estilo que toolbar-card de asignaciones -->
+  <div class="page-header-card">
+    <div class="page-brand">
+      <i class="bi bi-people-fill page-brand-icon"></i>
+      <div class="page-brand-text">
+        <span class="page-title">Empleados</span>
+        <span class="page-subtitle">Gestión del personal del sistema</span>
+      </div>
     </div>
-    <button class="btn btn-primary-custom d-flex align-items-center gap-2 shadow-sm" (click)="abrirNuevo()">
+
+    <div class="header-center">
+      <div class="toolbar-search">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por nombre o código…"
+          [(ngModel)]="textoBusqueda"
+        />
+      </div>
+      <select [(ngModel)]="filtroDepartamento" class="select-filtro">
+        <option value="">Todos los departamentos</option>
+        <option value="Soporte Técnico">Soporte Técnico</option>
+        <option value="IT">IT</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary-custom d-flex align-items-center gap-2" (click)="abrirNuevo()">
       <i class="bi bi-plus-lg"></i> Nuevo empleado
     </button>
   </div>
 
-  <div class="filtros-bar">
-    <div class="search-box">
-      <i class="bi bi-search"></i>
-      <input type="text" placeholder="Buscar por nombre o código..."
-             [(ngModel)]="textoBusqueda" />
-    </div>
-    <select [(ngModel)]="filtroDepartamento" class="select-filtro">
-      <option value="">Todos los departamentos</option>
-      <option value="Soporte Técnico">Soporte Técnico</option>
-      <option value="IT">IT</option>
-    </select>
-  </div>
-
+  <!-- TABLA -->
   <div class="tabla-card">
     <table>
       <thead>
         <tr>
           <th>Empleado</th>
           <th>Código</th>
-          <th>Cedula</th>
+          <th>Cédula</th>
           <th>Teléfonos</th>
           <th>Departamento</th>
           <th>Posición</th>
@@ -58,17 +68,17 @@
             </td>
 
             <td>{{ emp.departamento }}</td>
-            <td>{{ emp.posicion }}</td>
+            <td>{{ emp.cargo }}</td>
 
             <td style="max-width: 250px;">
               <div class="d-flex flex-wrap gap-1">
                 @for (eq of emp.equipos; track eq.IdEquipo) {
-                  <span class="badge-mini border"
-                        [ngClass]="eq.categoria === 'Hardware' ? 'bg-primary text-white' : 'bg-success text-white'">
+                  <span class="badge-equipo"
+                        [ngClass]="eq.categoria === 'Hardware' ? 'badge-hw' : 'badge-sw'">
                     {{ eq.nombreEquipo }}
                   </span>
                 } @empty {
-                  <span class="tiny-text text-muted fst-italic">Sin equipos asignados</span>
+                  <span class="sin-equipos">Sin equipos</span>
                 }
               </div>
             </td>
@@ -94,8 +104,8 @@
 
         @if (empleadosFiltrados().length === 0) {
           <tr>
-            <td colspan="8" class="text-center py-4 text-muted">
-              <i class="bi bi-inbox fs-2"></i>
+            <td colspan="9" class="empty-state">
+              <i class="bi bi-inbox"></i>
               <p>No se encontraron empleados</p>
             </td>
           </tr>
@@ -106,12 +116,21 @@
 </div>
 
 
+<!-- ══════════════════ MODAL ══════════════════ -->
 @if (mostrarModal) {
   <div class="modal-overlay" (click)="cerrarModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
+   <div class="modal-card" [formGroup]="formulario" (click)="$event.stopPropagation()">
 
       <div class="modal-header">
-        <h3>{{ editando ? 'Editar empleado' : 'Nuevo empleado' }}</h3>
+        <div class="modal-header-brand">
+          <div class="modal-avatar-icon">
+            <i class="bi" [ngClass]="editando ? 'bi-pencil-square' : 'bi-person-plus-fill'"></i>
+          </div>
+          <div>
+            <h3>{{ editando ? 'Editar empleado' : 'Nuevo empleado' }}</h3>
+            <p class="modal-subtitle">{{ editando ? 'Modifica los datos del técnico' : 'Completa la información del nuevo técnico' }}</p>
+          </div>
+        </div>
         <button class="btn-cerrar" (click)="cerrarModal()">
           <i class="bi bi-x-lg"></i>
         </button>
@@ -119,87 +138,120 @@
 
       <div class="modal-body">
 
-        <div class="campo">
-          <label>Nombre completo</label>
-          <input [(ngModel)]="form.nombre" placeholder="Ej: Juan Pérez" [disabled]="editando" />
-        </div>
-
-        <div class="campo">
-          <label>Código</label>
-          <input [(ngModel)]="form.codigo" placeholder="Ej: 20261150"  [disabled]="editando"/>
-        </div>
-
-        <div class="fila-doble">
-          <div class="campo">
-            <label>Teléfono flota</label>
-            <input [(ngModel)]="form.telefonoFlota" placeholder="829-000-0000" />
+        <!-- Datos personales -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-person"></i> Datos personales
           </div>
           <div class="campo">
-            <label>Teléfono personal</label>
-            <input [(ngModel)]="form.telefonoPersonal" placeholder="809-000-0000" />
-          </div>
-        </div>
-
-        <div class="fila-doble">
-          <div class="campo">
-            <label>Departamento</label>
-            <select [(ngModel)]="form.departamento">
-              <option value="">Seleccionar...</option>
-              @for (depto of departamentosCatalogo; track depto.IdDepartamento) {
-                <option [value]="depto.descripcion">{{ depto.descripcion }}</option>
-              } @empty {
-                <option>Cargando catálogo...</option>
-              }
-            </select>
+            <label>Nombre completo</label>
+            <input formControlName="nombre" placeholder="Ej: Juan Pérez" />
+            @if (formulario.get('nombre')?.invalid && formulario.get('nombre')?.touched) {
+              <span class="campo-error">Nombre requerido (mínimo 3 caracteres)</span>
+            }
           </div>
           <div class="campo">
-            <label>Posición</label>
-            <select [(ngModel)]="form.posicion">
-              <option value="">Seleccionar...</option>
-             @for (cargo of cargosCatalogo; track cargo.IdCargo) {
-                <option [value]="cargo.descripcion">{{ cargo.descripcion }}</option>
-              } @empty {
-                <option>Cargando catálogo...</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <!-- ── CHECKBOXES DE EQUIPOS ── -->
-        <div class="campo mt-3">
-          <label class="mb-2">Equipamiento Asignado <span class="text-muted fw-normal" style="font-size: 0.8rem;">(Haz clic para asignar/quitar)</span></label>
-          
-          <div class="d-flex flex-wrap gap-2">
-            @for (item of equiposDisponibles; track item.IdEquipo) {
-              
-              <div class="equipo-chip" 
-                   [class.seleccionado]="verificarSiTieneEquipo(item.IdEquipo)"
-                   (click)="toggleEquipoManual(item.IdEquipo)">
-                   
-                <i class="bi" [ngClass]="verificarSiTieneEquipo(item.IdEquipo) ? 'bi-check-circle-fill' : 'bi-circle'"></i>
-                <span>{{ item.descripcion }}</span>
-                
-              </div>
-
-            } @empty {
-              <div class="text-muted tiny-text">Cargando catálogo...</div>
+            <label>Código</label>
+            <input formControlName="codigo" placeholder="Ej: 20261150" />
+            @if (formulario.get('codigo')?.invalid && formulario.get('codigo')?.touched) {
+              <span class="campo-error">Código requerido</span>
             }
           </div>
         </div>
 
-        <div class="campo mt-3">
-          <label>Estado</label>
-          <select [(ngModel)]="form.estado">
-            <option [ngValue]="true">Activo</option>
-            <option [ngValue]="false">Inactivo</option>
-          </select>
+        <!-- Contacto -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-telephone"></i> Contacto
+          </div>
+          <div class="fila-doble">
+            <div class="campo">
+              <label>Teléfono flota</label>
+              <input formControlName="telefonoFlota"    placeholder="829-000-0000" />
+            </div>
+            <div class="campo">
+              <label>Teléfono personal</label>
+              <input formControlName="telefonoPersonal" placeholder="809-000-0000" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Rol -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-briefcase"></i> Rol y área
+          </div>
+          <div class="fila-doble">
+  <div class="campo">
+    <label>Departamento</label>
+    <select formControlName="departamento">
+      <option value="">-- Selecciona --</option>
+      @for (dep of departamentosCatalogo; track dep.IdDepartamento) {
+        <option [value]="dep.IdDepartamento">{{ dep.descripcion }}</option>
+
+      }
+    </select>
+    @if (formulario.get('departamento')?.invalid && formulario.get('departamento')?.touched) {
+      <span class="campo-error">Selecciona un departamento</span>
+    }
+  </div>
+
+  <div class="campo">
+    <label>Posición</label>
+    <select formControlName="cargo">
+      <option value="">-- Selecciona --</option>
+      @for (cargo of cargosCatalogo; track cargo.IdCargo) {
+        <option [value]="cargo.IdCargo">{{ cargo.descripcion }}</option>
+       
+      }
+    </select>
+    @if (formulario.get('posicion')?.invalid && formulario.get('posicion')?.touched) {
+      <span class="campo-error">Selecciona una posición</span>
+    }
+  </div>
+</div>
+        </div>
+
+        <!-- Equipos -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-laptop"></i> Equipamiento asignado
+            <span class="form-section-hint">Clic para asignar o quitar</span>
+          </div>
+          <div class="equipos-grid">
+            @for (item of equiposDisponibles; track item.IdEquipo) {
+              <div
+                class="equipo-chip"
+                [class.seleccionado]="verificarSiTieneEquipo(item.IdEquipo)"
+                (click)="toggleEquipoManual(item.IdEquipo)"
+              >
+                <i class="bi" [ngClass]="verificarSiTieneEquipo(item.IdEquipo) ? 'bi-check-circle-fill' : 'bi-circle'"></i>
+                <span>{{ item.descripcion }}</span>
+              </div>
+            } @empty {
+              <div class="text-muted" style="font-size:0.8rem">Cargando catálogo...</div>
+            }
+          </div>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-toggle-on"></i> Estado del empleado
+          </div>
+          <div class="campo">
+            <select formControlName="estado">
+              <option [ngValue]="true">Activo</option>
+              <option [ngValue]="false">Inactivo</option>
+            </select>
+          </div>
         </div>
 
       </div>
 
       <div class="modal-footer">
         <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn-guardar btn-primary-custom d-flex align-items-center gap-2 shadow-sm" (click)="guardar()">
+        <button class="btn-guardar btn-primary-custom d-flex align-items-center gap-2" (click)="guardar()">
           <i class="bi bi-check-lg"></i>
           {{ editando ? 'Guardar cambios' : 'Crear empleado' }}
         </button>

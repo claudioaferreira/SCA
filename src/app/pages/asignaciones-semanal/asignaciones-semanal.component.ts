@@ -237,9 +237,9 @@ export class AsignacionesSemanalComponent implements OnInit {
   }
 
   /** Convierte el nombre completo de la posición a una versión corta */
-  abreviarPosicion(posicion: string | undefined): string {
-    if (!posicion) return 'Soporte';
-    return posicion
+  abreviarPosicion(cargo: string | undefined): string {
+    if (!cargo) return 'Soporte';
+    return cargo
       .replace(/Soporte Tecnico III/gi,   'SOPORTE III')
       .replace(/Soporte Tecnico II/gi,    'SOPORTE II')
       .replace(/Soporte Tecnico I/gi,     'SOPORTE I')
@@ -628,6 +628,7 @@ contarDisponibles(): number {
     let lista = this.empleadosMaster.filter(e =>
       e.nombre.toLowerCase().includes(b)     ||
       e.localidad?.toLowerCase().includes(b) ||
+      e.ubicacion?.toLowerCase().includes(b) ||
       e.codigo.includes(b)
     );
 
@@ -643,14 +644,28 @@ contarDisponibles(): number {
 
     if (filtrarTipo) {
       lista = lista.filter(e => {
-        const esAux = e.posicion?.toUpperCase().includes('AUXILIAR');
-        const esSop = e.posicion?.toUpperCase().includes('SOPORTE');
+        const esAux = e.cargo?.toUpperCase().includes('AUXILIAR');
+        const esSop = e.cargo?.toUpperCase().includes('SOPORTE');
         return (
           (this.filtrosActivos.has('auxiliar') && esAux) ||
           (this.filtrosActivos.has('soporte')  && esSop)
         );
       });
     }
+
+    // 3b. Filtra por estado ocupado / disponible
+const filtrarOcupado    = this.filtrosActivos.has('ocupados');
+const filtrarDisponible = this.filtrosActivos.has('disponibles');
+
+if (filtrarOcupado || filtrarDisponible) {
+  lista = lista.filter(e => {
+    const ocupado = this.empleadoEstaOcupado(e.id);
+    return (
+      (filtrarOcupado    &&  ocupado) ||
+      (filtrarDisponible && !ocupado)
+    );
+  });
+}
 
     // 4. Ordena por métricas: quien tiene menos asignaciones sube primero
       const score = (e: Empleado): number => {

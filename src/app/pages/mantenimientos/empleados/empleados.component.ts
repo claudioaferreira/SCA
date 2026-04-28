@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule,  ReactiveFormsModule, FormBuilder, FormGroup, Validators  } from '@angular/forms';
 import { EmpleadosService } from '../../../services/empleados.service';
 import Swal from 'sweetalert2';
 import { CommonModule } from '@angular/common';
@@ -13,7 +13,7 @@ import {
 @Component({
   selector: 'app-empleados',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule],
   templateUrl: './empleados.component.html',
   styleUrls: ['./empleados.component.scss'],
 })
@@ -24,10 +24,11 @@ export class EmpleadosComponent implements OnInit {
   equiposSeleccionados: number[] = [];
   departamentosCatalogo: any[] = [];
   cargosCatalogo: any[] = [];
-
+  private empleadoIdActual = 0
 
   private _empleadosService = inject(EmpleadosService);
-
+  private _fb = inject(FormBuilder);
+  formulario!: FormGroup;
 
   
   // ── FILTROS ───────────────────────────────────────────────────────────────
@@ -53,12 +54,14 @@ export class EmpleadosComponent implements OnInit {
   cargarExtras() {
     this._empleadosService.getDepartamentos().subscribe({
       next: (data) => {
+         console.log('Primer depto:', data[0]); //
         this.departamentosCatalogo = data;
       },
       error: (err) => console.error('Error al cargar departamentos', err)
     });
     this._empleadosService.getCargos().subscribe({
       next: (data) => {
+        console.log('Primer cargo:', data[0]); // 
         this.cargosCatalogo = data;
       },
       error: (err) => console.error('Error al cargar cargos', err)
@@ -132,67 +135,73 @@ verificarSiTieneEquipo(IdEquipo: number): boolean {
   editando = false;
 
   // Objeto del formulario — se llena al abrir el modal
-  form: Empleado = this.formVacio();
+  //form: Empleado = this.formVacio();
 
   // Retorna un empleado vacío para el formulario de "Nuevo"
-  private formVacio(): Empleado {
-    return {
-      id: 0,
-      nombre: '',
-      codigo: '',
-      ubicacion: '',
-      localidad: '',
-      departamento: '',
-      estado: false,
-      equipos: [], // Arreglo vacío por defecto
-      stats: {
-        totalInterior: 0,
-        totalSede: 0,
-        metroMes: 0,
-        diasNorte: 0,
-        diasSur: 0,
-        diasEste: 0,
-        metroSemana: 0,
-        totalInteriorSemana: 0,
-        totalSedeSemana: 0
-      },
-    };
+  private construirForm(emp?: Empleado): void {
+  this.formulario = this._fb.group({
+    nombre:          [emp?.nombre          ?? '', [Validators.required, Validators.minLength(3)]],
+    codigo:          [emp?.codigo          ?? '', [Validators.required]],
+    telefonoFlota:   [emp?.telefonoFlota   ?? ''],
+    telefonoPersonal:[emp?.telefonoPersonal?? ''],
+    departamento:    [emp?.IdDepartamento  ?? '', [Validators.required]], // ← ID
+    cargo:           [emp?.IdCargo         ?? '', [Validators.required]], // ← antes "posicion"
+    estado:          [emp?.estado          ?? true],
+  });
+
+  if (emp) {
+    this.formulario.get('nombre')?.disable();
+    this.formulario.get('codigo')?.disable();
   }
+}
 
   // ── ACCIONES ──────────────────────────────────────────────────────────────
 
   // Abre el modal en modo "Nuevo"
   abrirNuevo() {
     this.editando = false;
-    this.form = this.formVacio();
-    this.equiposSeleccionados = []; // NUEVO: Limpiamos los checkboxes
+    this.empleadoIdActual = 0;
+    //this.form = this.formVacio();
+    this.equiposSeleccionados = [];
+     this.construirForm();
     this.mostrarModal = true;
   }
 
   // Abre el modal en modo "Editar" con los datos del empleado seleccionado
   abrirEditar(emp: Empleado) {
-    this.editando = true;
-    this.form     = { ...emp };
- 
-    // ─────────────────────────────────────────────────────────────────────
-    // CORRECCIÓN CLAVE: cada item de emp.equipos ahora tiene { IdEquipo, nombreEquipo, categoria }
-    // gracias al fix en el SQL. Aquí extraemos solo los IDs para los checkboxes.
-    // ─────────────────────────────────────────────────────────────────────
-    this.equiposSeleccionados = (emp.equipos ?? [])
-      .map((eq: any) => Number(eq.IdEquipo))   // convertimos a number por seguridad
-      .filter((id: number) => !isNaN(id) && id > 0); // descartamos valores inválidos
-    // console.log('Equipos seleccionados al abrir editar:', this.equiposSeleccionados);
-    this.mostrarModal = true;
-  }
-  // Guarda (crea o actualiza) el empleado
+  this.editando = true;
+  this.empleadoIdActual = emp.id;
+  this.construirForm(emp);
+  this.equiposSeleccionados = (emp.equipos ?? [])
+    .map((eq: any) => Number(eq.IdEquipo))
+    .filter((id: number) => !isNaN(id) && id > 0);
+  this.mostrarModal = true;
+}
+
+
+  /// Guarda (crea o actualiza) el empleado
   guardar() {
-    // 1. Preparamos el payload (corregí el pequeño error de tipeo 'paypload')
-    const payload = {
-      ...this.form,
-      equiposIds: this.equiposSeleccionados 
-    };
+  this.formulario.markAllAsTouched();
+  if (this.formulario.invalid) return;
+
+  const raw = this.formulario.getRawValue();
+
+const payload = {
+  id:               this.empleadoIdActual,
+  nombre:           raw.nombre,
+  codigo:           raw.codigo,
+  telefonoFlota:    raw.telefonoFlota    || '',
+  telefonoPersonal: raw.telefonoPersonal || '',
+  IdDepartamento:   Number(raw.departamento),
+  IdCargo:          Number(raw.cargo),
+  ubicacion:        raw.ubicacion        || '',
+  localidad:        raw.localidad        || '',
+  estado:           raw.estado,
+  equiposIds:       this.equiposSeleccionados
+};
+
     
-    // console.log('Payload a enviar al backend:', payload);
+     console.log('Payload a enviar al backend:', payload);
 
     // 2. Mostramos la alerta de carga bloqueando la pantalla
     Swal.fire({

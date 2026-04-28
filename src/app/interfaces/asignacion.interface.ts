@@ -5,26 +5,24 @@ export interface Empleado {
   cedula?: string;
   telefonoFlota?: string;
   telefonoPersonal?: string;
-  departamento: string;
+  IdDepartamento: number;        // ← ID numérico para el form
+  departamento: string;          // ← texto para mostrar en tabla
+  IdCargo: number;               // ← ID numérico para el form
+  cargo: string;                 // ← antes "posicion"
   ubicacion: string;
   localidad: string;
-  posicion?: string;
   estado: boolean;
   equipos?: EquipoAsignado[];
   stats: {
-    // SEMANA
     metroSemana:         number;
     totalInteriorSemana: number;
     totalSedeSemana:     number;
-
-    // HISTÓRICO / MES
-    metroMes:      number;
-    totalInterior: number;
-    totalSede:     number;
-
-    diasNorte: number;
-    diasSur:   number;
-    diasEste:  number;
+    metroMes:            number;
+    totalInterior:       number;
+    totalSede:           number;
+    diasNorte:           number;
+    diasSur:             number;
+    diasEste:            number;
   };
 }
 export interface EquipoAsignado {
