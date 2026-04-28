@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Empleado } from '../interfaces/asignacion.interface';
+import { Empleado, TipoAsignacion } from '../interfaces/asignacion.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -37,6 +37,10 @@ getEmpleados(): Observable<Empleado[]> {
   }
   getDepartamentos(): Observable<any> {
     return this.http.get(`${this.apiUrl}/empleados/departamentos/catalogo`);
+  }
+
+  getTipoAsignaciones(): Observable<TipoAsignacion[]> {
+    return this.http.get<TipoAsignacion[]>(`${this.apiUrl}/asignaciones//tipoasignaciones`);
   }
 
   getCargos(): Observable<any> {

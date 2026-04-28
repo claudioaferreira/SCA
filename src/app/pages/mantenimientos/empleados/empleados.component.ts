@@ -146,12 +146,15 @@ verificarSiTieneEquipo(IdEquipo: number): boolean {
       estado: false,
       equipos: [], // Arreglo vacío por defecto
       stats: {
-        totalInterior: undefined,
-        totalSede: undefined,
-        metroMes: undefined,
-        diasNorte: undefined,
-        diasSur: undefined,
-        diasEste: undefined,
+        totalInterior: 0,
+        totalSede: 0,
+        metroMes: 0,
+        diasNorte: 0,
+        diasSur: 0,
+        diasEste: 0,
+        metroSemana: 0,
+        totalInteriorSemana: 0,
+        totalSedeSemana: 0
       },
     };
   }

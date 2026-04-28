@@ -10,14 +10,21 @@ export interface Empleado {
   localidad: string;
   posicion?: string;
   estado: boolean;
-equipos?: EquipoAsignado[];
+  equipos?: EquipoAsignado[];
   stats: {
-    totalInterior?: number;
-    totalSede?: number;
-    metroMes?: number;
-    diasNorte?: number;
-    diasSur?: number;
-    diasEste?: number;
+    // SEMANA
+    metroSemana:         number;
+    totalInteriorSemana: number;
+    totalSedeSemana:     number;
+
+    // HISTÓRICO / MES
+    metroMes:      number;
+    totalInterior: number;
+    totalSede:     number;
+
+    diasNorte: number;
+    diasSur:   number;
+    diasEste:  number;
   };
 }
 export interface EquipoAsignado {
@@ -26,7 +33,7 @@ export interface EquipoAsignado {
   IdEquipo: number; // Opcional, pero útil para cuando vayas a editar
 }
 export interface TipoAsignacion {
-  idTipo: number;
+  IdTipo: number;
   nombre: string;
 }
 
@@ -38,7 +45,7 @@ export interface Asignacion {
 }
 
 export interface AsignacionCelda {
-  uid: string;             // ID único local para que Angular trackee correctamente el DOM
+  uid: string; // ID único local para que Angular trackee correctamente el DOM
   idAsignacion: number | null;
   tipoId: number;
   cantidad: string;

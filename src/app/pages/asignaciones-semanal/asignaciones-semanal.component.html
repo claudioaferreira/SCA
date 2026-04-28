@@ -1,52 +1,87 @@
 <div class="main-dashboard p-2 bg-light">
   <!-- TOPBAR -->
- <div class="toolbar-card">
-  <div class="toolbar-left">
-    <p class="toolbar-title">Gestión Técnica</p>
+  <div class="toolbar-card">
+    <div class="toolbar-left">
+      <p class="toolbar-title">Gestión Técnica</p>
 
-    <div class="week-nav">
-      <button class="btn-nav" title="Semana anterior" (click)="navegarSemana(-1)">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-      <span class="week-label">
-        <i class="bi bi-calendar3"></i>
-        <strong>{{ diasSemana[0] | date: 'dd MMM' }}</strong>
-        <span class="separador">—</span>
-        <strong>{{ diasSemana[6] | date: 'dd MMM yyyy' }}</strong>
-      </span>
-      <button class="btn-nav" title="Semana siguiente" (click)="navegarSemana(1)">
-        <i class="bi bi-chevron-right"></i>
-      </button>
-      @if (!esSemanaActual()) {
-        <button class="btn-hoy" (click)="irASemanaActual()">Hoy</button>
-      }
+      <div class="week-nav">
+        <button
+          class="btn-nav"
+          title="Semana anterior"
+          (click)="navegarSemana(-1)"
+        >
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <span class="week-label">
+          <i class="bi bi-calendar3"></i>
+          <strong>{{ diasSemana[0] | date: "dd MMM" }}</strong>
+          <span class="separador">—</span>
+          <strong>{{ diasSemana[6] | date: "dd MMM yyyy" }}</strong>
+        </span>
+        <button
+          class="btn-nav"
+          title="Semana siguiente"
+          (click)="navegarSemana(1)"
+        >
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        @if (!esSemanaActual()) {
+          <button class="btn-hoy" (click)="irASemanaActual()">Hoy</button>
+        }
 
-      <!-- Separador visual -->
-      <span class="nav-divider"></span>
+        <!-- Separador visual -->
+        <span class="nav-divider"></span>
 
-      <!-- Chips inline -->
-      <button class="chip chip-metro"    [class.active]="filtroActivo==='metro'"    (click)="setFiltro('metro')">
-        <span class="dot"></span>Metro
-      </button>
-      <button class="chip chip-interior" [class.active]="filtroActivo==='interior'" (click)="setFiltro('interior')">
-        <span class="dot"></span>Interior
-      </button>
-      <button class="chip chip-sede"     [class.active]="filtroActivo==='sede'"     (click)="setFiltro('sede')">
-        <span class="dot"></span>Sede
-      </button>
-      <button class="chip chip-auxiliar" [class.active]="filtroActivo==='auxiliar'" (click)="setFiltro('auxiliar')">
-        <span class="dot"></span>Auxiliares
-      </button>
-      <button class="chip chip-soporte"  [class.active]="filtroActivo==='soporte'"  (click)="setFiltro('soporte')">
-        <span class="dot"></span>Soporte
-      </button>
-      <button class="chip chip-reset" (click)="setFiltro('ninguno')">
-        <i class="bi bi-arrow-counterclockwise"></i> Reset
-      </button>
+        <!-- Chips inline -->
+        <button
+          class="chip chip-metro"
+          [class.active]="filtrosActivos.has('metro')"
+          (click)="setFiltro('metro')"
+        >
+          <span class="dot"></span>Metro
+        </button>
+        <button
+          class="chip chip-interior"
+          [class.active]="filtrosActivos.has('interior')"
+          (click)="setFiltro('interior')"
+        >
+          <span class="dot"></span>Interior
+        </button>
+        <button
+          class="chip chip-sede"
+          [class.active]="filtrosActivos.has('sede')"
+          (click)="setFiltro('sede')"
+        >
+          <span class="dot"></span>Sede
+        </button>
+        <button
+          class="chip chip-auxiliar"
+          [class.active]="filtrosActivos.has('auxiliar')"
+          (click)="setFiltro('auxiliar')"
+        >
+          <span class="dot"></span>Auxiliares
+        </button>
+        <button
+          class="chip chip-soporte"
+          [class.active]="filtrosActivos.has('soporte')"
+          (click)="setFiltro('soporte')"
+        >
+          <span class="dot"></span>Soporte
+        </button>
+        <button class="chip chip-reset" (click)="setFiltro('ninguno')">
+          <i class="bi bi-arrow-counterclockwise"></i> Reset
+        </button>
+        <button class="btn-filtro" (click)="setFiltro('ocupados')">
+          Ocupados 
+          <span class="badge">{{ contarOcupados() }}</span>
+        </button>
+         <button class="btn-filtro" (click)="setFiltro('disponibles')">
+          Disponibles 
+          <span class="badge">{{ contarDisponibles() }}</span>
+        </button>
+      </div>
     </div>
-
   </div>
-</div>
 
   <!-- BUSCADOR -->
   <div class="search-container mb-2">
@@ -73,12 +108,12 @@
     <div class="table-card bg-white shadow-sm rounded-3 border">
       <div class="table-responsive">
         <table
-          class="table table-sm table-hover align-middle mb-0 table-fixed-layout"
+          class="table table-sm table-hover align-middle table-fixed-layout"
         >
           <thead class="bg-dark text-white">
             <tr>
-              <th class="p-2 sticky-col-1" style="width: 250px">
-                Técnico / Datos
+              <th class="p-2 sticky-col-1" style="width: 170px">
+                Técnicos / Datos
               </th>
               <th
                 class="text-center p-2 sticky-col-2 border-end"
@@ -87,7 +122,14 @@
                 Historial
               </th>
               @for (dia of diasSemana; track dia) {
-                <th class="text-center p-1 day-header day-cell" style="width: 90px; height: auto !important; max-height: none !important">
+                <th
+                  class="text-center p-1 day-header day-cell"
+                  style="
+                    width: 90px;
+                    height: auto !important;
+                    max-height: none !important;
+                  "
+                >
                   <div class="text-uppercase tiny-text opacity-75">
                     {{ dia | date: "EEEE" }}
                   </div>
@@ -103,24 +145,24 @@
             @for (emp of filtrarEmpleados(); track emp.id) {
               <tr [class.fila-ocupada]="empleadoEstaOcupado(emp.id)">
                 <!-- TÉCNICO -->
-                <td class="ps-2 py-2 sticky-col-1 bg-white">
+                <td class="ps-2 py-1 sticky-col-1 bg-white">
                   <div class="d-flex align-items-start">
                     <div
-                      class="avatar-circle-sm me-2 text-uppercase"
+                      class="avatar-circle-sm me-1 text-uppercase"
                       [class.avatar-ocupado]="empleadoEstaOcupado(emp.id)"
                     >
-                      {{ emp.nombre.substring(0, 3) }}
+                      {{ emp.nombre.substring(0, 2) }}
                     </div>
                     <div class="info-container">
                       <div class="d-flex align-items-center gap-1 mb-0">
                         <div
                           class="fw-bold text-dark"
-                          style="font-size: 0.95rem; line-height: 1.1"
+                          style="font-size: 0.9rem; line-height: 1.1"
                         >
                           {{ emp.nombre }}
                         </div>
                         @if (empleadoEstaOcupado(emp.id)) {
-                          <span class="badge-ocupado">⛔ Ocupado</span>
+                          <span class="badge-ocupado">⛔Ocup</span>
                         }
                       </div>
                       <div class="d-flex gap-1 my-0">
@@ -136,8 +178,9 @@
                       </div>
                       <div class="extra-info-row">
                         <span class="tiny-text text-muted"
-                          >💼 {{ emp.posicion || " Soporte Tecnico" }}</span
+                          >💼 {{ abreviarPosicion(emp.posicion) }}</span
                         >
+
                         <span class="tiny-text text-primary ms-2">
                           📱Flot:
                           <a
@@ -180,26 +223,23 @@
                 <td class="px-1 sticky-col-2 bg-white border-end text-center">
                   <div class="stats-grid-mini">
                     <div class="stat-mini sede" title="Sede Central">
-                      <span>🏢 Sede</span>
-                      <strong>{{ emp.stats.totalSede || 0 }}</strong>
+                      <span>🏢 SEDE</span>
+                      <strong>{{ getSedeSemana(emp.id) }}</strong>
                     </div>
-
                     <div class="stat-mini interior" title="Interior">
-                      <span>🌄 Interior</span>
-                      <strong>{{ emp.stats.totalInterior || 0 }}</strong>
+                      <span>🌄 INTERIOR</span>
+                      <strong>{{ getInteriorExteriorSemana(emp.id) }}</strong>
                     </div>
-
                     <div class="stat-mini metro" title="Metro">
-                      <span>🚇 Metro</span>
-                      <strong>{{ emp.stats.metroMes || 0 }}</strong>
+                      <span>🚇 METRO</span>
+                      <strong>{{ getMetroSemana(emp.id) }}</strong>
                     </div>
-
                     <div class="stat-mini exterior" title="Exterior">
-                      <span>🌍 Exterior</span>
-                      <!-- <strong>{{ emp.stats.totalExterior || 0 }}</strong> -->
+                      <span>🌍 EXTERIOR</span>
                       <strong>0</strong>
                     </div>
                   </div>
+                  
                 </td>
 
                 <!-- DÍAS -->
@@ -211,106 +251,128 @@
                     [ngClass]="getClaseColor(key, dia)"
                     class="border-start assignment-cell day-cell position-relative"
                   >
+                    <!--
+                      cell-scroll-inner ahora es flex column:
+                      - chips en grid 2x2 arriba
+                      - formularios de nueva asignación abajo del grid
+                      - botón "+ Agregar" siempre al fondo con mt-auto
+                    -->
                     <div class="cell-scroll-inner">
-                      @for (item of items; track item.uid) {
-                        @if (!item.esNueva) {
-                          <!-- CHIP COMPACTO -->
-                          <div
-                            class="asig-chip mb-1"
-                            [class.chip-ocupado]="
-                              item.idEstado !== 3 && item.tipoId !== 0
-                            "
-                            [class.chip-libre]="item.idEstado === 3"
-                            [class.chip-expanded]="chipExpandido.has(item.uid)"
-                            (click)="toggleChip(item.uid)"
-                          >
-                            <div class="chip-row">
-                              <span
-                                class="chip-dot"
-                                [class.dot-sede]="item.tipoId === 1"
-                                [class.dot-metro]="item.tipoId === 2"
-                                [class.dot-interior]="item.tipoId === 3"
-                                [class.dot-exterior]="item.tipoId === 4"
-                              >
-                              </span>
-                              <span class="chip-label text-truncate">
-                                {{ getNombreTipo(item.tipoId) }}
-                                @if (item.tipoId === 1 && item.cantidad) {
-                                  · {{ item.cantidad }}t
-                                }
-                                @if (item.tipoId === 2 && item.cantidadMetro) {
-                                  · 🚇{{ item.cantidadMetro }}
-                                }
-                                @if (item.tipoId === 3 || item.tipoId === 4) {
-                                  · {{ item.dias }}d {{ item.zona }}
-                                }
-                              </span>
-                              <span class="chip-estado ms-auto flex-shrink-0">
-                                {{ item.idEstado !== 3 ? "🔴" : "🟢" }}
-                              </span>
-                              <button
-                                class="btn-icon-xs text-danger flex-shrink-0"
-                                title="Eliminar"
-                                (click)="
-                                  $event.stopPropagation();
-                                  eliminarAsignacion(emp.id, dia, $index)
-                                "
-                              >
-                                ✕
-                              </button>
-                            </div>
+                      <!-- GRID 2 COLUMNAS: solo chips existentes -->
+                      <div class="chips-grid">
+                        @for (item of items; track item.uid) {
+                          @if (!item.esNueva) {
+                            <div
+                              class="asig-chip mb-1"
+                              [class.chip-ocupado]="
+                                item.idEstado !== 3 && item.tipoId !== 0
+                              "
+                              [class.chip-libre]="item.idEstado === 3"
+                              [class.chip-expanded]="
+                                chipExpandido.has(item.uid)
+                              "
+                              (click)="toggleChip(item.uid)"
+                            >
+                              <div class="chip-row">
+                                <span
+                                  class="chip-dot"
+                                  [class.dot-sede]="item.tipoId === 1"
+                                  [class.dot-metro]="item.tipoId === 2"
+                                  [class.dot-interior]="item.tipoId === 3"
+                                  [class.dot-exterior]="item.tipoId === 4"
+                                ></span>
+                                <span class="chip-label text-truncate">
+                                  {{ getNombreTipo(item.tipoId) }}
+                                  @if (item.tipoId === 1 && item.cantidad) {
+                                    · {{ item.cantidad }}t
+                                  }
+                                  @if (
+                                    item.tipoId === 2 && item.cantidadMetro
+                                  ) {
+                                    · {{ item.cantidadMetro }}
+                                  }
+                                  @if (item.tipoId === 3 || item.tipoId === 4) {
+                                    · {{ item.dias }}d {{ item.zona }}
+                                  }
+                                </span>
+                                <span class="chip-estado ms-auto flex-shrink-0">
+                                  {{ item.idEstado !== 3 ? "🔴" : "🟢" }}
+                                </span>
+                                <button
+                                  class="btn-icon-xs text-danger flex-shrink-0"
+                                  title="Eliminar"
+                                  (click)="
+                                    $event.stopPropagation();
+                                    eliminarAsignacion(emp.id, dia, $index)
+                                  "
+                                >
+                                  ✕
+                                </button>
+                              </div>
 
-                            @if (chipExpandido.has(item.uid)) {
-                              <div
-                                class="chip-detail mt-1 pt-1 border-top d-flex justify-content-between align-items-center"
-                                (click)="$event.stopPropagation()"
-                              >
-                                @if (item.idEstado !== 3) {
-                                  <span
-                                    class="text-danger fw-bold"
-                                    style="font-size: 0.6rem"
-                                  >
-                                    <i class="bi bi-lock-fill"></i> Ocupado
-                                  </span>
-                                  <button
-                                    class="btn btn-link p-0 text-success fw-bold text-decoration-none"
-                                    style="font-size: 0.6rem"
-                                    (click)="
-                                      marcarComoDisponible(emp.id, dia, $index)
-                                    "
-                                  >
-                                    Liberar
-                                  </button>
-                                }
-                                @if (item.idEstado === 3) {
-                                  <span
-                                    class="text-success fw-bold"
-                                    style="font-size: 0.6rem"
-                                  >
-                                    <i class="bi bi-check2-all"></i> Libre
-                                  </span>
-                                  @if (item.tipoId !== 1) {
+                              @if (chipExpandido.has(item.uid)) {
+                                <div
+                                  class="chip-detail mt-1 pt-1 border-top d-flex justify-content-between align-items-center"
+                                  (click)="$event.stopPropagation()"
+                                >
+                                  @if (item.idEstado !== 3) {
+                                    <span
+                                      class="text-danger fw-bold"
+                                      style="font-size: 0.6rem"
+                                    >
+                                      <i class="bi bi-lock-fill"></i> Ocup
+                                    </span>
                                     <button
-                                      class="btn btn-link p-0 text-danger fw-bold text-decoration-none"
+                                      class="btn btn-link p-0 text-success fw-bold text-decoration-none"
                                       style="font-size: 0.6rem"
                                       (click)="
-                                        marcarComoOcupado(emp.id, dia, $index)
+                                        marcarComoDisponible(
+                                          emp.id,
+                                          dia,
+                                          $index
+                                        );
+                                        toggleChip(item.uid)
                                       "
                                     >
-                                      Ocupar
+                                      Lib
                                     </button>
                                   }
-                                }
-                              </div>
-                            }
-                          </div>
+                                  @if (item.idEstado === 3) {
+                                    <span
+                                      class="text-success fw-bold"
+                                      style="font-size: 0.6rem"
+                                    >
+                                      <i class="bi bi-check2-all"></i> Lib
+                                    </span>
+                                    @if (item.tipoId !== 1) {
+                                      <button
+                                        class="btn btn-link p-0 text-danger fw-bold text-decoration-none"
+                                        style="font-size: 0.6rem"
+                                        (click)="
+                                          marcarComoOcupado(
+                                            emp.id,
+                                            dia,
+                                            $index
+                                          );
+                                          toggleChip(item.uid)
+                                        "
+                                      >
+                                        Ocup
+                                      </button>
+                                    }
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
                         }
+                      </div>
+                      <!-- FIN chips-grid -->
 
+                      <!-- FORMULARIOS de nueva asignación (ancho completo, fuera del grid) -->
+                      @for (item of items; track item.uid) {
                         @if (item.esNueva) {
-                          <div
-                            class="asignacion-item mb-1 rounded border"
-                            style="font-size: 0.65rem; padding: 3px 5px"
-                          >
+                          <div class="asignacion-popup">
                             <div
                               class="d-flex justify-content-between align-items-center mb-1"
                             >
@@ -338,9 +400,9 @@
                               <option [ngValue]="0">- Tipo -</option>
                               @for (
                                 t of tiposDisponibles(emp.id, dia, item);
-                                track t.idTipo
+                                track t.IdTipo
                               ) {
-                                <option [ngValue]="t.idTipo">
+                                <option [ngValue]="t.IdTipo">
                                   {{ t.nombre }}
                                 </option>
                               }
@@ -416,8 +478,9 @@
                         }
                       }
 
+                      <!-- BOTÓN AGREGAR — siempre al fondo gracias a mt-auto -->
                       <button
-                        class="btn btn-outline-secondary btn-xs w-100 mt-1"
+                        class="btn btn-outline-secondary btn-xs w-100 mt-auto"
                         style="
                           font-size: 0.62rem;
                           height: 20px;
