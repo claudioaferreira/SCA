@@ -1,29 +1,44 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Empleado, TipoAsignacion } from '../interfaces/asignacion.interface';
+import { Empleado, TipoAsignacion, ZonaGeo } from '../interfaces/asignacion.interface';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class EmpleadosService {
-
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   getEmpleadosActivos(): Observable<Empleado[]> {
     return this.http.get<Empleado[]>(`${this.apiUrl}/empleados/activos`);
   }
-  
-getEmpleados(): Observable<Empleado[]> {
+
+  getEmpleados(): Observable<Empleado[]> {
     return this.http.get<Empleado[]>(`${this.apiUrl}/empleados`);
   }
+
+  getZonaGeo(): Observable<ZonaGeo[]> {
+    return this.http.get<ZonaGeo[]>(`${this.apiUrl}/asignaciones/zonageo`);
+  }
+  getResumenHome(inicio: string, fin: string): Observable<any> {
+  return this.http.get(`${this.apiUrl}/asignaciones/resumen?inicio=${inicio}&fin=${fin}`);
+}
+
+ getResumenZonas(inicio: string, fin: string): Observable<any> {
+  return this.http.get(`${this.apiUrl}/asignaciones/resumenZonas?inicio=${inicio}&fin=${fin}`);
+}
+
+getEmpleadosPorTipo(inicio: string, fin: string): Observable<any> {
+  return this.http.get(`${this.apiUrl}/asignaciones/empleadosPorTipo?inicio=${inicio}&fin=${fin}`);
+}
+
+
   guardarEmpleado(payload: any): Observable<any> {
     // console.log('Payload enviado al backend: desde services', payload);
-   return this.http.post(`${this.apiUrl}/empleados/guardar`, payload);
-   
+    return this.http.post(`${this.apiUrl}/empleados/guardar`, payload);
   }
 
   guardarAsignacionCelda(payload: any): Observable<any> {
@@ -32,7 +47,7 @@ getEmpleados(): Observable<Empleado[]> {
 
   getAsignacionesSemana(inicio: string, fin: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/asignaciones/semana`, {
-      params: { inicio, fin }
+      params: { inicio, fin },
     });
   }
   getDepartamentos(): Observable<any> {
@@ -40,22 +55,28 @@ getEmpleados(): Observable<Empleado[]> {
   }
 
   getTipoAsignaciones(): Observable<TipoAsignacion[]> {
-    return this.http.get<TipoAsignacion[]>(`${this.apiUrl}/asignaciones//tipoasignaciones`);
+    return this.http.get<TipoAsignacion[]>(
+      `${this.apiUrl}/asignaciones//tipoasignaciones`,
+    );
   }
 
   getCargos(): Observable<any> {
     return this.http.get(`${this.apiUrl}/empleados/cargos/catalogo`);
   }
 
-
-
   // ← nuevo: historial acumulado sin filtro de fecha
   getHistorialEmpleados(): Observable<any> {
     return this.http.get(`${this.apiUrl}/asignaciones/historial`);
   }
 
-  actualizarEstadoAsignacion(idAsignacion: number, idEstado: number): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/asignaciones/estado`, { idAsignacion, idEstado });
+  actualizarEstadoAsignacion(
+    idAsignacion: number,
+    idEstado: number,
+  ): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/asignaciones/estado`, {
+      idAsignacion,
+      idEstado,
+    });
   }
 
   eliminarAsignacion(idAsignacion: number): Observable<any> {

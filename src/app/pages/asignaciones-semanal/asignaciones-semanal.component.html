@@ -292,12 +292,12 @@
                                     · {{ item.cantidad }}t
                                   }
                                   @if (
-                                    item.tipoId === 2 && item.cantidadMetro
+                                    item.tipoId === 2 && item.dias
                                   ) {
-                                    · {{ item.cantidadMetro }}
+                                    · {{ item.dias }}
                                   }
                                   @if (item.tipoId === 3 || item.tipoId === 4) {
-                                    · {{ item.dias }}d {{ item.zona }}
+                                    · {{ item.dias }}d {{ item.IdZonaGeo }}
                                   }
                                 </span>
                                 <span class="chip-estado ms-auto flex-shrink-0">
@@ -412,7 +412,7 @@
                                 </option>
                               }
                             </select>
-
+                              <!-- SEDE (1): solo cantidad de tareas -->
                             @if (item.tipoId === 1) {
                               <input
                                 type="number"
@@ -420,8 +420,10 @@
                                 class="form-control form-control-xs text-center border-primary w-100 mb-1"
                                 placeholder="Cantidad de tareas"
                                 [(ngModel)]="item.cantidad"
+                                (ngModelChange)="marcarModificado(item)"
                               />
                             }
+                            <!-- METRO (2): solo días -->
                             @if (item.tipoId === 2) {
                               <div
                                 class="input-group input-group-sm w-100 mb-1"
@@ -436,11 +438,13 @@
                                   min="0"
                                   class="form-control form-control-xs text-center border-0"
                                   placeholder="Rutas"
-                                  [(ngModel)]="item.cantidadMetro"
+                                  [(ngModel)]="item.dias"
+                                  (ngModelChange)="marcarModificado(item)"
                                 />
                               </div>
                             }
-                            @if (item.tipoId === 3 || item.tipoId === 4) {
+                            <!-- INTERIOR (3): días + zona -->
+                            @if (item.tipoId === 3) {
                               <div class="d-flex gap-1 w-100 mb-1">
                                 <input
                                   type="number"
@@ -448,16 +452,18 @@
                                   class="form-control form-control-xs w-50 border-warning px-1 text-center"
                                   placeholder="Días"
                                   [(ngModel)]="item.dias"
+                                  (ngModelChange)="marcarModificado(item)"
                                 />
                                 <select
-                                  class="form-select form-select-xs w-50 border-warning px-1 text-center"
-                                  [(ngModel)]="item.zona"
-                                >
-                                  <option value="">Zona</option>
-                                  <option value="Norte">Norte</option>
-                                  <option value="Sur">Sur</option>
-                                  <option value="Este">Este</option>
-                                </select>
+                                      class="form-select form-select-xs w-50 border-warning px-1 text-center"
+                                      [(ngModel)]="item.IdZonaGeo"
+                                      (ngModelChange)="marcarModificado(item)"
+                                    >
+                                      <option [value]="0">Zona</option>
+                                      @for (zona of zonasGeo; track zona.IdZonaGeo) {
+                                        <option [ngValue]="zona.IdZonaGeo">{{ zona.Descripcion }}</option>
+                                      }
+                                    </select>
                               </div>
                             }
 

@@ -43,15 +43,26 @@ export interface Asignacion {
 }
 
 export interface AsignacionCelda {
-  uid: string; // ID único local para que Angular trackee correctamente el DOM
+  uid:          string;
   idAsignacion: number | null;
-  tipoId: number;
-  cantidad: string;
-  cantidadMetro: string;
-  dias: string;
-  zona: string;
-  idEstado: number | null;
-  modificado: boolean;
-  guardadoOk: boolean;
-  esNueva: boolean;
+  tipoId:       number;
+  cantidad:     string;   // Sede (1): tareas
+  dias:         string;   // Metro (2) e Interior (3): días de viaje
+  IdZonaGeo:    number;   // Interior (3): zona geográfica
+  idEstado:     number;
+  modificado:   boolean;
+  guardadoOk:   boolean;
+  esNueva:      boolean;
+}
+
+export interface ZonaGeo{
+  IdZonaGeo: number;
+  Descripcion: string;
+}
+
+export interface ResumenHome {
+  IdTipo:             number;
+  TotalCantidad:      number;
+  TotalDias:          number;
+  TotalAsignaciones:  number;
 }

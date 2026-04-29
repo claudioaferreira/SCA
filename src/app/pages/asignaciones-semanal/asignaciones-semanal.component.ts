@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
-import { Empleado, TipoAsignacion, AsignacionCelda } from '../../interfaces/asignacion.interface';
+import { Empleado, TipoAsignacion, AsignacionCelda, ZonaGeo } from '../../interfaces/asignacion.interface';
 import { EmpleadosService } from '../../services/empleados.service';
 
 
@@ -27,6 +27,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   // ─── EMPLEADOS ──────────────────────────────────────────────────────────
 
   empleadosMaster: Empleado[] = [];
+  zonasGeo: ZonaGeo[] = [];
 
 
   // ─── TIPOS DE ASIGNACIÓN ────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   ngOnInit() {
     this.irASemanaActual();
     this.obtenerTiposAsignaciones(); // catálogo primero, no depende de nada
+    this.cargarZonasGeo();
     this.cargarEmpleadosDeAPI();     // empleados + asignaciones + historial
   }
 
@@ -130,14 +132,25 @@ export class AsignacionesSemanalComponent implements OnInit {
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  //  TIPOS DE ASIGNACIÓN
+  //  TIPOS DE ASIGNACIÓN / ZONAS GEOGRÁFICAS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+  // GET /api/asignaciones/zonageo
   // ─────────────────────────────────────────────────────────────────────────
   // GET /api/asignaciones/tipoasignaciones
   // Trae el catálogo de tipos (Sede, Metro, Interior, Exterior).
   // Se llama una sola vez al abrir el componente.
   // ─────────────────────────────────────────────────────────────────────────
+
+  cargarZonasGeo() {
+  this._empleadosService.getZonaGeo().subscribe({
+    next: (res: any) => {
+      this.zonasGeo = res.body ?? [];
+    },
+    error: (err) => console.error('Error al cargar zonas geográficas', err)
+  });
+}
+
+
   obtenerTiposAsignaciones() {
     this._empleadosService.getTipoAsignaciones().subscribe({
       next: (res: any) => {
@@ -175,6 +188,7 @@ export class AsignacionesSemanalComponent implements OnInit {
       return !tiposYaUsados.has(t.IdTipo);
     });
   }
+
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -361,7 +375,7 @@ getMetroSemana(empId: number): number {
     const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
     const rutas = items
       .filter(i => !i.esNueva && i.tipoId === 2)
-      .reduce((sum, i) => sum + (Number(i.cantidadMetro) || 0), 0);
+      .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
     return total + rutas;
   }, 0);
 }
@@ -470,15 +484,18 @@ getInteriorExteriorSemana(empId: number): number {
     }
 
     const fechaStr      = dia.toISOString().split('T')[0];
-    const cantidadFinal = item.tipoId === 2 ? item.cantidadMetro : item.cantidad;
+    const cantidadFinal = item.tipoId === 2 ? item.dias : item.cantidad;
 
     const payload = {
       idEmpleado:           empId,
       fecha:                fechaStr,
       idTipo:               item.tipoId,
-      CantidadAsignaciones: cantidadFinal || null,
-      diasViaje:            item.dias     || null,
-      zonaGeografica:       item.zona     || null,
+       // Sede (1) → Cantidad, resto NULL
+       CantidadAsignaciones: item.tipoId === 1 ? Number(item.cantidad) || null : null,
+       // Metro (2) e Interior (3) → Dias, Sede NULL
+       diasViaje:            (item.tipoId === 2 || item.tipoId === 3) ? Number(item.dias) || null : null,
+       // Interior (3) → // Solo Interior (3) → Zona
+       IdZonaGeo:            item.tipoId === 3 ? item.IdZonaGeo || null : null,
       idEstado:             item.idEstado ?? 1,
       observaciones:        null,
     };
@@ -493,6 +510,7 @@ getInteriorExteriorSemana(empId: number): number {
         this.cargarHistorialDesdeBD();
        
         setTimeout(() => { item.guardadoOk = false; }, 2000);
+        //console.log('Payload guardado:', payload);
       },
       error: (err) => {
         console.error('Error al guardar:', err);
@@ -728,37 +746,43 @@ if (filtrarOcupado || filtrarDisponible) {
   /** Convierte el formato de la API al formato interno AsignacionCelda */
   private mapearDesdeAPI(a: any): AsignacionCelda {
     return {
-      uid:           `saved-${a.IdAsignacion}`,
-      idAsignacion:  a.IdAsignacion,
-      tipoId:        a.IdTipo                ?? 0,
-      cantidad:      a.IdTipo !== 2          ? (a.CantidadAsignaciones?.toString() ?? '') : '',
-      cantidadMetro: a.IdTipo === 2          ? (a.CantidadAsignaciones?.toString() ?? '') : '',
-      dias:          a.DiasViaje?.toString() ?? '',
-      zona:          a.ZonaGeografica        ?? '',
-      idEstado:      a.idEstado              ?? 1,
-      modificado:    false,
-      guardadoOk:    false,
-      esNueva:       false,
-    };
-  }
+    uid:          `saved-${a.IdAsignacion}`,
+    idAsignacion: a.IdAsignacion,
+    tipoId:       a.IdTipo ?? 0,
+
+    // Sede (1): usa Cantidad
+    cantidad:     a.IdTipo === 1 ? (a.CantidadAsignaciones?.toString() ?? '') : '',
+
+    // Metro (2): usa Dias
+    
+    // Interior (3): usa Dias + Zona
+    dias:         (a.IdTipo === 2 || a.IdTipo === 3) ? (a.DiasViaje?.toString() ?? '') : '',
+
+    IdZonaGeo:    a.IdTipo === 3 ? (a.IdZonaGeo ?? 0) : 0,
+
+    idEstado:     a.idEstado ?? 1,
+    modificado:   false,
+    guardadoOk:   false,
+    esNueva:      false,
+  };
+}
 
   /** Crea un objeto AsignacionCelda vacío para filas nuevas (aún no guardadas) */
   private nuevaCeldaVacia(): AsignacionCelda {
-    this.uidCounter++;
-    return {
-      uid:           `new-${this.uidCounter}`,
-      idAsignacion:  null,
-      tipoId:        0,
-      cantidad:      '',
-      cantidadMetro: '',
-      dias:          '',
-      zona:          '',
-      idEstado:      1,
-      modificado:    false,
-      guardadoOk:    false,
-      esNueva:       true,
-    };
-  }
+  this.uidCounter++;
+  return {
+    uid:          `new-${this.uidCounter}`,
+    idAsignacion: null,
+    tipoId:       0,
+    cantidad:     '',
+    dias:         '',
+    IdZonaGeo:    0,
+    idEstado:     1,
+    modificado:   false,
+    guardadoOk:   false,
+    esNueva:      true,
+  };
+}
 
   /** Muestra el alert cuando el técnico ya tiene una asignación activa esta semana */
   private mostrarAlertaTecnicoOcupado(diaSemana: Date, asigOcupada: AsignacionCelda) {
@@ -768,10 +792,10 @@ if (filtrarOcupado || filtrarDisponible) {
     let detalle = '';
     if (asigOcupada.tipoId === 1 && asigOcupada.cantidad)
       detalle = ` · ${asigOcupada.cantidad} tareas`;
-    else if (asigOcupada.tipoId === 2 && asigOcupada.cantidadMetro)
-      detalle = ` · 🚇 ${asigOcupada.cantidadMetro} rutas`;
-    else if ((asigOcupada.tipoId === 3 || asigOcupada.tipoId === 4) && asigOcupada.zona)
-      detalle = ` · ${asigOcupada.dias}d — ${asigOcupada.zona}`;
+    else if (asigOcupada.tipoId === 2 && asigOcupada.dias)
+      detalle = ` · 🚇 ${asigOcupada.dias} rutas`;
+    else if ((asigOcupada.tipoId === 3 || asigOcupada.tipoId === 4) && asigOcupada.IdZonaGeo)
+      detalle = ` · ${asigOcupada.dias}d — ${asigOcupada.IdZonaGeo}`;
 
     Swal.fire({
       icon:  'warning',

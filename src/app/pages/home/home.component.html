@@ -1,145 +1,368 @@
 <div class="watermark">PRUEBA</div>
-<div class="main-dashboard p-3 bg-light" style="min-height: 100vh;">
-  
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-    <div>
-      <h3 class="fw-bold text-dark mb-0">Sistema de Control de Asignaciones</h3>
-      <p class="text-muted mb-0" style="font-size: 0.85rem;">Resumen general de gestión técnica y rutas</p>
+<div class="home-dashboard p-2">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar-card mb-3">
+    <div class="toolbar-row-top">
+
+      <!-- Marca / título -->
+      <div class="toolbar-brand">
+        <i class="bi bi-speedometer2 toolbar-icon"></i>
+        <div>
+          <span class="toolbar-title">Sistema de Control de Asignaciones</span>
+          <span class="toolbar-subtitle">Resumen general de gestión técnica y rutas</span>
+        </div>
+      </div>
+
+      <!-- Tabs rápidos -->
+      <div class="periodo-tabs">
+        <button class="periodo-btn" [class.activo]="filtroPeriodo === 'hoy'"    (click)="setFiltro('hoy')">Hoy</button>
+        <button class="periodo-btn" [class.activo]="filtroPeriodo === 'semana'" (click)="setFiltro('semana')">Semana</button>
+        <button class="periodo-btn" [class.activo]="filtroPeriodo === 'mes'"    (click)="setFiltro('mes')">Mes</button>
+      </div>
+
+      <!-- Botón Personalizado + Picker -->
+      <div class="picker-wrapper" (click)="$event.stopPropagation()">
+        <button
+          class="btn-personalizado"
+          [class.activo]="filtroPeriodo === 'personalizado'"
+          (click)="togglePicker($event)">
+          <i class="bi bi-calendar3"></i>
+          Personalizado
+          <i class="bi bi-chevron-down picker-chevron" [class.rotado]="pickerOpen"></i>
+        </button>
+
+        @if (pickerOpen) {
+          <div class="picker-panel" (click)="$event.stopPropagation()">
+
+            <!-- Tabs del picker -->
+            <div class="picker-tabs">
+              <button class="picker-tab" [class.activo]="pickerTab === 'mes'"   (click)="switchPickerTab('mes')">Por mes</button>
+              <button class="picker-tab" [class.activo]="pickerTab === 'rango'" (click)="switchPickerTab('rango')">Rango libre</button>
+            </div>
+
+            <!-- TAB: Por mes -->
+            @if (pickerTab === 'mes') {
+              <div class="picker-body">
+                <div class="year-nav">
+                  <button class="cal-nav" (click)="changePickerYear(-1)"><i class="bi bi-chevron-left"></i></button>
+                  <span class="year-label">{{ pickerYear }}</span>
+                  <button class="cal-nav" (click)="changePickerYear(1)"><i class="bi bi-chevron-right"></i></button>
+                </div>
+                <div class="month-grid">
+                  @for (m of MESES_SHORT_REF; track $index) {
+                    <button
+                      class="month-btn"
+                      [class.activo]="isPickerMonthSelected($index)"
+                      [class.hoy]="isCurrentMonth($index)"
+                      (click)="selectPickerMonth($index)">
+                      {{ m }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- TAB: Rango libre -->
+            @if (pickerTab === 'rango') {
+              <div class="picker-body">
+
+                <!-- Accesos rápidos -->
+                <div class="quick-tags">
+                  <button class="quick-tag" (click)="applyQuickRange(7)">7 días</button>
+                  <button class="quick-tag" (click)="applyQuickRange(14)">14 días</button>
+                  <button class="quick-tag" (click)="applyQuickRange(30)">30 días</button>
+                  <button class="quick-tag" (click)="applyQuickRange(90)">90 días</button>
+                </div>
+
+                <!-- Inputs de fecha -->
+                <div class="range-inputs">
+                  <div class="range-field">
+                    <label>Desde</label>
+                    <input type="date" [(ngModel)]="rangeStart" (change)="buildCal()">
+                  </div>
+                  <div class="range-field">
+                    <label>Hasta</label>
+                    <input type="date" [(ngModel)]="rangeEnd" (change)="buildCal()">
+                  </div>
+                </div>
+
+                <!-- Calendario -->
+                <div class="cal-header-row">
+                  <button class="cal-nav" (click)="changeCalMonth(-1)"><i class="bi bi-chevron-left"></i></button>
+                  <span class="cal-month-title">{{ calTitle }}</span>
+                  <button class="cal-nav" (click)="changeCalMonth(1)"><i class="bi bi-chevron-right"></i></button>
+                </div>
+                <div class="cal-grid">
+                  @for (d of DIAS_DOW_REF; track d) {
+                    <div class="cal-dow">{{ d }}</div>
+                  }
+                  @for (cell of calDays; track $index) {
+                    @if (cell.day === null) {
+                      <div class="cal-day empty"></div>
+                    } @else {
+                      <button
+                        class="cal-day"
+                        [class.today]="cell.isToday"
+                        [class.range-start]="cell.isStart"
+                        [class.range-end]="cell.isEnd"
+                        [class.in-range]="cell.inRange"
+                        (click)="pickCalDay(cell.date)">
+                        {{ cell.day }}
+                      </button>
+                    }
+                  }
+                </div>
+
+              </div>
+            }
+
+            <!-- Footer -->
+            <div class="picker-footer">
+              <button class="btn-picker-cancel" (click)="closePicker()">Cancelar</button>
+              <button class="btn-picker-apply"  (click)="applySelection()">
+                <i class="bi bi-check2"></i> Aplicar
+              </button>
+            </div>
+
+          </div>
+        }
+      </div>
+
+      <!-- Spinner -->
+      @if (cargando) {
+        <span class="spinner-border spinner-border-sm text-warning" style="width:14px;height:14px;"></span>
+      }
+
+      <!-- Botones de acción -->
+      <div class="toolbar-actions ms-auto">
+        <button class="btn btn-primary-custom btn-sm d-flex align-items-center gap-2" routerLink="/asignaciones">
+          <i class="bi bi-calendar-week"></i> Ir a Asignaciones
+        </button>
+        <button class="btn btn-outline-custom btn-sm d-flex align-items-center gap-1">
+          <i class="bi bi-download"></i> Reporte
+        </button>
+      </div>
+
     </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary-custom d-flex align-items-center gap-2 shadow-sm" routerLink="/asignaciones">
-    <i class="bi bi-calendar-week"></i>
-    <span>Ir a Asignaciones</span>
-  </button>
-      <button class="btn btn-outline-custom d-flex align-items-center shadow-sm">
-  <i class="bi bi-download me-2"></i> Reporte
-</button>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-row-bottom">
+      <span class="chips-label">Mostrando datos de</span>
+      <span class="periodo-label">
+        <i class="bi bi-calendar3 me-1"></i>{{ labelFecha }}
+      </span>
     </div>
   </div>
 
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
-    
+  <!-- KPI CARDS -->
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-3">
+
+    <!-- ── Sede ── -->
     <div class="col">
-      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Tickets Activos</span>
-          <div class="icon-shape bg-light text-dark rounded-circle">
-            <i class="bi bi-ticket-detailed"></i>
+      <div class="kpi-card" style="--kpi-color: #2563eb; --kpi-bg: #eff6ff;">
+        <div class="kpi-header">
+          <span class="kpi-label">Sede Central</span>
+          <div class="kpi-icon" style="color:#2563eb; background:#dbeafe;"><i class="bi bi-building"></i></div>
+        </div>
+        @if (cargando) {
+          <div class="placeholder-glow"><span class="placeholder col-5 rounded" style="height:2.2rem;"></span></div>
+        } @else {
+          <div class="kpi-value">{{ sedeTareas }}</div>
+        }
+        <div class="kpi-footer"><i class="bi bi-list-check"></i> Tareas · {{ labelPeriodo }}</div>
+        @if (!cargando && sedeEmpleados > 0) {
+          <div class="kpi-subdato"
+               (mouseenter)="onChipMouseEnter($event, TIPO_REF.SEDE)"
+               (mouseleave)="onChipMouseLeave()">
+            <i class="bi bi-people"></i>
+            {{ sedeEmpleados }} empleado{{ sedeEmpleados !== 1 ? 's' : '' }}
+            <i class="bi bi-info-circle ms-1" style="opacity:.5; font-size:.7rem;"></i>
           </div>
-        </div>
-        <h2 class="fw-bold mb-0 text-dark">42</h2>
-        <div class="mt-2 text-success fw-bold" style="font-size: 0.75rem;">
-          <i class="bi bi-arrow-up-short"></i> 12% esta semana
-        </div>
+        }
       </div>
     </div>
 
+    <!-- ── Metro ── -->
     <div class="col">
-      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #2563eb !important;">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Sede Central</span>
-          <div class="icon-shape text-primary rounded-circle" style="background: #eff6ff;">
-            <i class="bi bi-building"></i>
+      <div class="kpi-card" style="--kpi-color: #d97706; --kpi-bg: #fffbeb;">
+        <div class="kpi-header">
+          <span class="kpi-label">Rutas Metro</span>
+          <div class="kpi-icon" style="color:#d97706; background:#fef3c7;"><i class="bi bi-train-front"></i></div>
+        </div>
+        @if (cargando) {
+          <div class="placeholder-glow"><span class="placeholder col-5 rounded" style="height:2.2rem;"></span></div>
+        } @else {
+          <div class="kpi-value">{{ metroDias }}</div>
+        }
+        <div class="kpi-footer"><i class="bi bi-calendar-day"></i> Días en ruta · {{ labelPeriodo }}</div>
+        @if (!cargando && metroEmpleados > 0) {
+          <div class="kpi-subdato"
+               (mouseenter)="onChipMouseEnter($event, TIPO_REF.METRO)"
+               (mouseleave)="onChipMouseLeave()">
+            <i class="bi bi-people"></i>
+            {{ metroEmpleados }} empleado{{ metroEmpleados !== 1 ? 's' : '' }}
+            <i class="bi bi-info-circle ms-1" style="opacity:.5; font-size:.7rem;"></i>
           </div>
-        </div>
-        <h2 class="fw-bold mb-0 text-dark">18</h2>
-        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
-          Tareas asignadas hoy
-        </div>
+        }
       </div>
     </div>
 
+    <!-- ── Interior ── -->
     <div class="col">
-      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #d97706 !important;">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Rutas Metro</span>
-          <div class="icon-shape text-warning rounded-circle" style="background: #fffbeb;">
-            <i class="bi bi-train-front"></i>
+      <div class="kpi-card kpi-card-desglose" style="--kpi-color: #16a34a; --kpi-bg: #f0fdf4;">
+        <div class="kpi-header">
+          <span class="kpi-label">Interior (Zonas)</span>
+          <div class="kpi-icon" style="color:#16a34a; background:#dcfce7;"><i class="bi bi-map"></i></div>
+        </div>
+        @if (cargando) {
+          <div class="placeholder-glow"><span class="placeholder col-5 rounded" style="height:2.2rem;"></span></div>
+        } @else {
+          <div class="kpi-value">{{ interiorDias }}</div>
+        }
+        <div class="kpi-footer"><i class="bi bi-signpost-2"></i> Días de viaje · {{ labelPeriodo }}</div>
+        @if (!cargando && interiorEmpleados > 0) {
+          <div class="kpi-subdato"
+               (mouseenter)="onChipMouseEnter($event, TIPO_REF.INTERIOR)"
+               (mouseleave)="onChipMouseLeave()">
+            <i class="bi bi-people"></i>
+            {{ interiorEmpleados }} empleado{{ interiorEmpleados !== 1 ? 's' : '' }}
+            <i class="bi bi-info-circle ms-1" style="opacity:.5; font-size:.7rem;"></i>
           </div>
-        </div>
-        <h2 class="fw-bold mb-0 text-dark">8</h2>
-        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
-          Estaciones en recorrido
-        </div>
+        }
+        @if (!cargando && zonasResumen.length > 0) {
+          <div class="zona-list mt-2">
+            @for (zona of zonasResumen; track zona.nombre) {
+              <div class="zona-row">
+                <span class="zona-dot" [style.background]="zona.color"></span>
+                <span class="zona-nombre">{{ zona.nombre }}</span>
+                <span class="zona-valor">{{ zona.dias }}d</span>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
 
+    <!-- ── Exterior ── -->
     <div class="col">
-      <div class="kpi-card card border-0 shadow-sm rounded-3 h-100 p-3" style="border-bottom: 3px solid #16a34a !important;">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="text-muted fw-bold" style="font-size: 0.75rem; text-transform: uppercase;">Interior (Zonas)</span>
-          <div class="icon-shape text-success rounded-circle" style="background: #f0fdf4;">
-            <i class="bi bi-map"></i>
+      <div class="kpi-card" style="--kpi-color: #7c3aed; --kpi-bg: #f5f3ff;">
+        <div class="kpi-header">
+          <span class="kpi-label">Exterior</span>
+          <div class="kpi-icon" style="color:#7c3aed; background:#ede9fe;"><i class="bi bi-globe-americas"></i></div>
+        </div>
+        @if (cargando) {
+          <div class="placeholder-glow"><span class="placeholder col-5 rounded" style="height:2.2rem;"></span></div>
+        } @else {
+          <div class="kpi-value">{{ exteriorDias }}</div>
+        }
+        <div class="kpi-footer"><i class="bi bi-airplane"></i> Días de viaje · {{ labelPeriodo }}</div>
+        @if (!cargando && exteriorEmpleados > 0) {
+          <div class="kpi-subdato"
+               (mouseenter)="onChipMouseEnter($event, TIPO_REF.EXTERIOR)"
+               (mouseleave)="onChipMouseLeave()">
+            <i class="bi bi-people"></i>
+            {{ exteriorEmpleados }} empleado{{ exteriorEmpleados !== 1 ? 's' : '' }}
+            <i class="bi bi-info-circle ms-1" style="opacity:.5; font-size:.7rem;"></i>
           </div>
-        </div>
-        <h2 class="fw-bold mb-0 text-dark">16</h2>
-        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
-          Despliegues en municipios
-        </div>
+        }
       </div>
     </div>
+
   </div>
 
+  <!-- ── POPOVER DE EMPLEADOS ── -->
+  @if (popoverVisible && popoverTipo !== null) {
+    <div class="emp-popover"
+         [style.top.px]="popoverTop"
+         [style.left.px]="popoverLeft"
+         (mouseenter)="onPopoverMouseEnter()"
+         (mouseleave)="onPopoverMouseLeave()">
+
+      <div class="emp-popover-header">
+        <i class="bi bi-people-fill"></i>
+        <span>{{ getLabelTipo(popoverTipo) }}</span>
+        <span class="emp-popover-periodo">{{ labelPeriodo }}</span>
+      </div>
+
+      @if (empleadosActivos.length === 0) {
+        <div class="emp-popover-empty">Sin empleados registrados</div>
+      } @else {
+        <div class="emp-popover-list">
+          @for (emp of empleadosActivos; track emp.IdEmpleado) {
+            <div class="emp-popover-row">
+              <div class="emp-avatar">{{ emp.Empleado.charAt(0) }}</div>
+              <div class="emp-info">
+                <span class="emp-nombre">{{ emp.Empleado }}</span>
+                <span class="emp-codigo">{{ emp.Codigo }}</span>
+              </div>
+              <div class="emp-metrica">
+                <span class="emp-valor">{{ getValorMetrica(emp, popoverTipo!) }}</span>
+                <span class="emp-label">{{ getLabelMetrica(popoverTipo!) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- FILA INFERIOR -->
   <div class="row g-3">
-    
     <div class="col-12 col-lg-7">
-      <div class="card border-0 shadow-sm rounded-3 h-100">
-        <div class="card-header bg-white border-0 pt-3 pb-0">
-          <h6 class="fw-bold text-dark mb-0">Distribución Semanal</h6>
+      <div class="panel-card h-100">
+        <div class="panel-header">
+          <i class="bi bi-bar-chart-line panel-header-icon"></i>
+          <span>Distribución Semanal</span>
         </div>
-        <div class="card-body d-flex flex-column justify-content-center align-items-center text-muted" style="min-height: 250px;">
-          <i class="bi bi-bar-chart-line" style="font-size: 3rem; opacity: 0.2;"></i>
-          <p class="mt-2" style="font-size: 0.85rem;">Espacio para gráfico de barras (Asignaciones vs Completadas)</p>
+        <div class="panel-body d-flex flex-column justify-content-center align-items-center text-muted">
+          <i class="bi bi-bar-chart-line" style="font-size:3rem; opacity:.15;"></i>
+          <p class="mt-2 mb-0" style="font-size:.82rem;">Próximamente — gráfico de barras por tipo</p>
         </div>
       </div>
     </div>
 
     <div class="col-12 col-lg-5">
-      <div class="card border-0 shadow-sm rounded-3 h-100">
-        <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
-          <h6 class="fw-bold text-dark mb-0">Trabajos Recientes</h6>
-          <a href="#" class="text-primary text-decoration-none" style="font-size: 0.75rem;">Ver todo</a>
+      <div class="panel-card h-100">
+        <div class="panel-header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history panel-header-icon"></i>
+            <span>Actividad Reciente</span>
+          </div>
+          <a href="#" class="text-decoration-none" style="font-size:.72rem; color:var(--ifm-color-primary);">Ver todo</a>
         </div>
-        <div class="card-body p-0">
+        <div class="panel-body p-0">
           <div class="list-group list-group-flush">
-            
-            <div class="list-group-item border-0 border-bottom py-3 hover-bg">
-              <div class="d-flex w-100 justify-content-between align-items-start">
-                <div>
-                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Mantenimiento en Centro de Villa Mella</h6>
-                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Checklist preventivo de equipos de captura.</p>
-                </div>
-                <span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-size: 0.65rem;">Completado</span>
+            <div class="reciente-item">
+              <div class="reciente-dot" style="background:#16a34a;"></div>
+              <div class="reciente-info">
+                <span class="reciente-titulo">Mantenimiento — Villa Mella</span>
+                <span class="reciente-desc">Checklist preventivo de equipos de captura</span>
               </div>
-              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i> Hace 2 horas</small>
+              <span class="reciente-badge badge-completado">Completado</span>
             </div>
-
-            <div class="list-group-item border-0 border-bottom py-3 hover-bg">
-              <div class="d-flex w-100 justify-content-between align-items-start">
-                <div>
-                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Ruta Noroeste III</h6>
-                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Soporte técnico y actualización de software.</p>
-                </div>
-                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill" style="font-size: 0.65rem;">En progreso</span>
+            <div class="reciente-item">
+              <div class="reciente-dot" style="background:#d97706;"></div>
+              <div class="reciente-info">
+                <span class="reciente-titulo">Ruta Noroeste III</span>
+                <span class="reciente-desc">Soporte técnico y actualización de software</span>
               </div>
-              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i> Hoy, 08:30 AM</small>
+              <span class="reciente-badge badge-progreso">En progreso</span>
             </div>
-
-             <div class="list-group-item border-0 py-3 hover-bg">
-              <div class="d-flex w-100 justify-content-between align-items-start">
-                <div>
-                  <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Sede: Revisión de Servidores</h6>
-                  <p class="mb-0 text-muted" style="font-size: 0.75rem;">Mantenimiento físico y limpieza de racks.</p>
-                </div>
-                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill" style="font-size: 0.65rem;">Pendiente</span>
+            <div class="reciente-item" style="border-bottom:none;">
+              <div class="reciente-dot" style="background:#94a3b8;"></div>
+              <div class="reciente-info">
+                <span class="reciente-titulo">Sede — Revisión de Servidores</span>
+                <span class="reciente-desc">Mantenimiento físico y limpieza de racks</span>
               </div>
-              <small class="text-muted mt-2 d-block" style="font-size: 0.7rem;"><i class="bi bi-calendar-event me-1"></i> Programado para mañana</small>
+              <span class="reciente-badge badge-pendiente">Pendiente</span>
             </div>
-
           </div>
         </div>
       </div>
     </div>
-
   </div>
+
 </div>
