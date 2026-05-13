@@ -52,12 +52,27 @@
       <tbody>
         @for (emp of empleadosFiltrados(); track emp.id) {
           <tr>
-            <td>
-              <div class="empleado-info">
-                <div class="avatar">{{ emp.nombre.substring(0, 2).toUpperCase() }}</div>
-                <span class="nombre">{{ emp.nombre }}</span>
-              </div>
-            </td>
+<td>
+  <div class="empleado-info">
+
+    <img
+      [src]="'img/empleados/' + emp.codigo + '.png'"
+      class="pop-foto"
+      alt="Foto"
+      (error)="foto.style.display='none'; inicialFallback.style.display='flex'"
+      #foto
+    >
+
+    <div class="avatar"
+         #inicialFallback
+         style="display: none;">
+      {{ emp.nombre.substring(0, 2).toUpperCase() }}
+    </div>
+
+    <span class="nombre">{{ emp.nombre }}</span>
+
+  </div>
+</td>
 
             <td><span class="badge-codigo">{{ emp.codigo }}</span></td>
             <td><span class="badge-cedula">{{ emp.cedula }}</span></td>

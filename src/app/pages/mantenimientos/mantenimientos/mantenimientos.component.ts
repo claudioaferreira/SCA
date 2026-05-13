@@ -28,6 +28,13 @@ export class MantenimientosComponent {
       ruta:        '/mantenimientos/empleados',
       color:       '#eff6ff',
     },
+       {
+      icono:       'bi-people-fill',
+      titulo:      'Gestion Humana',
+      descripcion: 'Vacaciones, Licencias, Permisos',
+      ruta:        '/mantenimientos/gestion-humana',
+      color:       '#fdf7f2',
+    },
     {
       icono:       'bi-building',
       titulo:      'Departamentos',
@@ -42,5 +49,6 @@ export class MantenimientosComponent {
       ruta:        '/mantenimientos/roles',
       color:       '#fdf2f8',
     },
+ 
   ];
 }

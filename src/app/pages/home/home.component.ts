@@ -3,6 +3,9 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpleadosService } from '../../services/empleados.service';
+import { BdayWidgetComponent } from "../../components/bday-widget/bday-widget.component";
+import { AusenciasWidgetComponent } from '../../components/ausencias-widget/ausencias-widget.component';
+import { RankingWidgetComponent } from '../../components/ranking-widget/ranking-widget.component';
 
 type FiltroPeriodo = 'hoy' | 'semana' | 'mes' | 'personalizado';
 type PickerTab      = 'mes' | 'rango';
@@ -17,6 +20,18 @@ export interface EmpleadoKpi {
   TotalCantidad:  number;
   TotalDias:      number;
   TotalRegistros: number;
+  IdTipo?:        number;
+}
+
+export interface EmpleadoZona {
+  IdEmpleado:    number;
+  Empleado:      string;
+  Codigo:        string;
+  IdZonaGeo:     number;
+  ZonaGeo:       string;
+  TotalRutas:    number;
+  TotalDias:     number;
+  TotalCantidad: number;
 }
 
 const MESES_FULL  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -26,7 +41,7 @@ const DIAS_DOW    = ['L','M','X','J','V','S','D'];
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, BdayWidgetComponent, AusenciasWidgetComponent, RankingWidgetComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -69,9 +84,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   interiorEmpleados  = 0;
   exteriorDias       = 0;
   exteriorEmpleados  = 0;
+  metroAsignaciones    = 0;
+interiorAsignaciones = 0;
+exteriorAsignaciones = 0;
 
   // ── Zonas ─────────────────────────────────────────────────────────────────
-  zonasResumen: { nombre: string; dias: number; empleados: number; color: string }[] = [];
+zonasResumen: { nombre: string; dias: number; asignaciones: number; empleados: number; color: string }[] = [];
+
+   // ── Zonas Exterior (NUEVO) ────────────────────────────────────────────────
+  zonasExterior: { nombre: string; rutas: number; dias: number; empleados: number; color: string }[] = [];
 
   // ── Empleados por tipo ────────────────────────────────────────────────────
   empleadosPorTipo: Record<TipoId, EmpleadoKpi[]> = {
@@ -81,11 +102,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     [TIPO.EXTERIOR]: [],
   };
 
+    // ── Zonas por empleado para el popover (NUEVO) ────────────────────────────
+  // clave: IdEmpleado → array de zonas
+  zonasPorEmpleado: Map<number, EmpleadoZona[]> = new Map();
+  cargandoZonas = false;
+
   // ── Popover ───────────────────────────────────────────────────────────────
   popoverTipo:    TipoId | null = null;
   popoverVisible  = false;
   popoverTop      = 0;
   popoverLeft     = 0;
+
 
   private closeTimer: any = null;
   private readonly CLOSE_DELAY = 120;
@@ -232,57 +259,109 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // ── Carga de datos ────────────────────────────────────────────────────────
-  private cargarTodo() {
+ private cargarTodo() {
     this.cargando = true;
     const { inicio, fin } = this.getRango();
 
+
+    // KPIs principales
     this._svc.getResumenHome(inicio, fin).subscribe({
       next: (res) => {
+        console.log('resumenHome:', res.body); 
         const data: any[] = res.body ?? [];
         const g = (tipo: TipoId) => data.find((d: any) => d.IdTipo === tipo);
-
+ 
         const sede = g(TIPO.SEDE);
-        this.sedeTareas    = sede?.TotalCantidad         ?? 0;
+        this.sedeTareas    = sede?.TotalCantidad          ?? 0;
         this.sedeEmpleados = sede?.EmpleadosInvolucrados  ?? 0;
-
+ 
         const metro = g(TIPO.METRO);
         this.metroDias      = metro?.TotalDias             ?? 0;
         this.metroEmpleados = metro?.EmpleadosInvolucrados ?? 0;
-
+        this.metroAsignaciones   = metro?.TotalRegistros        ?? 0;
+ 
         const interior = g(TIPO.INTERIOR);
         this.interiorDias      = interior?.TotalDias             ?? 0;
         this.interiorEmpleados = interior?.EmpleadosInvolucrados ?? 0;
-
+        this.interiorAsignaciones   = interior?.TotalRegistros        ?? 0; 
+ 
         const exterior = g(TIPO.EXTERIOR);
         this.exteriorDias      = exterior?.TotalDias             ?? 0;
         this.exteriorEmpleados = exterior?.EmpleadosInvolucrados ?? 0;
-
+        this.exteriorAsignaciones   = exterior?.TotalRegistros        ?? 0;
+ 
         this.cargando = false;
       },
       error: () => (this.cargando = false)
     });
-
+ 
+    // Zonas Interior
     this._svc.getResumenZonas(inicio, fin).subscribe({
       next: (res) => {
         this.zonasResumen = (res.body ?? []).map((z: any) => ({
           nombre:    z.Zona,
           dias:      z.TotalDias,
+          asignaciones: z.TotalAsignaciones ?? 0,
           empleados: z.EmpleadosInvolucrados ?? 0,
-          color:     this.zonaColores[z.IdZonaGeo] ?? '#94a3b8'
+          color:     this.zonaColores[z.IdZonaGeo] ?? '#94a3b8',
+        }));
+      }
+    });
+ 
+    // Zonas Exterior (NUEVO)
+    this._svc.getResumenZonasExterior(inicio, fin).subscribe({
+      next: (res) => {
+        this.zonasExterior = (res.body ?? []).map((z: any) => ({
+          nombre:    z.Zona,
+          rutas:     z.TotalRutas,
+          dias:      z.TotalDias,
+          empleados: z.EmpleadosInvolucrados ?? 0,
+          color:     this.zonaColores[z.IdZonaGeo] ?? '#94a3b8',
         }));
       }
     });
 
-    this.resetEmpleados();
-    this._svc.getEmpleadosPorTipo(inicio, fin).subscribe({
-      next: (res) => {
-        const lista: (EmpleadoKpi & { IdTipo: TipoId })[] = res.body ?? [];
-        lista.forEach(e => {
-          if (this.empleadosPorTipo[e.IdTipo] !== undefined)
-            this.empleadosPorTipo[e.IdTipo].push(e);
-        });
+    
+ 
+   // Empleados por tipo (para el popover básico)
+this.resetEmpleados();
+this._svc.getEmpleadosPorTipo(inicio, fin).subscribe({
+  next: (res) => {
+    const lista: (EmpleadoKpi & { IdTipo: TipoId })[] = res.body ?? [];
+    
+    lista.forEach(e => {
+      if (this.empleadosPorTipo[e.IdTipo] !== undefined) {
+        this.empleadosPorTipo[e.IdTipo].push(e);
       }
     });
+
+    Object.keys(this.empleadosPorTipo).forEach(tipoKey => {
+      const tipoId = Number(tipoKey) as TipoId;
+      const empleados = this.empleadosPorTipo[tipoId];
+
+      empleados.sort((a, b) => {
+        // CASO 1: SEDE CENTRAL -> Ordenar por tareas (TotalCantidad)
+        if (tipoId === TIPO.SEDE) {
+          return b.TotalCantidad - a.TotalCantidad;
+        } 
+        
+        // CASO 2: INTERIOR (O EXTERIOR) -> Ordenar PRIMERO por Días
+        if (tipoId === TIPO.INTERIOR || tipoId === TIPO.EXTERIOR) {
+          if (b.TotalDias !== a.TotalDias) {
+            return b.TotalDias - a.TotalDias; // Más días arriba
+          }
+          return b.TotalRegistros - a.TotalRegistros; // Desempate por asignaciones
+        }
+
+        // CASO 3: METRO (O POR DEFECTO) -> Ordenar por Asignaciones
+        if (b.TotalRegistros !== a.TotalRegistros) {
+          return b.TotalRegistros - a.TotalRegistros;
+        }
+        return b.TotalDias - a.TotalDias;
+      });
+    });
+  }
+});
   }
 
   private resetEmpleados() {
@@ -297,6 +376,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.popoverTipo    = tipo;
     this.popoverVisible = true;
     this.posicionarPopover(event);
+     this.cargarZonasParaTipo(tipo);
   }
 
   onChipMouseLeave() { this.programarClose(); }
@@ -319,6 +399,39 @@ export class HomeComponent implements OnInit, OnDestroy {
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.popoverTop  = rect.bottom + window.scrollY + 6;
     this.popoverLeft = rect.left   + window.scrollX;
+  }
+
+   private cargarZonasParaTipo(tipo: TipoId) {
+    // Solo tipos que tienen sentido de zonificación (Metro, Interior, Exterior)
+    // Para Sede no aplica zona geo
+    if (tipo === TIPO.SEDE) return;
+ 
+    this.cargandoZonas = true;
+    const { inicio, fin } = this.getRango();
+ 
+    this._svc.getEmpleadosPorZona(inicio, fin, tipo).subscribe({
+      next: (res) => {
+        const lista: EmpleadoZona[] = res.body ?? [];
+        this.zonasPorEmpleado = new Map();
+        lista.forEach(item => {
+          const actual = this.zonasPorEmpleado.get(item.IdEmpleado) ?? [];
+          actual.push(item);
+          this.zonasPorEmpleado.set(item.IdEmpleado, actual);
+        });
+        this.cargandoZonas = false;
+      },
+      error: () => (this.cargandoZonas = false)
+    });
+  }
+ 
+  // NUEVO — helper para el template: devuelve las zonas de un empleado concreto
+  getZonasEmpleado(idEmpleado: number): EmpleadoZona[] {
+    return this.zonasPorEmpleado.get(idEmpleado) ?? [];
+  }
+ 
+  // NUEVO — color de una zona geo
+  getColorZona(idZonaGeo: number): string {
+    return this.zonaColores[idZonaGeo] ?? '#94a3b8';
   }
 
   // ── Helpers template ──────────────────────────────────────────────────────
@@ -392,4 +505,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   private fmtDisplay(d: Date): string {
     return `${d.getDate()} ${MESES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
   }
+
+
+
+
+
 }

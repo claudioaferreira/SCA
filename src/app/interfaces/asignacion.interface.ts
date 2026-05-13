@@ -53,6 +53,17 @@ export interface AsignacionCelda {
   modificado:   boolean;
   guardadoOk:   boolean;
   esNueva:      boolean;
+   // ── detalle del viaje ───────────────────────────────────────────────────
+    idDetalle:    number | null;
+    fechaInicio:  string;
+    fechaFin:     string;
+    nroTicket:    string;
+    titulo:       string;
+    chofer:       string;
+    placa:        string;
+
+    // ── centros visitados (reemplaza idCentroCedulacion único) ──────────────
+    centros:      RutaCentro[];   // [] para Sede y Metro sin centro
 }
 
 export interface ZonaGeo{
@@ -65,4 +76,29 @@ export interface ResumenHome {
   TotalCantidad:      number;
   TotalDias:          number;
   TotalAsignaciones:  number;
+}
+
+// Cada centro individual en la lista de la ruta
+export interface RutaCentro {
+    idRutaCentro?:       number;   // null si es nuevo (aún no guardado)
+    idCentroCedulacion:  number;
+    orden:               number;
+    // campos derivados para mostrar en pantalla
+    centro?:             string;
+    municipio?:          string;
+    provincia?:          string;
+    zonaGeo?:            string;
+}
+
+// Interface para el selector de centros
+export interface CentroCedulacion {
+    IdCentroCedulacion: number;
+    Centro:             string;
+    ZonaOperativa:      string;
+    IdMunicipio:        number;
+    Municipio:          string;
+    IdProvincia:        number;
+    Provincia:          string;
+    IdZonaGeo:          number;
+    ZonaGeo:            string;
 }

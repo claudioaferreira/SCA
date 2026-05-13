@@ -1,57 +1,244 @@
+@import "@ng-select/ng-select/themes/default.theme.css";
 
-/* Definición de la paleta de colores del proyecto */
+/* ═══════════════════════════════════════════════════════════════════════
+   SCA — DESIGN SYSTEM
+   Paleta marrón/dorado · soporte light + dark · tokens unificados
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── TEMA CLARO (default) ────────────────────────────────────────────── */
 :root {
-  --ifm-color-primary: #d59f0f;
-  --ifm-color-primary-dark: #bd8e0d;
-  --ifm-color-primary-darker: #a37c0c;
-  --ifm-color-primary-darkest: #896b0a;
-  --ifm-color-primary-light: #e0b638;
-  --ifm-color-primary-lighter: #ebcb6a;
-  --ifm-color-primary-lightest: #f6e09c;
-  --background-color: #f4f7f6;
-  --text-color: #333;
-  --border-color: #ddd;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-} 
+  /* ─── BRAND — los 5 colores que pediste ─── */
+  --brand:           #ce9e0e;   /* dorado principal */
+  --brand-dark:      #a37c0c;
+  --brand-darker:    #6c4228;   /* mocha */
+  --brand-darkest:   #331b00;   /* café profundo */
+  --brand-light:     #e0b638;
+  --brand-lighter:   #ebcb6a;
+  --brand-lightest:  #f6e09c;
+  --brand-soft:      #fef7e5;   /* vainilla — fondo suave */
+  --brand-mocha-alt: #6e4026;
 
-// :root {
-//   --ifm-color-primary: #3b82f6;
-//   --ifm-color-primary-dark: #2563eb;
-//   --ifm-color-primary-darker: #1d4ed8;
-//   --ifm-color-primary-darkest: #1e40af;
-//   --ifm-color-primary-light: #60a5fa;
-//   --ifm-color-primary-lighter: #93c5fd;
-//   --ifm-color-primary-lightest: #dbeafe;
-//   --background-color: #f8fafc; /* Un blanco ligeramente azulado para complementar */
-//   --text-color: #1e293b;       /* Un gris oscuro azulado para el texto */
-//   --border-color: #e2e8f0;     /* Un borde gris claro */
-//   --shadow-color: rgba(0, 0, 0, 0.1);
-// }
+  /* Compatibilidad con tu CSS existente — alias antiguos siguen funcionando */
+  --ifm-color-primary:          var(--brand);
+  --ifm-color-primary-dark:     var(--brand-dark);
+  --ifm-color-primary-darker:   var(--brand-darker);
+  --ifm-color-primary-darkest:  var(--brand-darkest);
+  --ifm-color-primary-light:    var(--brand-light);
+  --ifm-color-primary-lighter:  var(--brand-lighter);
+  --ifm-color-primary-lightest: var(--brand-lightest);
 
-/* Estilos globales para el cuerpo de la página */
+  /* ─── FONDOS ─── */
+  --bg-app:        #faf8f3;     /* lienzo de la app */
+  --bg-card:       #ffffff;
+  --bg-elevated:   #ffffff;     /* modales, dropdowns */
+  --bg-hover:      #faf6ec;
+  --bg-input:      #faf8f3;
+  --bg-muted:      #f4f0e6;
+  --bg-dark-band:  #331b00;     /* el café oscuro para headers de tabla */
+  --bg-overlay:    rgba(51, 27, 0, 0.45);   /* fondo de modales */
 
+  /* ─── TEXTO ─── */
+  --text-primary:    #2d1f0f;   /* casi negro con tinte cálido */
+  --text-secondary:  #4b3c2a;
+  --text-muted:      #8a7a5f;
+  --text-disabled:   #b5a786;
+  --text-on-dark:    #fef7e5;   /* sobre fondos oscuros */
+  --text-on-brand:   #331b00;   /* sobre el dorado, café muy oscuro */
+
+  /* ─── BORDES ─── */
+  --border-soft:     #f0eadc;
+  --border-default:  #e2dcc8;
+  --border-strong:   #c8bd9d;
+  --border-focus:    var(--brand);
+
+  /* ─── SEMÁNTICOS (mantener para success/warning/danger/info) ─── */
+  --success:        #16a34a;
+  --success-soft:   #f0fdf4;
+  --success-border: #86efac;
+  --warning:        #f59e0b;
+  --warning-soft:   #fffbeb;
+  --warning-border: #fcd34d;
+  --danger:         #dc2626;
+  --danger-soft:    #fff1f1;
+  --danger-border:  #fca5a5;
+  --info:           #185fa5;
+  --info-soft:      #e6f1fb;
+  --info-border:    #b5d4f4;
+
+  /* ─── SOMBRAS ─── */
+  --shadow-xs: 0 1px 2px rgba(51, 27, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(51, 27, 0, 0.06);
+  --shadow-md: 0 1px 3px rgba(51, 27, 0, 0.06), 0 4px 12px rgba(51, 27, 0, 0.05);
+  --shadow-lg: 0 8px 24px rgba(51, 27, 0, 0.12);
+  --shadow-xl: 0 20px 60px rgba(51, 27, 0, 0.18);
+
+  /* Compatibilidad con tu --shadow-color */
+  --shadow-color: rgba(51, 27, 0, 0.10);
+  --background-color: var(--bg-app);
+  --text-color:       var(--text-primary);
+  --border-color:     var(--border-default);
+
+  /* ─── RADIOS ─── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ─── ESPACIADO ─── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ─── TIPOGRAFÍA ─── */
+  --font-sans: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-xs: 0.68rem;
+  --font-size-sm: 0.78rem;
+  --font-size-md: 0.9rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+
+  /* ─── TRANSICIONES ─── */
+  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition:      150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── TEMA OSCURO ────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  /* Brand: dorado ligeramente más suave para no quemar sobre gris oscuro */
+  --brand:          #d4a017;
+  --brand-dark:     #b8891a;
+  --brand-darker:   #96700f;
+  --brand-darkest:  #6c5010;
+  --brand-light:    #e2b840;
+  --brand-soft:     rgba(212, 160, 23, 0.12);
+
+  /* ── FONDOS: escala de grises neutros, cero tinte café ──
+     Inspirado en Linear / Vercel / GitHub dark — fácil para el ojo,
+     contraste suficiente sin ser negro puro.
+  */
+  --bg-app:        #0f1117;   /* fondo raíz — gris muy oscuro, casi negro */
+  --bg-card:       #181b23;   /* tarjetas y paneles                       */
+  --bg-elevated:   #1e2130;   /* modales, dropdowns, popups               */
+  --bg-hover:      #252836;   /* hover de filas y ítems                   */
+  --bg-input:      #181b23;   /* campos de formulario                     */
+  --bg-muted:      #331726;   /* zonas apagadas, días pasados             */
+  --bg-dark-band:  #0c0e14;   /* header de tablas, sidebar                */
+  --bg-overlay:    rgba(0, 0, 0, 0.60);
+
+  /* ── TEXTO: blancos suaves, no #ffffff puro (reduce fatiga visual) ── */
+  --text-primary:    #e8eaf0;   /* lectura principal — blanco roto        */
+  --text-secondary:  #eeeeee;   /* texto secundario, subtítulos           */
+  --text-muted:      #ebebeb;   /* placeholders, etiquetas apagadas       */
+  --text-disabled:   #3d4155;
+  --text-on-dark:    #e8eaf0;
+  --text-on-brand:   #0f1117;   /* texto sobre el dorado activo           */
+
+  /* ── BORDES: líneas muy sutiles, apenas visibles ── */
+  --border-soft:     #1e2130;
+  --border-default:  #272b3a;
+  --border-strong:   #343849;
+  --border-focus:    var(--brand);
+
+  /* ── SEMÁNTICOS: transparencias sobre el gris oscuro ── */
+  --success:         #22c55e;
+  --success-soft:    rgba(34, 197, 94, 0.12);
+  --success-border:  rgba(34, 197, 94, 0.30);
+  --warning:         #f59e0b;
+  --warning-soft:    rgba(245, 158, 11, 0.12);
+  --warning-border:  rgba(245, 158, 11, 0.30);
+  --danger:          #f87171;
+  --danger-soft:     rgba(248, 113, 113, 0.12);
+  --danger-border:   rgba(248, 113, 113, 0.30);
+  --info:            #60a5fa;
+  --info-soft:       rgba(96, 165, 250, 0.12);
+  --info-border:     rgba(96, 165, 250, 0.30);
+
+  /* ── SOMBRAS: pronunciadas para que las capas se distingan ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.65);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.75);
+
+  --shadow-color: rgba(0, 0, 0, 0.40);
+
+  --bs-secondary-color:  #22c55e;
+  --bs-table-color-state: #e8eaf0;
+  .sidebar-container {
+  background-color: #0c0e14;
+}
+}
+
+/* ─── BASE GLOBAL ────────────────────────────────────────────────────── */
 html, body {
-  height: 100%; /* Le da altura a toda la página */
+  height: 100%;
   margin: 0;
-  font-family: var(--font-sans); /* O tu fuente principal */
 }
 
 body {
-  margin: 0; /* Buena práctica para eliminar márgenes por defecto.*/
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition), color var(--transition);
 }
 
-app-root {
+.page-container, 
+.main-dashboard,
+.toolbar-card, 
+.page-header-card, 
+.tabla-card, 
+button, input, select, .chip {
+    transition: background-color 0.15s ease-in-out,
+                border-color 0.15s ease-in-out,
+                box-shadow 0.15s ease-in-out;
+}
+
+/* 2. El texto DEBE cambiar instantáneamente (0s) para evitar parpadeos sucios */
+*, *::before, *::after {
+    transition: color 0s;
+
+}
+
+tbody tr,
+.btn-accion {
+    transition: background-color 0.1s ease-in-out;
+}
+
+app-root, app-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
+  flex: 1;
 }
 
-app-layout {
-  display: flex;
-  flex-direction: column;
-  flex: 1; /*Hace que el layout crezca para ocupar el espacio de app-root.*/
+/* Scrollbars finos consistentes */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-xs);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
+/* Focus accesible global */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}

@@ -1,0 +1,158 @@
+<div class="wrap">
+
+  <!-- ── Cabecera ── -->
+  <div class="hd">
+    <div class="hd-l">
+      <span class="hd-ico">🛡️</span>
+      <div>
+        <h6 class="hd-title">Ranking</h6>
+        <span class="hd-sub">Disponibilidad Anual · {{ fin | slice:0:4 }}</span>
+      </div>
+    </div>
+    @if (!cargando) {
+      <span class="badge-total">{{ ranking.length }} empleados</span>
+    }
+  </div>
+
+  <!-- ── Tabs por nivel ── -->
+  <div class="tabs-bar">
+
+    <button class="tab-btn"
+            [class.tab-activa]="tabActiva === 'top'"
+            [class.tab-activa-top]="tabActiva === 'top'"
+            (click)="setTab('top')">
+      <span class="tab-dot dot-top"></span>
+      Más viajes
+      @if (!cargando) {
+        <span class="tab-count tab-count-top">{{ grupoTop.length }}</span>
+      }
+    </button>
+
+    <button class="tab-btn"
+            [class.tab-activa]="tabActiva === 'mid'"
+            [class.tab-activa-mid]="tabActiva === 'mid'"
+            (click)="setTab('mid')">
+      <span class="tab-dot dot-mid"></span>
+      Intermedio
+      @if (!cargando) {
+        <span class="tab-count tab-count-mid">{{ grupoMid.length }}</span>
+      }
+    </button>
+
+    <button class="tab-btn"
+            [class.tab-activa]="tabActiva === 'low'"
+            [class.tab-activa-low]="tabActiva === 'low'"
+            (click)="setTab('low')">
+      <span class="tab-dot dot-low"></span>
+      Disponibles
+      @if (!cargando) {
+        <span class="tab-count tab-count-low">{{ grupoLow.length }}</span>
+      }
+    </button>
+
+  </div>
+
+  <!-- ── Lista scrolleable ── -->
+  <div class="scroll">
+
+    <!-- Skeleton de carga -->
+    @if (cargando) {
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="sk-row">
+          <div class="sk-rank"></div>
+          <div class="sk-av"></div>
+          <div class="sk-lines">
+            <div class="sk-line w65"></div>
+            <div class="sk-line w45"></div>
+            <div class="sk-bar"></div>
+          </div>
+          <div class="sk-pill"></div>
+        </div>
+      }
+
+    <!-- Sin datos en este nivel -->
+    } @else if (listaActiva.length === 0) {
+      <div class="empty-state">
+        <span class="empty-ico">{{ tabActiva === 'top' ? '🎯' : tabActiva === 'mid' ? '📊' : '📭' }}</span>
+        <p>Sin empleados en nivel <strong>{{ tabActiva === 'top' ? 'Alto' : tabActiva === 'mid' ? 'Medio' : 'Bajo' }}</strong></p>
+      </div>
+
+    <!-- Lista de empleados del nivel activo -->
+    } @else {
+      @for (item of listaActiva; track item.Codigo; let i = $index) {
+
+        <div class="person" [class.person-top3]="tabActiva === 'top' && i < 3">
+
+          <!-- Número / Medalla (posición global) -->
+          <div class="rank-num">
+            @if (tabActiva === 'top' && i < 3) {
+              <span class="medal">{{ getMedal(i) }}</span>
+            } @else {
+              <span class="rank-idx">{{ offsetRanking + i + 1 }}</span>
+            }
+          </div>
+
+          <!-- Avatar -->
+          <div class="av" [ngClass]="'av-' + getScoreClass(item)">
+            <img
+              [src]="'img/empleados/' + item.Codigo + '.png'"
+              [alt]="item.Empleado"
+              class="av-img"
+              (error)="onImgError($event)">
+            <span class="av-inicial" style="display:none">{{ inicial(item.Empleado) }}</span>
+          </div>
+
+          <!-- Info -->
+          <div class="pinfo">
+            <p class="pname">{{ item.Empleado }}</p>
+            <p class="pmeta">
+              Cód. {{ item.Codigo }}
+              <span class="meta-sep">·</span>
+              <strong>{{ item.DiasAcumulados }}d</strong> viajados
+              @if (item.TotalRutas > 0) {
+                <span class="meta-sep">·</span>
+                {{ item.TotalRutas }} rutas
+              }
+            </p>
+
+            <!-- Barra de progreso normalizada al grupo -->
+            <div class="progress-wrap">
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [ngClass]="'fill-' + getScoreClass(item)"
+                  [style.width.%]="getBarWidth(item.DiasAcumulados)">
+                </div>
+              </div>
+              <span class="progress-pct">{{ item.DiasAcumulados }}d</span>
+            </div>
+          </div>
+
+          <!-- Píldora score -->
+          <div class="p-right">
+            <span class="pill" [ngClass]="'pill-' + getScoreClass(item)">
+              {{ item.DiasAcumulados }}<span class="pill-unit">d</span>
+            </span>
+          </div>
+
+        </div>
+      }
+    }
+  </div>
+
+  <!-- ── Pie ── -->
+  <div class="ft">
+    <i class="bi bi-info-circle"></i>
+    <span>🔴 Más viajes = Evitar · 🟢 Disponibles = Asignar primero</span>
+    @if (!cargando) {
+      <span class="ft-sep">·</span>
+      <span class="ft-nivel"
+            [class.ft-top]="tabActiva === 'top'"
+            [class.ft-mid]="tabActiva === 'mid'"
+            [class.ft-low]="tabActiva === 'low'">
+        {{ listaActiva.length }} empleados
+      </span>
+    }
+  </div>
+
+</div>

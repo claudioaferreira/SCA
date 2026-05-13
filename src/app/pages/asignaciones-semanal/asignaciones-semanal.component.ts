@@ -1,34 +1,50 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { NgSelectModule } from '@ng-select/ng-select';
 import Swal from 'sweetalert2';
 
-import { Empleado, TipoAsignacion, AsignacionCelda, ZonaGeo } from '../../interfaces/asignacion.interface';
+import {
+  Empleado,
+  TipoAsignacion,
+  AsignacionCelda,
+  ZonaGeo,
+  CentroCedulacion,
+  RutaCentro,
+} from '../../interfaces/asignacion.interface';
 import { EmpleadosService } from '../../services/empleados.service';
 
+import {
+  alertaTecnicoOcupado,
+  alertaTodosLosTiposAsignados,
+  confirmarEliminarAsignacion,
+  alertaErrorGuardar,
+  alertaTipoDuplicado,
+} from './alertas-asignacion.helper';
+import { GestionHumanaService } from '../../services/gestion-humana.service';
 
 @Component({
   selector: 'app-asignaciones-semanal',
   standalone: true,
-  imports: [CommonModule, DatePipe, FormsModule, HttpClientModule],
+  imports: [CommonModule, DatePipe, FormsModule, NgSelectModule],
   templateUrl: './asignaciones-semanal.component.html',
   styleUrls: ['./asignaciones-semanal.component.scss'],
 })
 export class AsignacionesSemanalComponent implements OnInit {
-
   // ─── ESTADO GENERAL ─────────────────────────────────────────────────────
-
-  loading     = false;
+  popoverAbierto: number | null = null;
+  loading = false;
   diasSemana: Date[] = [];
   private lunesActual!: Date;
 
+  ausenciasMap = new Map<string, any>(); // clave: "empId-YYYY-MM-DD"
 
   // ─── EMPLEADOS ──────────────────────────────────────────────────────────
 
   empleadosMaster: Empleado[] = [];
   zonasGeo: ZonaGeo[] = [];
-
+  centrosCedulacion: CentroCedulacion[] = [];
 
   // ─── TIPOS DE ASIGNACIÓN ────────────────────────────────────────────────
 
@@ -41,27 +57,29 @@ export class AsignacionesSemanalComponent implements OnInit {
    */
   private readonly TIPOS_CON_LIMITE: number[] = [2, 3, 4];
 
-
   // ─── ASIGNACIONES (CELDAS) ──────────────────────────────────────────────
 
   dataTemporal: Record<string, AsignacionCelda[]> = {};
   private uidCounter = 0;
   chipExpandido = new Set<string>();
 
-
   // ─── BÚSQUEDA Y FILTROS ─────────────────────────────────────────────────
 
   terminoBusqueda = '';
-  filtrosActivos  = new Set<string>();
+  filtrosActivos = new Set<string>();
 
   // @deprecated — usar filtrosActivos en su lugar
   // filtroActivo: string = 'ninguno';
 
+  // ─── RANKING DE APTITUD (cache) ───────────────────────────────────
+  rankingMap = new Map<string, number>();
 
   // ─── CONSTRUCTOR ────────────────────────────────────────────────────────
 
   constructor(private _empleadosService: EmpleadosService) {}
 
+  // ---- INJECCIÓN DE SERVICIOS ----
+  private ghService = inject(GestionHumanaService);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  CICLO DE VIDA
@@ -71,10 +89,159 @@ export class AsignacionesSemanalComponent implements OnInit {
     this.irASemanaActual();
     this.obtenerTiposAsignaciones(); // catálogo primero, no depende de nada
     this.cargarZonasGeo();
-    this.cargarEmpleadosDeAPI();     // empleados + asignaciones + historial
+    this.cargarEmpleadosDeAPI(); // empleados + asignaciones + historial
+    this.cargarCentrosCedulacion();
+    this.cargarAusenciasSemana();
+    this.cargarRanking();
   }
 
+  cargarRanking(): void {
+    const anioActual = new Date().getFullYear();
+    const inicio = `${anioActual}-01-01`;
+    const fin = `${anioActual}-12-31`;
 
+    this._empleadosService.getRankingDisponibilidad(inicio, fin).subscribe({
+      next: (res) => {
+        this.rankingMap.clear();
+        (res.body ?? []).forEach((r: any) => {
+          this.rankingMap.set(r.Codigo, r.ScoreDisponibilidad);
+        });
+      },
+      error: () => {
+        /* silencioso */
+      },
+    });
+  }
+
+  /** Devuelve el nivel del empleado: 'top' | 'mid' | 'low' | null */
+  getNivelRanking(codigo: string): 'top' | 'mid' | 'low' | null {
+    const score = this.rankingMap.get(codigo);
+    if (score === undefined) return null;
+    if (score > 85) return 'top';
+    if (score > 70) return 'mid';
+    return 'low';
+  }
+
+  /** Devuelve el score del empleado para mostrar como badge (opcional) */
+  getScoreRanking(codigo: string): number | null {
+    return this.rankingMap.get(codigo) ?? null;
+  }
+
+  buscadorPersonalizado(term: string, item: any) {
+    term = term.toLowerCase();
+    // Busca coincidencias tanto en el nombre del Centro como en la Zona
+    return (
+      item.Centro.toLowerCase().includes(term) ||
+      item.ZonaGeo.toLowerCase().includes(term)
+    );
+  }
+
+  cargarAusenciasSemana(): void {
+    const { inicio, fin } = this.getRangoSemana();
+    this.ausenciasMap.clear();
+
+    // 1) AUSENCIAS (Permiso · Licencia · Vacaciones)
+    this.ghService.getAusenciasRango(inicio, fin).subscribe({
+      next: (res) => {
+        const ausencias = res.body ?? [];
+        ausencias.forEach((a: any) => {
+          const desde = this.parsearFechaLocal(a.FechaInicio);
+          const hasta = this.parsearFechaLocal(a.FechaReintegro);
+          for (
+            let d = new Date(desde);
+            d <= hasta;
+            d.setDate(d.getDate() + 1)
+          ) {
+            const key = `${a.IdEmpleado}-${this.fechaLocalISO(d)}`;
+            this.ausenciasMap.set(key, { ...a, tipo: 'ausencia' });
+          }
+        });
+      },
+    });
+
+    // 2) BLOQUEOS MANUALES (override del supervisor)
+    this.ghService.getBloqueosManualesRango(inicio, fin).subscribe({
+      next: (res) => {
+        const bloqueos = res.body ?? [];
+        bloqueos.forEach((b: any) => {
+          const desde = this.parsearFechaLocal(b.FechaInicio);
+          const hasta = this.parsearFechaLocal(b.FechaFin);
+          for (
+            let d = new Date(desde);
+            d <= hasta;
+            d.setDate(d.getDate() + 1)
+          ) {
+            const key = `${b.IdEmpleado}-${this.fechaLocalISO(d)}`;
+            // Si ya hay ausencia (vacaciones/licencia/permiso), NO la sobreescribimos.
+            // Las ausencias formales tienen prioridad visual sobre el bloqueo manual.
+            if (!this.ausenciasMap.has(key)) {
+              this.ausenciasMap.set(key, {
+                tipo: 'manual',
+                IdEstadoManual: b.IdEstadoManual,
+                Motivo: b.Motivo,
+                FechaInicio: b.FechaInicio,
+                FechaFin: b.FechaFin,
+                TipoAusencia: 'Bloqueo manual',
+              });
+            }
+          }
+        });
+      },
+    });
+
+    // 3) CUMPLEAÑOS (Calculado en vivo desde la lista de empleados)
+    if (this.empleadosMaster && this.empleadosMaster.length > 0) {
+      this.empleadosMaster.forEach((emp: any) => {
+        // 👇 Buscamos la fecha sin importar si llega con mayúscula o minúscula
+        const fechaNac = emp.FechaNacimiento || emp.fechaNacimiento;
+
+        if (fechaNac) {
+          // Extraemos mes y día
+          const partes = fechaNac.split('T')[0].split('-');
+          const mesNac = parseInt(partes[1], 10);
+          const diaNac = parseInt(partes[2], 10);
+
+          this.diasSemana.forEach((dia) => {
+            if (dia.getMonth() + 1 === mesNac && dia.getDate() === diaNac) {
+              const key = `${emp.id}-${this.fechaLocalISO(dia)}`;
+
+              if (!this.ausenciasMap.has(key)) {
+                this.ausenciasMap.set(key, {
+                  tipo: 'cumpleanos',
+                  TipoAusencia: 'Cumpleaños',
+                  FechaInicio: this.fechaLocalISO(dia),
+                  FechaReintegro: this.fechaLocalISO(dia),
+                });
+              }
+            }
+          });
+        } else {
+          // ⚠️ Si entra aquí, significa que tu backend NO está enviando la fecha
+          console.warn(`Sin fecha de nacimiento detectada para: ${emp.nombre}`);
+        }
+      });
+    }
+  }
+
+  tieneAusencia(empId: number, dia: Date): any | null {
+    const key = `${empId}-${this.fechaLocalISO(dia)}`;
+    return this.ausenciasMap.get(key) ?? null;
+  }
+
+  copiarDatosTecnico(emp: any) {
+    const texto = `Nombre: ${emp.nombre} | Código: ${emp.codigo} | Cargo: ${emp.cargo} | Tel. Flota: ${emp.telefonoFlota || 'N/A'} | Tel. Personal: ${emp.telefonoPersonal || 'N/A'}`;
+    navigator.clipboard.writeText(texto);
+    // - PENDIENTE mostrar un SWEETALERT de confirmación
+  }
+
+  cargarCentrosCedulacion() {
+    this._empleadosService.getCentrosCedulacion().subscribe({
+      next: (res: any) => {
+        this.centrosCedulacion = res.body ?? [];
+      },
+      error: (err) => console.error('Error al cargar centros:', err),
+    });
+  }
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  NAVEGACIÓN DE SEMANA
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -91,6 +258,7 @@ export class AsignacionesSemanalComponent implements OnInit {
     nuevoLunes.setDate(nuevoLunes.getDate() + direccion * 7);
     this.setSemana(nuevoLunes);
     this.recargarSemana();
+    this.cargarAusenciasSemana();
   }
 
   /** Devuelve true si la semana en pantalla es la semana actual */
@@ -104,8 +272,8 @@ export class AsignacionesSemanalComponent implements OnInit {
 
   /** Calcula el lunes de la semana que contiene la fecha dada */
   private getLunesDe(fecha: Date): Date {
-    const d    = new Date(fecha);
-    const dia  = d.getDay();
+    const d = new Date(fecha);
+    const dia = d.getDay();
     const diff = dia === 0 ? -6 : 1 - dia;
     d.setDate(d.getDate() + diff);
     d.setHours(0, 0, 0, 0);
@@ -115,7 +283,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   /** Rellena diasSemana[] con los 7 días a partir del lunes dado */
   private setSemana(lunes: Date) {
     this.lunesActual = new Date(lunes);
-    this.diasSemana  = Array.from({ length: 7 }, (_, i) => {
+    this.diasSemana = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lunes);
       d.setDate(lunes.getDate() + i);
       return d;
@@ -125,11 +293,10 @@ export class AsignacionesSemanalComponent implements OnInit {
   /** Devuelve las fechas de inicio y fin de la semana visible */
   private getRangoSemana() {
     return {
-      inicio: this.diasSemana[0].toISOString().split('T')[0],
-      fin:    this.diasSemana[6].toISOString().split('T')[0],
+      inicio: this.fechaLocalISO(this.diasSemana[0]),
+      fin: this.fechaLocalISO(this.diasSemana[6]),
     };
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  TIPOS DE ASIGNACIÓN / ZONAS GEOGRÁFICAS
@@ -142,14 +309,13 @@ export class AsignacionesSemanalComponent implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
 
   cargarZonasGeo() {
-  this._empleadosService.getZonaGeo().subscribe({
-    next: (res: any) => {
-      this.zonasGeo = res.body ?? [];
-    },
-    error: (err) => console.error('Error al cargar zonas geográficas', err)
-  });
-}
-
+    this._empleadosService.getZonaGeo().subscribe({
+      next: (res: any) => {
+        this.zonasGeo = res.body ?? [];
+      },
+      error: (err) => console.error('Error al cargar zonas geográficas', err),
+    });
+  }
 
   obtenerTiposAsignaciones() {
     this._empleadosService.getTipoAsignaciones().subscribe({
@@ -165,31 +331,38 @@ export class AsignacionesSemanalComponent implements OnInit {
 
   /** Devuelve el nombre del tipo según su ID (ej: 2 → 'Metro') */
   getNombreTipo(tipoId: number): string {
-  const nombre = this.tipos.find(t => t.IdTipo === tipoId)?.nombre ?? '';
-  return nombre.substring(0, 3).toUpperCase();
-}
+    const nombre = this.tipos.find((t) => t.IdTipo === tipoId)?.nombre ?? '';
+    return nombre.substring(0, 2).toUpperCase();
+  }
 
   /**
    * Devuelve los tipos que aún puede elegir el técnico en ese día.
    * Excluye los tipos con límite que ya están guardados.
    */
-  tiposDisponibles(empId: number, dia: Date, itemActual?: AsignacionCelda): TipoAsignacion[] {
-    const key   = this.generarLlave(empId, dia);
+  tiposDisponibles(
+    empId: number,
+    dia: Date,
+    itemActual?: AsignacionCelda,
+  ): TipoAsignacion[] {
+    const key = this.generarLlave(empId, dia);
     const items = this.dataTemporal[key] ?? [];
 
     const tiposYaUsados = new Set(
       items
-        .filter(i => !i.esNueva && i.uid !== itemActual?.uid && this.TIPOS_CON_LIMITE.includes(i.tipoId))
-        .map(i => i.tipoId)
+        .filter(
+          (i) =>
+            !i.esNueva &&
+            i.uid !== itemActual?.uid &&
+            this.TIPOS_CON_LIMITE.includes(i.tipoId),
+        )
+        .map((i) => i.tipoId),
     );
 
-    return this.tipos.filter(t => {
+    return this.tipos.filter((t) => {
       if (!this.TIPOS_CON_LIMITE.includes(t.IdTipo)) return true;
       return !tiposYaUsados.has(t.IdTipo);
     });
   }
-
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  EMPLEADOS
@@ -220,15 +393,15 @@ export class AsignacionesSemanalComponent implements OnInit {
             // SEMANA
             totalSedeSemana: 0,
             metroSemana: 0,
-            totalInteriorSemana: 0
+            totalInteriorSemana: 0,
           };
-});
+        });
 
         this.ordenarListaAlfabeticamente();
         this.inicializarDataTemporal();
         this.cargarAsignacionesSemana();
         this.cargarHistorialDesdeBD();
-      
+        this.cargarAusenciasSemana();
       },
       error: (err) => {
         console.error('Error al cargar empleados:', err);
@@ -246,7 +419,9 @@ export class AsignacionesSemanalComponent implements OnInit {
   empleadoEstaOcupado(empId: number): boolean {
     return this.diasSemana.some((dia) => {
       const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-      return items.some(i => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId));
+      return items.some(
+        (i) => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId),
+      );
     });
   }
 
@@ -254,11 +429,11 @@ export class AsignacionesSemanalComponent implements OnInit {
   abreviarPosicion(cargo: string | undefined): string {
     if (!cargo) return 'Soporte';
     return cargo
-      .replace(/Soporte Tecnico III/gi,   'SOPORTE III')
-      .replace(/Soporte Tecnico II/gi,    'SOPORTE II')
-      .replace(/Soporte Tecnico I/gi,     'SOPORTE I')
-      .replace(/Soporte Tecnico/gi,       'SOPORTE')
-      .replace(/Auxiliar/gi,              'AUX.')
+      .replace(/Soporte Tecnico III/gi, 'SOPORTE III')
+      .replace(/Soporte Tecnico II/gi, 'SOPORTE II')
+      .replace(/Soporte Tecnico I/gi, 'SOPORTE I')
+      .replace(/Soporte Tecnico/gi, 'SOPORTE')
+      .replace(/Auxiliar/gi, 'AUX.')
       .replace(/SUPERVISOR\/A TECNICO/gi, 'SUP.TECNICO');
   }
 
@@ -266,7 +441,6 @@ export class AsignacionesSemanalComponent implements OnInit {
   limpiarTelefono(numero: string): string {
     return numero.replace(/\D/g, '');
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  HISTORIAL DE EMPLEADOS
@@ -286,30 +460,37 @@ export class AsignacionesSemanalComponent implements OnInit {
         // Reinicia todos los contadores antes de acumular
         this.empleadosMaster.forEach((emp) => {
           if (emp.stats) {
-            emp.stats.totalSede     = 0;
-            emp.stats.metroMes      = 0;
-            emp.stats.diasNorte     = 0;
-            emp.stats.diasSur       = 0;
-            emp.stats.diasEste      = 0;
+            emp.stats.totalSede = 0;
+            emp.stats.metroMes = 0;
+            emp.stats.diasNorte = 0;
+            emp.stats.diasSur = 0;
+            emp.stats.diasEste = 0;
             emp.stats.totalInterior = 0;
           }
         });
 
         // Acumula por empleado según el tipo de asignación
         rows.forEach((row) => {
-          const emp = this.empleadosMaster.find(e => e.id === row.IdEmpleado);
+          const emp = this.empleadosMaster.find((e) => e.id === row.IdEmpleado);
           if (!emp?.stats) return;
 
           const cantidad = Number(row.TotalCantidad) || 0;
-          const dias     = Number(row.TotalDias)     || 0;
+          const dias = Number(row.TotalDias) || 0;
 
           switch (row.IdTipo) {
-            case 1: emp.stats.totalSede = (emp.stats.totalSede || 0) + cantidad; break;
-            case 2: emp.stats.metroMes  = (emp.stats.metroMes  || 0) + cantidad; break;
+            case 1:
+              emp.stats.totalSede = (emp.stats.totalSede || 0) + cantidad;
+              break;
+            case 2:
+              emp.stats.metroMes = (emp.stats.metroMes || 0) + cantidad;
+              break;
             case 3:
-              if (row.ZonaGeografica === 'Norte') emp.stats.diasNorte = (emp.stats.diasNorte || 0) + dias;
-              if (row.ZonaGeografica === 'Sur')   emp.stats.diasSur   = (emp.stats.diasSur   || 0) + dias;
-              if (row.ZonaGeografica === 'Este')  emp.stats.diasEste  = (emp.stats.diasEste  || 0) + dias;
+              if (row.ZonaGeografica === 'Norte')
+                emp.stats.diasNorte = (emp.stats.diasNorte || 0) + dias;
+              if (row.ZonaGeografica === 'Sur')
+                emp.stats.diasSur = (emp.stats.diasSur || 0) + dias;
+              if (row.ZonaGeografica === 'Este')
+                emp.stats.diasEste = (emp.stats.diasEste || 0) + dias;
               break;
           }
         });
@@ -319,15 +500,14 @@ export class AsignacionesSemanalComponent implements OnInit {
           if (emp.stats) {
             emp.stats.totalInterior =
               (emp.stats.diasNorte || 0) +
-              (emp.stats.diasSur   || 0) +
-              (emp.stats.diasEste  || 0);
+              (emp.stats.diasSur || 0) +
+              (emp.stats.diasEste || 0);
           }
         });
       },
       error: (err) => console.error('Error al cargar historial:', err),
     });
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  ASIGNACIONES — CARGA Y RECARGA
@@ -338,65 +518,100 @@ export class AsignacionesSemanalComponent implements OnInit {
   // Trae las asignaciones de la semana visible y las coloca en dataTemporal.
   // Se llama al cargar empleados y al navegar entre semanas.
   // ─────────────────────────────────────────────────────────────────────────
- private cargarAsignacionesSemana() {
-  const { inicio, fin } = this.getRangoSemana();
-  this._empleadosService.getAsignacionesSemana(inicio, fin).subscribe({
-    next: (res: any) => {
-      const asignaciones: any[] = res.body ?? [];
-      asignaciones.forEach((a) => {
-         const fechaStr = (a.Fecha as string).substring(0, 10);
-         const key = `${a.IdEmpleado}-${fechaStr}`;
-        if (this.dataTemporal[key] !== undefined) {
-          this.dataTemporal[key].push(this.mapearDesdeAPI(a));
-        }
-      });
-      this.loading = false;
-       // ← aquí, cuando dataTemporal ya está listo
-    },
-    error: (err) => {
-      console.error('Error al cargar asignaciones:', err);
-      this.loading = false;
-    },
-  });
-}
+  private cargarAsignacionesSemana() {
+    const { inicio, fin } = this.getRangoSemana();
+    this._empleadosService.getAsignacionesSemana(inicio, fin).subscribe({
+      next: (res: any) => {
+        const asignaciones: any[] = res.body ?? [];
 
- getSedeSemana(empId: number): number {
-  return this.diasSemana.reduce((total, dia) => {
-    const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-    const tareas = items
-      .filter(i => !i.esNueva && i.tipoId === 1)
-      .reduce((sum, i) => sum + (Number(i.cantidad) || 1), 0);
-    return total + tareas;
-  }, 0);
-}
+        asignaciones.forEach((a) => {
+          const celda = this.mapearDesdeAPI(a);
 
-getMetroSemana(empId: number): number {
-  return this.diasSemana.reduce((total, dia) => {
-    const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-    const rutas = items
-      .filter(i => !i.esNueva && i.tipoId === 2)
-      .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
-    return total + rutas;
-  }, 0);
-}
+          // Rango real: usa FechaInicio/FechaFin si existe (rutas), si no usa Fecha
+          const desdeStr =
+            (a.FechaInicio as string | null)?.substring(0, 10) ??
+            (a.Fecha as string).substring(0, 10);
+          const hastaStr =
+            (a.FechaFinalizacion as string | null)?.substring(0, 10) ??
+            (a.Fecha as string).substring(0, 10);
 
-getInteriorExteriorSemana(empId: number): number {
-  return this.diasSemana.reduce((total, dia) => {
-    const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-    const dias = items
-      .filter(i => !i.esNueva && (i.tipoId === 3 || i.tipoId === 4))
-      .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
-    return total + dias;
-  }, 0);
-}
+          // Marca cada día de la semana visible que caiga en el rango
+          this.diasSemana.forEach((diaSemana) => {
+            const diaStr = this.fechaLocalISO(diaSemana);
+
+            if (diaStr >= desdeStr && diaStr <= hastaStr) {
+              const key = `${a.IdEmpleado}-${diaStr}`;
+              if (this.dataTemporal[key] !== undefined) {
+                const yaExiste = this.dataTemporal[key].some(
+                  (i) => i.idAsignacion === celda.idAsignacion,
+                );
+                if (!yaExiste) {
+                  this.dataTemporal[key].push(celda);
+                }
+              }
+            }
+          });
+        });
+
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar asignaciones:', err);
+        this.loading = false;
+      },
+    });
+  }
+
+  getSedeSemana(empId: number): number {
+    return this.diasSemana.reduce((total, dia) => {
+      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+      const tareas = items
+        .filter((i) => !i.esNueva && i.tipoId === 1)
+        .reduce((sum, i) => sum + (Number(i.cantidad) || 1), 0);
+      return total + tareas;
+    }, 0);
+  }
+
+  getMetroSemana(empId: number): number {
+    const idsVistos = new Set<number>();
+    return this.diasSemana.reduce((total, dia) => {
+      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+      const rutas = items
+        .filter((i) => {
+          if (i.esNueva || i.tipoId !== 2) return false;
+          if (i.idAsignacion && idsVistos.has(i.idAsignacion)) return false;
+          if (i.idAsignacion) idsVistos.add(i.idAsignacion);
+          return true;
+        })
+        .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
+      return total + rutas;
+    }, 0);
+  }
+
+  getInteriorExteriorSemana(empId: number): number {
+    const idsVistos = new Set<number>();
+    return this.diasSemana.reduce((total, dia) => {
+      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+      const dias = items
+        .filter((i) => {
+          if (i.esNueva || (i.tipoId !== 3 && i.tipoId !== 4)) return false;
+          if (i.idAsignacion && idsVistos.has(i.idAsignacion)) return false;
+          if (i.idAsignacion) idsVistos.add(i.idAsignacion);
+          return true;
+        })
+        .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
+      return total + dias;
+    }, 0);
+  }
 
   /** Recarga solo las asignaciones al navegar de semana (sin volver a pedir empleados) */
   private recargarSemana() {
-  this.loading = true;
-  this.inicializarDataTemporal();
+    this.loading = true;
+    this.inicializarDataTemporal();
 
-  this.cargarAsignacionesSemana(); // tabla
-}
+    this.cargarAsignacionesSemana();
+    this.cargarAusenciasSemana();
+  }
 
   /** Crea entradas vacías en dataTemporal para cada combinación empleado+día */
   private inicializarDataTemporal() {
@@ -407,22 +622,34 @@ getInteriorExteriorSemana(empId: number): number {
     });
   }
 
-
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  ASIGNACIONES — AGREGAR
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   /** Intenta agregar una nueva fila vacía al técnico en ese día */
   agregarAsignacion(empId: number, dia: Date) {
-    const key   = this.generarLlave(empId, dia);
+    const ausencia = this.tieneAusencia(empId, dia);
+    const key = this.generarLlave(empId, dia);
     const items = this.dataTemporal[key] ?? [];
+
+    if (ausencia) {
+      Swal.fire({
+        icon: 'info',
+        title: `${ausencia.TipoAusencia}`,
+        text: `Este empleado tiene ${ausencia.TipoAusencia.toLowerCase()} hasta el ${ausencia.FechaReintegro}`,
+      });
+      return;
+    }
 
     // Valida que el técnico no esté ocupado en ningún día de la semana
     for (const diaSemana of this.diasSemana) {
-      const keySemana   = this.generarLlave(empId, diaSemana);
+      const keySemana = this.generarLlave(empId, diaSemana);
       const itemsSemana = this.dataTemporal[keySemana] ?? [];
       const asigOcupada = itemsSemana.find(
-        i => !i.esNueva && i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId)
+        (i) =>
+          !i.esNueva &&
+          i.idEstado !== 3 &&
+          this.TIPOS_CON_LIMITE.includes(i.tipoId),
       );
       if (asigOcupada) {
         this.mostrarAlertaTecnicoOcupado(diaSemana, asigOcupada);
@@ -432,24 +659,20 @@ getInteriorExteriorSemana(empId: number): number {
 
     // Valida que no estén todos los tipos cubiertos para ese día
     const tiposGuardados = items
-      .filter(i => !i.esNueva && this.TIPOS_CON_LIMITE.includes(i.tipoId))
-      .map(i => i.tipoId);
-    const todosUsados = this.TIPOS_CON_LIMITE.every(t => tiposGuardados.includes(t));
+      .filter((i) => !i.esNueva && this.TIPOS_CON_LIMITE.includes(i.tipoId))
+      .map((i) => i.tipoId);
+    const todosUsados = this.TIPOS_CON_LIMITE.every((t) =>
+      tiposGuardados.includes(t),
+    );
 
     if (todosUsados && this.tiposDisponibles(empId, dia).length === 0) {
-      Swal.fire({
-        icon: 'info',
-        title: 'Todos los tipos asignados',
-        text: 'Este técnico ya tiene todos los tipos cubiertos para este día.',
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      //SWEETALERT
+      alertaTodosLosTiposAsignados();
       return;
     }
 
     this.dataTemporal[key].push(this.nuevaCeldaVacia());
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  ASIGNACIONES — GUARDAR
@@ -461,7 +684,7 @@ getInteriorExteriorSemana(empId: number): number {
   // Devuelve el idAsignacion generado para actualizar el item local.
   // ─────────────────────────────────────────────────────────────────────────
   guardarCelda(empId: number, dia: Date, index: number) {
-    const key  = this.generarLlave(empId, dia);
+    const key = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
 
     if (!item || item.tipoId === 0) return;
@@ -469,60 +692,97 @@ getInteriorExteriorSemana(empId: number): number {
     // Evita guardar el mismo tipo dos veces en el mismo día
     if (this.TIPOS_CON_LIMITE.includes(item.tipoId)) {
       const duplicado = this.dataTemporal[key].some(
-        (i) => i.uid !== item.uid && i.tipoId === item.tipoId && !i.esNueva
+        (i) => i.uid !== item.uid && i.tipoId === item.tipoId && !i.esNueva,
       );
       if (duplicado) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Tipo duplicado',
-          text: `Ya existe una asignación de tipo "${this.getNombreTipo(item.tipoId)}" guardada para este día.`,
-          timer: 2500,
-          showConfirmButton: false,
-        });
+        alertaTipoDuplicado(this.getNombreTipo(item.tipoId));
         return;
       }
     }
 
-    const fechaStr      = dia.toISOString().split('T')[0];
+    const fechaStr = this.fechaLocalISO(dia);
     const cantidadFinal = item.tipoId === 2 ? item.dias : item.cantidad;
 
+    const zonaGeo: number | null =
+      item.tipoId === 4
+        ? item.IdZonaGeo || null
+        : item.tipoId === 3
+          ? item.centros[0]
+            ? (this.centrosCedulacion.find(
+                (c) =>
+                  c.IdCentroCedulacion === item.centros[0].idCentroCedulacion,
+              )?.IdZonaGeo ?? null)
+            : null
+          : null;
+
     const payload = {
-      idEmpleado:           empId,
-      fecha:                fechaStr,
-      idTipo:               item.tipoId,
-       // Sede (1) → Cantidad, resto NULL
-       CantidadAsignaciones: item.tipoId === 1 ? Number(item.cantidad) || null : null,
-       // Metro (2) e Interior (3) → Dias, Sede NULL
-       diasViaje:            (item.tipoId === 2 || item.tipoId === 3) ? Number(item.dias) || null : null,
-       // Interior (3) → // Solo Interior (3) → Zona
-       IdZonaGeo:            item.tipoId === 3 ? item.IdZonaGeo || null : null,
-      idEstado:             item.idEstado ?? 1,
-      observaciones:        null,
+      idEmpleado: empId,
+      fecha: fechaStr,
+      idTipo: item.tipoId,
+      CantidadAsignaciones:
+        item.tipoId === 1 ? Number(item.cantidad) || null : null,
+      diasViaje:
+        item.tipoId === 2 || item.tipoId === 3
+          ? Number(item.dias) || null
+          : null,
+      IdZonaGeo: zonaGeo,
+      idEstado: item.idEstado ?? 1,
+      observaciones: null,
+      ...([2, 3].includes(item.tipoId) && {
+        fechaInicio: item.fechaInicio || null,
+        fechaFin: item.fechaFin || null,
+        nroTicket: item.nroTicket || null,
+        titulo: item.titulo || null,
+        chofer: item.chofer || null,
+        placa: item.placa || null,
+        // array de centros con su orden
+        centros: item.centros.map((c, i) => ({
+          idCentroCedulacion: c.idCentroCedulacion,
+          orden: i + 1, // recalcula el orden según posición en el array
+        })),
+      }),
     };
 
     this._empleadosService.guardarAsignacionCelda(payload).subscribe({
       next: (res: any) => {
         item.idAsignacion = res.body?.idAsignacion ?? null;
-        item.uid          = `saved-${item.idAsignacion}`;
-        item.modificado   = false;
-        item.esNueva      = false;
-        item.guardadoOk   = true;
+        item.uid = `saved-${item.idAsignacion}`;
+        item.modificado = false;
+        item.esNueva = false;
+        item.guardadoOk = true;
         this.cargarHistorialDesdeBD();
-       
-        setTimeout(() => { item.guardadoOk = false; }, 2000);
+        this.cargarAsignacionesSemana();
+        setTimeout(() => {
+          item.guardadoOk = false;
+        }, 2000);
         //console.log('Payload guardado:', payload);
       },
       error: (err) => {
         console.error('Error al guardar:', err);
-        Swal.fire({
-          icon: 'error', title: 'Error al guardar',
-          text: 'Revisa tu conexión e intenta de nuevo.',
-          timer: 3000, showConfirmButton: false,
-        });
+
+        // 👇 AQUÍ ATRAPAMOS EL MENSAJE EXACTO DEL BACKEND 👇
+        if (err.status === 409 && err.error && err.error.message) {
+          // Si es el error 409 de Ausencia que configuramos en Node
+          Swal.fire({
+            icon: 'error',
+            title: 'Asignación Bloqueada',
+            text: err.error.message, // Mostrará: "Bloqueado: El empleado figura con..."
+            confirmButtonColor: '#d33',
+          });
+        } else if (err.status === 400 && err.error && err.error.message) {
+          // Por si también quieres atrapar las validaciones de "Falta fecha", etc.
+          Swal.fire({
+            icon: 'warning',
+            title: 'Datos incompletos',
+            text: err.error.message,
+          });
+        } else {
+          // Si es otro error (ej. se cayó el internet o error 500 del servidor)
+          alertaErrorGuardar();
+        }
       },
     });
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  ASIGNACIONES — ELIMINAR
@@ -534,72 +794,76 @@ getInteriorExteriorSemana(empId: number): number {
   // solo la quita de la pantalla sin llamar al servidor.
   // ─────────────────────────────────────────────────────────────────────────
   eliminarAsignacion(empId: number, dia: Date, index: number) {
-    const key  = this.generarLlave(empId, dia);
+    const key = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
 
-    Swal.fire({
-      title: '¿Eliminar asignación?',
-      text: 'Esta acción no se puede deshacer',
-      icon: 'warning',
-      showCancelButton:   true,
-      confirmButtonText:  'Sí, eliminar',
-      cancelButtonText:   'Cancelar',
-      confirmButtonColor: '#d33',
-      cancelButtonColor:  '#3085d6',
-    }).then((result) => {
-      if (!result.isConfirmed) return;
+    //SWEETALERT
+    confirmarEliminarAsignacion().then((confirmado) => {
+      if (!confirmado) return;
 
       if (item.idAsignacion) {
         // Está guardada en BD → la elimina del servidor
         this._empleadosService.eliminarAsignacion(item.idAsignacion).subscribe({
           next: () => {
             this.dataTemporal[key].splice(index, 1);
+            this.recargarSemana();
             this.cargarHistorialDesdeBD();
-          
-            Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1500, showConfirmButton: false });
           },
-          error: () => Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar la asignación' }),
+          error: () =>
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'No se pudo eliminar la asignación',
+            }),
         });
       } else {
         // Nunca fue guardada → solo la quita de pantalla
         this.dataTemporal[key].splice(index, 1);
-        
       }
     });
   }
 
-
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  ASIGNACIONES — ESTADO (OCUPADO / DISPONIBLE)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-contarOcupados(): number {
-  return this.empleadosMaster.filter(e => this.empleadoEstaOcupado(e.id)).length;
-}
-contarDisponibles(): number {
-  return this.empleadosMaster.filter(e => !this.empleadoEstaOcupado(e.id)).length;
-}
+  contarOcupados(): number {
+    return this.empleadosMaster.filter((e) => this.empleadoEstaOcupado(e.id))
+      .length;
+  }
+  contarDisponibles(): number {
+    return this.empleadosMaster.filter((e) => !this.empleadoEstaOcupado(e.id))
+      .length;
+  }
   // ─────────────────────────────────────────────────────────────────────────
   // PUT /api/asignaciones/:id/estado
   // Cambia el estado entre Ocupado (1) y Disponible (3).
   // Si la llamada al servidor falla, revierte el cambio en pantalla.
   // ─────────────────────────────────────────────────────────────────────────
   marcarComoDisponible(empId: number, dia: Date, index: number) {
-    const key  = this.generarLlave(empId, dia);
+    const key = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
     item.idEstado = 3;
 
     if (!item.idAsignacion) return;
 
-    this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 3).subscribe({
-      error: () => {
-        item.idEstado = 1; // Revierte si falla
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo liberar al técnico.', timer: 3000, showConfirmButton: false });
-      },
-    });
+    this._empleadosService
+      .actualizarEstadoAsignacion(item.idAsignacion, 3)
+      .subscribe({
+        error: () => {
+          item.idEstado = 1; // Revierte si falla
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo liberar al técnico.',
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        },
+      });
   }
 
   marcarComoOcupado(empId: number, dia: Date, index: number) {
-    const key  = this.generarLlave(empId, dia);
+    const key = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
 
     if (item.tipoId === 1) return; // Sede Central no bloquea al técnico
@@ -607,19 +871,26 @@ contarDisponibles(): number {
 
     if (!item.idAsignacion) return;
 
-    this._empleadosService.actualizarEstadoAsignacion(item.idAsignacion, 1).subscribe({
-      error: () => {
-        item.idEstado = 3; // Revierte si falla
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo marcar como ocupado.', timer: 3000, showConfirmButton: false });
-      },
-    });
+    this._empleadosService
+      .actualizarEstadoAsignacion(item.idAsignacion, 1)
+      .subscribe({
+        error: () => {
+          item.idEstado = 3; // Revierte si falla
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo marcar como ocupado.',
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        },
+      });
   }
 
   /** Marca una celda como modificada cuando el usuario cambia algo en el formulario */
   marcarModificado(item: AsignacionCelda) {
     item.modificado = true;
   }
-
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  BÚSQUEDA Y FILTROS
@@ -638,16 +909,21 @@ contarDisponibles(): number {
     }
   }
 
+  limpiarBusqueda() {
+    this.terminoBusqueda = '';
+  }
+
   /** Devuelve la lista de empleados con búsqueda y filtros aplicados */
   filtrarEmpleados() {
     const b = this.terminoBusqueda.toLowerCase();
 
     // 1. Filtra por texto de búsqueda
-    let lista = this.empleadosMaster.filter(e =>
-      e.nombre.toLowerCase().includes(b)     ||
-      e.localidad?.toLowerCase().includes(b) ||
-      e.ubicacion?.toLowerCase().includes(b) ||
-      e.codigo.includes(b)
+    let lista = this.empleadosMaster.filter(
+      (e) =>
+        e.nombre.toLowerCase().includes(b) ||
+        e.localidad?.toLowerCase().includes(b) ||
+        e.ubicacion?.toLowerCase().includes(b) ||
+        e.codigo.includes(b),
     );
 
     // 2. Sin filtros activos → solo orden alfabético
@@ -657,42 +933,63 @@ contarDisponibles(): number {
 
     // 3. Filtra por posición (auxiliar / soporte) — excluyente entre sí
     const filtrarTipo =
-      this.filtrosActivos.has('auxiliar') ||
-      this.filtrosActivos.has('soporte');
+      this.filtrosActivos.has('auxiliar') || this.filtrosActivos.has('soporte');
 
     if (filtrarTipo) {
-      lista = lista.filter(e => {
+      lista = lista.filter((e) => {
         const esAux = e.cargo?.toUpperCase().includes('AUXILIAR');
         const esSop = e.cargo?.toUpperCase().includes('SOPORTE');
         return (
           (this.filtrosActivos.has('auxiliar') && esAux) ||
-          (this.filtrosActivos.has('soporte')  && esSop)
+          (this.filtrosActivos.has('soporte') && esSop)
         );
       });
     }
 
     // 3b. Filtra por estado ocupado / disponible
-const filtrarOcupado    = this.filtrosActivos.has('ocupados');
-const filtrarDisponible = this.filtrosActivos.has('disponibles');
+    const filtrarOcupado = this.filtrosActivos.has('ocupados');
+    const filtrarDisponible = this.filtrosActivos.has('disponibles');
 
-if (filtrarOcupado || filtrarDisponible) {
-  lista = lista.filter(e => {
-    const ocupado = this.empleadoEstaOcupado(e.id);
-    return (
-      (filtrarOcupado    &&  ocupado) ||
-      (filtrarDisponible && !ocupado)
-    );
-  });
-}
+    if (filtrarOcupado || filtrarDisponible) {
+      lista = lista.filter((e) => {
+        const ocupado = this.empleadoEstaOcupado(e.id);
+        return (filtrarOcupado && ocupado) || (filtrarDisponible && !ocupado);
+      });
+    }
+
+    // 3c. Filtra por nivel del ranking
+    const filtrarRankTop = this.filtrosActivos.has('rank-top');
+    const filtrarRankMid = this.filtrosActivos.has('rank-mid');
+    const filtrarRankLow = this.filtrosActivos.has('rank-low');
+
+    if (filtrarRankTop || filtrarRankMid || filtrarRankLow) {
+      lista = lista.filter((e) => {
+        const nivel = this.getNivelRanking(e.codigo);
+        if (nivel === null) return false; // sin datos del ranking → no se muestra
+        return (
+          (filtrarRankTop && nivel === 'top') ||
+          (filtrarRankMid && nivel === 'mid') ||
+          (filtrarRankLow && nivel === 'low')
+        );
+      });
+
+      // Ordenar por score descendente (mayor aptitud primero)
+      return [...lista].sort((a, b) => {
+        const sA = this.rankingMap.get(a.codigo) ?? 0;
+        const sB = this.rankingMap.get(b.codigo) ?? 0;
+        return sB - sA;
+      });
+    }
 
     // 4. Ordena por métricas: quien tiene menos asignaciones sube primero
-      const score = (e: Empleado): number => {
-        let s = 0;
-        if (this.filtrosActivos.has('metro'))    s += this.getMetroSemana(e.id);
-        if (this.filtrosActivos.has('interior')) s += this.getInteriorExteriorSemana(e.id);
-        if (this.filtrosActivos.has('sede'))     s += this.getSedeSemana(e.id);
-        return s;
-      };
+    const score = (e: Empleado): number => {
+      let s = 0;
+      if (this.filtrosActivos.has('metro')) s += this.getMetroSemana(e.id);
+      if (this.filtrosActivos.has('interior'))
+        s += this.getInteriorExteriorSemana(e.id);
+      if (this.filtrosActivos.has('sede')) s += this.getSedeSemana(e.id);
+      return s;
+    };
 
     return [...lista].sort((a, b) => {
       const diff = score(b) - score(a);
@@ -700,25 +997,24 @@ if (filtrarOcupado || filtrarDisponible) {
     });
   }
 
-
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  HELPERS DEL TEMPLATE
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   /** Genera la clave única para buscar en dataTemporal (ej: "42-2025-04-21") */
   generarLlave(id: number, fecha: Date): string {
-    return `${id}-${fecha.toISOString().split('T')[0]}`;
+    return `${id}-${this.fechaLocalISO(fecha)}`;
   }
 
   /** Devuelve las clases CSS de color para una celda según su estado */
   getClaseColor(key: string, fecha: Date): string {
-    const items        = this.dataTemporal[key] ?? [];
+    const items = this.dataTemporal[key] ?? [];
     const tieneOcupado = items.some(
-      i => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId)
+      (i) => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId),
     );
     let clases = '';
     if (this.esDiaPasado(fecha)) clases += 'bg-dia-pasado ';
-    if (tieneOcupado)            clases += 'bg-warning-subtle ';
+    if (tieneOcupado) clases += 'bg-warning-subtle ';
     return clases;
   }
 
@@ -733,11 +1029,23 @@ if (filtrarOcupado || filtrarDisponible) {
 
   /** Devuelve true si la fecha es anterior a hoy */
   private esDiaPasado(fecha: Date): boolean {
-    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-    const f   = new Date(fecha); f.setHours(0, 0, 0, 0);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const f = new Date(fecha);
+    f.setHours(0, 0, 0, 0);
     return f < hoy;
   }
 
+  /**
+   * Devuelve la fecha en formato 'YYYY-MM-DD' usando hora LOCAL,
+   * sin conversiones a UTC. Bulletproof contra timezone shifts.
+   */
+  private fechaLocalISO(fecha: Date): string {
+    const año = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${año}-${mes}-${dia}`;
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  PRIVADOS DE SOPORTE
@@ -745,48 +1053,89 @@ if (filtrarOcupado || filtrarDisponible) {
 
   /** Convierte el formato de la API al formato interno AsignacionCelda */
   private mapearDesdeAPI(a: any): AsignacionCelda {
+    // Deserializar el JSON de centros que viene del FOR JSON PATH
+    let centros: RutaCentro[] = [];
+    if (a.CentrosJSON) {
+      try {
+        centros = JSON.parse(a.CentrosJSON).map((c: any) => ({
+          idRutaCentro: c.IdRutaCentro,
+          idCentroCedulacion: c.IdCentroCedulacion,
+          orden: c.Orden,
+          centro: c.Centro,
+          municipio: c.Municipio,
+          provincia: c.Provincia,
+          zonaGeo: c.ZonaGeo,
+        }));
+      } catch {
+        centros = [];
+      }
+    }
+
     return {
-    uid:          `saved-${a.IdAsignacion}`,
-    idAsignacion: a.IdAsignacion,
-    tipoId:       a.IdTipo ?? 0,
-
-    // Sede (1): usa Cantidad
-    cantidad:     a.IdTipo === 1 ? (a.CantidadAsignaciones?.toString() ?? '') : '',
-
-    // Metro (2): usa Dias
-    
-    // Interior (3): usa Dias + Zona
-    dias:         (a.IdTipo === 2 || a.IdTipo === 3) ? (a.DiasViaje?.toString() ?? '') : '',
-
-    IdZonaGeo:    a.IdTipo === 3 ? (a.IdZonaGeo ?? 0) : 0,
-
-    idEstado:     a.idEstado ?? 1,
-    modificado:   false,
-    guardadoOk:   false,
-    esNueva:      false,
-  };
-}
+      uid: `saved-${a.IdAsignacion}`,
+      idAsignacion: a.IdAsignacion,
+      tipoId: a.IdTipo ?? 0,
+      cantidad:
+        a.IdTipo === 1 ? (a.CantidadAsignaciones?.toString() ?? '') : '',
+      dias:
+        a.IdTipo === 2
+          ? (a.DiasViaje?.toString() ??
+            a.CantidadAsignaciones?.toString() ??
+            '')
+          : a.IdTipo === 3
+            ? (a.DiasViaje?.toString() ?? '')
+            : '',
+      IdZonaGeo: a.IdZonaGeo ?? 0,
+      idEstado: a.idEstado ?? 1,
+      modificado: false,
+      guardadoOk: false,
+      esNueva: false,
+      idDetalle: a.IdDetalle ?? null,
+      fechaInicio: a.FechaInicio ?? '',
+      fechaFin: a.FechaFinalizacion ?? '',
+      nroTicket: a.NroTicket ?? '',
+      titulo: a.Titulo ?? '',
+      chofer: a.Chofer ?? '',
+      placa: a.Placa ?? '',
+      centros,
+    };
+  }
 
   /** Crea un objeto AsignacionCelda vacío para filas nuevas (aún no guardadas) */
   private nuevaCeldaVacia(): AsignacionCelda {
-  this.uidCounter++;
-  return {
-    uid:          `new-${this.uidCounter}`,
-    idAsignacion: null,
-    tipoId:       0,
-    cantidad:     '',
-    dias:         '',
-    IdZonaGeo:    0,
-    idEstado:     1,
-    modificado:   false,
-    guardadoOk:   false,
-    esNueva:      true,
-  };
-}
+    this.uidCounter++;
+    return {
+      uid: `new-${this.uidCounter}`,
+      idAsignacion: null,
+      tipoId: 0,
+      cantidad: '',
+      dias: '',
+      IdZonaGeo: 0,
+      idEstado: 1,
+      modificado: false,
+      guardadoOk: false,
+      esNueva: true,
+      idDetalle: null,
+      fechaInicio: '',
+      fechaFin: '',
+      nroTicket: '',
+      titulo: '',
+      chofer: '',
+      placa: '',
+      centros: [], // ← array vacío
+    };
+  }
 
   /** Muestra el alert cuando el técnico ya tiene una asignación activa esta semana */
-  private mostrarAlertaTecnicoOcupado(diaSemana: Date, asigOcupada: AsignacionCelda) {
-    const nombreDia  = diaSemana.toLocaleDateString('es-DO', { weekday: 'long', day: '2-digit', month: 'short' });
+  private mostrarAlertaTecnicoOcupado(
+    diaSemana: Date,
+    asigOcupada: AsignacionCelda,
+  ) {
+    const nombreDia = diaSemana.toLocaleDateString('es-DO', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'short',
+    });
     const nombreTipo = this.getNombreTipo(asigOcupada.tipoId);
 
     let detalle = '';
@@ -794,33 +1143,57 @@ if (filtrarOcupado || filtrarDisponible) {
       detalle = ` · ${asigOcupada.cantidad} tareas`;
     else if (asigOcupada.tipoId === 2 && asigOcupada.dias)
       detalle = ` · 🚇 ${asigOcupada.dias} rutas`;
-    else if ((asigOcupada.tipoId === 3 || asigOcupada.tipoId === 4) && asigOcupada.IdZonaGeo)
+    else if (
+      (asigOcupada.tipoId === 3 || asigOcupada.tipoId === 4) &&
+      asigOcupada.IdZonaGeo
+    )
       detalle = ` · ${asigOcupada.dias}d — ${asigOcupada.IdZonaGeo}`;
 
-    Swal.fire({
-      icon:  'warning',
-      title: 'Técnico ocupado',
-      html: `
-        <div style="font-size:0.9rem; line-height:1.8;">
-          <div>Este técnico tiene una asignación activa:</div>
-          <div class="mt-2">
-            <span style="background:#fef3c7; padding:2px 8px; border-radius:4px; font-weight:600;">
-              📅 ${nombreDia}
-            </span>
-          </div>
-          <div class="mt-1">
-            <span style="background:#fee2e2; padding:2px 8px; border-radius:4px; font-weight:600;">
-              🗂️ ${nombreTipo}${detalle}
-            </span>
-          </div>
-          <div class="mt-2 text-muted" style="font-size:0.78rem;">
-            Libéralo primero para poder agregar una nueva asignación.
-          </div>
-        </div>
-      `,
-      confirmButtonText:  'Entendido',
-      confirmButtonColor: '#2563eb',
-    });
+    alertaTecnicoOcupado(diaSemana, asigOcupada);
   }
 
+  /** Agrega un centro vacío a la lista del item */
+  agregarCentro(item: AsignacionCelda) {
+    item.centros.push({
+      idCentroCedulacion: 0,
+      orden: item.centros.length + 1,
+    });
+    item.modificado = true;
+  }
+
+  /** Quita un centro de la lista por índice */
+  quitarCentro(item: AsignacionCelda, index: number) {
+    item.centros.splice(index, 1);
+    // Reordenar
+    item.centros.forEach((c, i) => (c.orden = i + 1));
+    item.modificado = true;
+  }
+
+  /** Cuando seleccionan un centro, rellena los datos derivados (municipio, provincia, etc.) */
+  onCentroSeleccionado(item: AsignacionCelda, index: number) {
+    const centroData = this.centrosCedulacion.find(
+      (c) => c.IdCentroCedulacion === item.centros[index].idCentroCedulacion,
+    );
+    if (centroData) {
+      item.centros[index].centro = centroData.Centro;
+      item.centros[index].municipio = centroData.Municipio;
+      item.centros[index].provincia = centroData.Provincia;
+      item.centros[index].zonaGeo = centroData.ZonaGeo;
+    }
+    item.modificado = true;
+  }
+
+  /**
+   * Convierte un string de base de datos ('YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss')
+   * a un objeto Date estricto en la zona horaria local a las 00:00:00,
+   * evitando que JavaScript reste horas por el UTC.
+   */
+  private parsearFechaLocal(fechaStr: string): Date {
+    if (!fechaStr) return new Date(); // Por seguridad
+    const partes = fechaStr.split('T')[0].split('-');
+    const anio = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10) - 1; // En JS los meses van de 0 a 11
+    const dia = parseInt(partes[2], 10);
+    return new Date(anio, mes, dia);
+  }
 }

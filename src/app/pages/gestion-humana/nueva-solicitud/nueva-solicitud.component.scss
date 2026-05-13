@@ -1,0 +1,224 @@
+.page-container {
+  padding: 8px;
+  background: var(--bg-app);
+  min-height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.page-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-brand-icon {
+  font-size: 1.2rem;
+  color: var(--brand);
+  transition: transform var(--transition);
+  &:hover { transform: translateX(-3px); }
+}
+
+.page-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ─── FORMULARIO ─────────────────────────────────────────── */
+.form-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  overflow: hidden;
+}
+
+.form-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+
+  i { color: var(--brand); font-size: 14px; }
+}
+
+.fila-doble {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  input, select, textarea {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 8px 11px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+    width: 100%;
+    font-family: inherit;
+
+    &:focus {
+      border-color: var(--brand);
+      background: var(--bg-card);
+      box-shadow: 0 0 0 3px var(--brand-soft);
+    }
+
+    &.is-invalid {
+      border-color: var(--danger-border);
+      background: var(--danger-soft);
+    }
+  }
+
+  textarea { resize: vertical; min-height: 60px; }
+}
+
+/* ─── RADIO Y CHECKBOX ──────────────────────────────────── */
+.radio-group {
+  display: flex;
+  gap: 12px;
+}
+
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-transform: none;          // overrides el uppercase del label
+  letter-spacing: normal;
+  font-weight: 500;
+
+  input { width: auto; cursor: pointer; }
+}
+
+/* ─── INFO DE SALDO ─────────────────────────────────────── */
+.saldo-info {
+  background: var(--info-soft);
+  border: 1px solid var(--info-border);
+  color: var(--info);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+
+  i { margin-right: 6px; }
+}
+
+/* ─── BOTONES DE ACCIÓN ─────────────────────────────────── */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--bg-hover);
+  border-top: 1px solid var(--border-soft);
+}
+
+.btn-cancelar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-guardar {
+  background: var(--brand);
+  border: 1px solid var(--brand-dark);
+  color: var(--text-on-brand);
+  padding: 8px 22px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+
+  &:hover:not(:disabled) {
+    background: var(--brand-dark);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+  }
+}
+
+
+.info-card-warning {
+  background: var(--warning-soft);
+  border: 1px solid var(--warning-border);
+  color: var(--warning);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i { font-size: 1rem; }
+}

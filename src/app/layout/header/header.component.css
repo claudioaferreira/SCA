@@ -1,19 +1,52 @@
 .main-header {
-    background-color: #896b0a; 
-    min-height: 45px;
-    padding: 0.2rem 1rem !important;
+  background-color: var(--bg-dark-band);  /* mismo café profundo que el header de la tabla — coherencia total */
+  min-height: 45px;
+  padding: 0.2rem 1rem !important;
+  border-bottom: 1px solid var(--brand-darker);  /* sutil línea dorada-mocha al fondo */
 
-    .logo { height: 28px; width: auto; }
+  .logo {
+    height: 28px;
+    width: auto;
+  }
 
-    .main-title {
-        font-size: 0.95rem !important;
-        color: #f0f7ff !important;
-        margin-left: 0.5rem;
+  .main-title {
+    font-size: 0.95rem !important;
+    color: var(--text-on-dark) !important;
+    margin-left: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-link {
+    color: var(--text-on-dark) !important;
+    opacity: 0.65;
+    font-size: 0.85rem;
+    padding: 6px 12px !important;
+    border-radius: var(--radius-md);
+    transition: all var(--transition);
+
+    &:hover {
+      opacity: 1;
+      background-color: rgba(255, 255, 255, 0.08) !important;
     }
 
-    .nav-link {
-        color: #cbd5e1 !important;
-        font-size: 0.85rem;
-        &:hover, &.active { color: white !important; }
+    &.active {
+      opacity: 1;
+      background-color: var(--brand) !important;
+      color: var(--text-on-brand) !important;
+      font-weight: 600;
     }
+  }
+}
+
+.thead-themed {
+  background: var(--bg-dark-band);
+  
+  th {
+    color: var(--text-on-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: var(--font-size-xs);
+  }
 }

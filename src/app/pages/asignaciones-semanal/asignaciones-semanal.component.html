@@ -1,16 +1,22 @@
-<div class="main-dashboard p-2 bg-light">
+<div class="watermark">PRUEBA</div>
+<div class="main-dashboard p-2">
   <!-- TOPBAR -->
   <div class="toolbar-card">
-
     <!-- FILA 1: Título + Buscador + Badges de estado -->
     <div class="toolbar-row-top">
       <div class="toolbar-brand">
         <i class="bi bi-grid-3x3-gap-fill toolbar-icon"></i>
         <span class="toolbar-title">Gestión Técnica</span>
       </div>
+      <i
+        class="bi bi-x-circle-fill clear-icon"
+        *ngIf="terminoBusqueda"
+        (click)="limpiarBusqueda()"
+      ></i>
 
       <div class="toolbar-search">
         <i class="bi bi-search search-icon"></i>
+
         <input
           type="text"
           class="search-input"
@@ -49,7 +55,11 @@
     <!-- FILA 2: Navegación de semana + Chips de filtro -->
     <div class="toolbar-row-bottom">
       <div class="week-nav">
-        <button class="btn-nav" title="Semana anterior" (click)="navegarSemana(-1)">
+        <button
+          class="btn-nav"
+          title="Semana anterior"
+          (click)="navegarSemana(-1)"
+        >
           <i class="bi bi-chevron-left"></i>
         </button>
         <span class="week-label">
@@ -58,7 +68,11 @@
           <span class="separador">—</span>
           <strong>{{ diasSemana[6] | date: "dd MMM yyyy" }}</strong>
         </span>
-        <button class="btn-nav" title="Semana siguiente" (click)="navegarSemana(1)">
+        <button
+          class="btn-nav"
+          title="Semana siguiente"
+          (click)="navegarSemana(1)"
+        >
           <i class="bi bi-chevron-right"></i>
         </button>
         @if (!esSemanaActual()) {
@@ -71,13 +85,25 @@
       <!-- Chips de filtro -->
       <div class="chips-filtro-group">
         <span class="chips-label">Ordenar por</span>
-        <button class="chip chip-metro"    [class.active]="filtrosActivos.has('metro')"    (click)="setFiltro('metro')">
+        <button
+          class="chip chip-metro"
+          [class.active]="filtrosActivos.has('metro')"
+          (click)="setFiltro('metro')"
+        >
           <span class="dot"></span>Metro
         </button>
-        <button class="chip chip-interior" [class.active]="filtrosActivos.has('interior')" (click)="setFiltro('interior')">
+        <button
+          class="chip chip-interior"
+          [class.active]="filtrosActivos.has('interior')"
+          (click)="setFiltro('interior')"
+        >
           <span class="dot"></span>Interior
         </button>
-        <button class="chip chip-sede"     [class.active]="filtrosActivos.has('sede')"     (click)="setFiltro('sede')">
+        <button
+          class="chip chip-sede"
+          [class.active]="filtrosActivos.has('sede')"
+          (click)="setFiltro('sede')"
+        >
           <span class="dot"></span>Sede
         </button>
       </div>
@@ -86,20 +112,62 @@
 
       <div class="chips-filtro-group">
         <span class="chips-label">Tipo</span>
-        <button class="chip chip-auxiliar" [class.active]="filtrosActivos.has('auxiliar')" (click)="setFiltro('auxiliar')">
+        <button
+          class="chip chip-auxiliar"
+          [class.active]="filtrosActivos.has('auxiliar')"
+          (click)="setFiltro('auxiliar')"
+        >
           <span class="dot"></span>Auxiliares
         </button>
-        <button class="chip chip-soporte"  [class.active]="filtrosActivos.has('soporte')"  (click)="setFiltro('soporte')">
+        <button
+          class="chip chip-soporte"
+          [class.active]="filtrosActivos.has('soporte')"
+          (click)="setFiltro('soporte')"
+        >
           <span class="dot"></span>Soporte
         </button>
       </div>
 
-      <button class="btn-reset ms-auto" (click)="setFiltro('ninguno')" title="Limpiar filtros">
+      <span class="nav-divider"></span>
+      <!-- Filtro por nivel del ranking -->
+      <div class="chips-filtro-group">
+        <span class="chips-label">Ranking</span>
+        <button
+          class="chip chip-rank-top"
+          [class.active]="filtrosActivos.has('rank-top')"
+          (click)="setFiltro('rank-top')"
+          title="Empleados con mayor disponibilidad (score > 85)"
+        >
+          <span class="dot"></span>Alta
+        </button>
+        <button
+          class="chip chip-rank-mid"
+          [class.active]="filtrosActivos.has('rank-mid')"
+          (click)="setFiltro('rank-mid')"
+          title="Disponibilidad media (71-85)"
+        >
+          <span class="dot"></span>Media
+        </button>
+        <button
+          class="chip chip-rank-low"
+          [class.active]="filtrosActivos.has('rank-low')"
+          (click)="setFiltro('rank-low')"
+          title="Empleados con menor disponibilidad (≤70)"
+        >
+          <span class="dot"></span>Baja
+        </button>
+      </div>
+      <span class="nav-divider"></span>
+
+      <button
+        class="btn-reset ms-auto"
+        (click)="setFiltro('ninguno')"
+        title="Limpiar filtros"
+      >
         <i class="bi bi-arrow-counterclockwise"></i>
         <span>Limpiar</span>
       </button>
     </div>
-
   </div>
 
   @if (loading) {
@@ -110,14 +178,14 @@
   }
 
   @if (!loading) {
-    <div class="table-card bg-white shadow-sm rounded-3 border">
+    <div class="table-card">
       <div class="table-responsive">
         <table
           class="table table-sm table-hover align-middle table-fixed-layout"
         >
-          <thead class="bg-dark text-white">
+          <thead class="thead-themed">
             <tr>
-              <th class="p-2 sticky-col-1" style="width: 170px">
+              <th class="p-2 sticky-col-1" style="width: 220px">
                 Técnicos / Datos
               </th>
               <th
@@ -138,7 +206,10 @@
                   <div class="text-uppercase tiny-text opacity-75">
                     {{ dia | date: "EEEE" }}
                   </div>
-                  <div class="fw-bold text-primary" style="font-size: 0.85rem">
+                  <div
+                    class="fw-bold day-date-label"
+                    style="font-size: 0.85rem"
+                  >
                     {{ dia | date: "dd MMM" }}
                   </div>
                 </th>
@@ -150,211 +221,339 @@
             @for (emp of filtrarEmpleados(); track emp.id) {
               <tr [class.fila-ocupada]="empleadoEstaOcupado(emp.id)">
                 <!-- TÉCNICO -->
-                <td class="ps-2 py-1 sticky-col-1 bg-white">
+                <td
+                  class="ps-2 py-1 sticky-col-1"
+                  (mouseenter)="popoverAbierto = emp.id"
+                  (mouseleave)="popoverAbierto = null"
+                >
                   <div class="d-flex align-items-start">
                     <div
-                      class="avatar-circle-sm me-1 text-uppercase"
-                      [class.avatar-ocupado]="empleadoEstaOcupado(emp.id)"
+                      class="avatar-wrapper-sm me-1"
+                      [title]="
+                        getScoreRanking(emp.codigo) !== null
+                          ? 'Aptitud: ' + getScoreRanking(emp.codigo) + ' pts'
+                          : ''
+                      "
                     >
-                      {{ emp.nombre.substring(0, 2) }}
+                      <img
+                        [src]="'img/empleados/' + emp.codigo + '.png'"
+                        class="avatar-circle-sm"
+                        [class.avatar-ocupado]="empleadoEstaOcupado(emp.id)"
+                        [class.apt-top]="getNivelRanking(emp.codigo) === 'top'"
+                        [class.apt-mid]="getNivelRanking(emp.codigo) === 'mid'"
+                        [class.apt-low]="getNivelRanking(emp.codigo) === 'low'"
+                        alt="Foto"
+                        (error)="
+                          fotoEmp.style.display = 'none';
+                          avatarEmp.style.display = 'flex'
+                        "
+                        #fotoEmp
+                      />
+
+                      <div
+                        class="avatar-circle-sm text-uppercase"
+                        [class.avatar-ocupado]="empleadoEstaOcupado(emp.id)"
+                        [class.apt-top]="getNivelRanking(emp.codigo) === 'top'"
+                        [class.apt-mid]="getNivelRanking(emp.codigo) === 'mid'"
+                        [class.apt-low]="getNivelRanking(emp.codigo) === 'low'"
+                        #avatarEmp
+                        style="display: none"
+                      >
+                        {{ emp.nombre.substring(0, 2) }}
+                      </div>
                     </div>
-                    <div class="info-container">
+                    <div
+                      class="info-container"
+                      style="position: relative; min-width: 0"
+                    >
+                      <!-- FILA 1: Nombre + badge ocupado + botón info -->
                       <div class="d-flex align-items-center gap-1 mb-0">
                         <div
-                          class="fw-bold text-dark"
-                          style="font-size: 0.9rem; line-height: 1.1"
+                          class="fw-bold nombre text-truncate"
+                          style="
+                            font-size: 0.82rem;
+                            line-height: 1.1;
+                            max-width: 130px;
+                          "
                         >
                           {{ emp.nombre }}
                         </div>
                         @if (empleadoEstaOcupado(emp.id)) {
-                          <span class="badge-ocupado">⛔Ocupado</span>
+                          <span class="badge-ocupado">⛔OCUPADO</span>
                         }
+                        <!-- Botón info -->
+                        <span
+                          class="info-btn ms-auto"
+                          title="Ver datos del técnico"
+                          (mouseenter)="popoverAbierto = emp.id"
+                          (mouseleave)="popoverAbierto = null"
+                        >
+                          @if (getScoreRanking(emp.codigo); as score) {
+                            <span
+                              class="mini-score"
+                              [ngClass]="'apt-' + getNivelRanking(emp.codigo)"
+                            >
+                              🛡️{{ score }}
+                            </span>
+                          } @else {
+                            ℹ️
+                          }
+                        </span>
                       </div>
-                      <div class="d-flex gap-1 my-0">
-                        <span class="badge-mini text-primary border">{{
+
+                      <!-- FILA 2: Código + ubicación · localidad unificados -->
+                      <div class="d-flex flex-wrap gap-1 my-0">
+                        <span class="badge-mini badge-codigo">{{
                           emp.codigo
                         }}</span>
-                        <span class="badge-mini text-secondary border"
-                          >📍 {{ emp.ubicacion }}</span
-                        >
-                        <span class="badge-mini text-secondary border"
-                          >🗺️ {{ emp.localidad }}</span
+                        <span class="badge-mini"
+                          >📍 {{ emp.ubicacion }} · {{ emp.localidad }}</span
                         >
                       </div>
-                      <div class="extra-info-row">
-                        <span class="tiny-text text-muted"
-                          >💼 {{ abreviarPosicion(emp.cargo) }}</span
+
+                      <!-- POPOVER: cargo, teléfonos, botón copiar -->
+                      @if (popoverAbierto === emp.id) {
+                        <div
+                          class="tecnico-popover"
+                          (mouseenter)="popoverAbierto = emp.id"
+                          (mouseleave)="popoverAbierto = null"
                         >
+                          <div class="pop-header-profile">
+                            <img
+                              [src]="'img/empleados/' + emp.codigo + '.png'"
+                              class="pop-foto"
+                              alt="Foto"
+                              (error)="
+                                foto.style.display = 'none';
+                                inicialFallback.style.display = 'flex'
+                              "
+                              #foto
+                            />
 
-                        <span class="tiny-text text-primary ms-2">
-                          📱Flot:
-                          <a
-                            *ngIf="emp.telefonoFlota"
-                            [href]="
-                              'https://wa.me/' +
-                              limpiarTelefono(emp.telefonoFlota)
-                            "
-                            target="_blank"
-                            class="text-decoration-none text-success"
-                          >
-                            {{ emp.telefonoFlota }}
-                          </a>
-                          <span *ngIf="!emp.telefonoFlota">Sin Flota</span>
-                        </span>
+                            <div
+                              class="pop-foto-fallback"
+                              #inicialFallback
+                              style="display: none"
+                            >
+                              {{ emp.nombre.substring(0, 1) }}
+                            </div>
 
-                        <span class="tiny-text text-primary ms-2">
-                          ☎️Pers:
-                          <a
-                            *ngIf="emp.telefonoPersonal"
-                            [href]="
-                              'https://wa.me/' +
-                              limpiarTelefono(emp.telefonoPersonal)
+                            <div class="pop-nombre-wrap">
+                              <div class="pop-nombre">{{ emp.nombre }}</div>
+                              <div class="pop-codigo-sub">
+                                Cód. {{ emp.codigo }}
+                              </div>
+                            </div>
+                          </div>
+                          <div class="pop-row">💼 {{ emp.cargo }}</div>
+                          <div class="pop-row">
+                            📱 Flota:
+                            <a
+                              *ngIf="emp.telefonoFlota"
+                              [href]="
+                                'https://wa.me/' +
+                                limpiarTelefono(emp.telefonoFlota)
+                              "
+                              target="_blank"
+                              class="text-decoration-none tel-link"
+                            >
+                              {{ emp.telefonoFlota }}
+                            </a>
+                            <span *ngIf="!emp.telefonoFlota" class="text-muted"
+                              >Sin flota</span
+                            >
+                          </div>
+                          <div class="pop-row">
+                            ☎️ Personal:
+                            <a
+                              *ngIf="emp.telefonoPersonal"
+                              [href]="
+                                'https://wa.me/' +
+                                limpiarTelefono(emp.telefonoPersonal)
+                              "
+                              target="_blank"
+                              class="text-decoration-none tel-link"
+                            >
+                              {{ emp.telefonoPersonal }}
+                            </a>
+                            <span
+                              *ngIf="!emp.telefonoPersonal"
+                              class="text-muted"
+                              >Sin personal</span
+                            >
+                          </div>
+                          <button
+                            class="pop-copy-btn"
+                            title="Copiar datos para correo"
+                            (click)="
+                              copiarDatosTecnico(emp); $event.stopPropagation()
                             "
-                            target="_blank"
-                            class="text-decoration-none text-success"
                           >
-                            {{ emp.telefonoPersonal }}
-                          </a>
-                          <span *ngIf="!emp.telefonoPersonal"
-                            >Sin Personal</span
-                          >
-                        </span>
-                      </div>
+                            📋 Copiar datos
+                          </button>
+                        </div>
+                      }
                     </div>
                   </div>
                 </td>
 
                 <!-- HISTORIAL -->
-                <td class="px-1 sticky-col-2 bg-white border-end text-center">
+                <td class="px-1 sticky-col-2 border-end text-center">
                   <div class="stats-grid-mini">
                     <div class="stat-mini sede" title="Sede Central">
                       <span>🏢 SEDE</span>
                       <strong>{{ getSedeSemana(emp.id) }}</strong>
                     </div>
                     <div class="stat-mini interior" title="Interior">
-                      <span>🌄 INTERIOR</span>
+                      <span>🌄INTERIOR</span>
                       <strong>{{ getInteriorExteriorSemana(emp.id) }}</strong>
                     </div>
                     <div class="stat-mini metro" title="Metro">
-                      <span>🚇 METRO</span>
+                      <span>🚇METRO</span>
                       <strong>{{ getMetroSemana(emp.id) }}</strong>
                     </div>
                     <div class="stat-mini exterior" title="Exterior">
-                      <span>🌍 EXTERIOR</span>
+                      <span>🌍</span>
                       <strong>0</strong>
                     </div>
                   </div>
-                  
                 </td>
 
                 <!-- DÍAS -->
                 @for (dia of diasSemana; track dia) {
                   @let key = generarLlave(emp.id, dia);
                   @let items = dataTemporal[key];
-
+                  @let ausencia = tieneAusencia(emp.id, dia);
                   <td
                     [ngClass]="getClaseColor(key, dia)"
                     class="border-start assignment-cell day-cell position-relative"
+                    [class.bg-ausencia]="ausencia"
                   >
-                    <!--
-                      cell-scroll-inner ahora es flex column:
-                      - chips en grid 2x2 arriba
-                      - formularios de nueva asignación abajo del grid
-                      - botón "+ Agregar" siempre al fondo con mt-auto
-                    -->
-                    <div class="cell-scroll-inner">
-                      <!-- GRID 2 COLUMNAS: solo chips existentes -->
-                      <div class="chips-grid">
-                        @for (item of items; track item.uid) {
-                          @if (!item.esNueva) {
-                            <div
-                              class="asig-chip mb-1"
-                              [class.chip-ocupado]="
-                                item.idEstado !== 3 && item.tipoId !== 0
-                              "
-                              [class.chip-libre]="item.idEstado === 3"
-                              [class.chip-expanded]="
-                                chipExpandido.has(item.uid)
-                              "
-                              (click)="toggleChip(item.uid)"
-                            >
-                              <div class="chip-row">
-                                <span
-                                  class="chip-dot"
-                                  [class.dot-sede]="item.tipoId === 1"
-                                  [class.dot-metro]="item.tipoId === 2"
-                                  [class.dot-interior]="item.tipoId === 3"
-                                  [class.dot-exterior]="item.tipoId === 4"
-                                ></span>
-                                <span class="chip-label text-truncate">
-                                  {{ getNombreTipo(item.tipoId) }}
-                                  @if (item.tipoId === 1 && item.cantidad) {
-                                    · {{ item.cantidad }}t
-                                  }
-                                  @if (
-                                    item.tipoId === 2 && item.dias
-                                  ) {
-                                    · {{ item.dias }}
-                                  }
-                                  @if (item.tipoId === 3 || item.tipoId === 4) {
-                                    · {{ item.dias }}d {{ item.IdZonaGeo }}
-                                  }
-                                </span>
-                                <span class="chip-estado ms-auto flex-shrink-0">
-                                  {{ item.idEstado !== 3 ? "🔴" : "🟢" }}
-                                </span>
-                                <button
-                                  class="btn-icon-xs text-danger flex-shrink-0"
-                                  title="Eliminar"
-                                  (click)="
-                                    $event.stopPropagation();
-                                    eliminarAsignacion(emp.id, dia, $index)
-                                  "
-                                >
-                                  ✕
-                                </button>
-                              </div>
+                    @if (ausencia) {
+                      <div class="ausencia-wrapper">
+                        <div
+                          class="chip-ausencia"
+                          [class.tipo-permiso]="ausencia.IdTipoSolicitud === 1"
+                          [class.tipo-licencia]="ausencia.IdTipoSolicitud === 2"
+                          [class.tipo-vacaciones]="
+                            ausencia.IdTipoSolicitud === 4
+                          "
+                          [class.tipo-manual]="ausencia.tipo === 'manual'"
+                          [class.tipo-cumpleanos]="
+                            ausencia.tipo === 'cumpleanos'
+                          "
+                          [title]="
+                            ausencia.tipo === 'cumpleanos'
+                              ? '🎂 Feliz Cumpleaños'
+                              : (ausencia.tipo === 'manual'
+                                  ? ausencia.Motivo
+                                  : ausencia.TipoAusencia) +
+                                ' · del ' +
+                                ausencia.FechaInicio +
+                                ' al ' +
+                                (ausencia.FechaFin ?? ausencia.FechaReintegro)
+                          "
+                        >
+                          @if (ausencia.IdTipoSolicitud === 1) {
+                            <i class="bi bi-clock-history"></i>
+                          }
+                          @if (ausencia.IdTipoSolicitud === 2) {
+                            <i class="bi bi-file-medical"></i>
+                          }
+                          @if (ausencia.IdTipoSolicitud === 4) {
+                            <i class="bi bi-sun-fill"></i>
+                          }
+                          @if (ausencia.tipo === "manual") {
+                            <i class="bi bi-hand-thumbs-down-fill"></i>
+                          }
 
-                              @if (chipExpandido.has(item.uid)) {
-                                <div
-                                  class="chip-detail mt-1 pt-1 border-top d-flex justify-content-between align-items-center"
-                                  (click)="$event.stopPropagation()"
-                                >
-                                  @if (item.idEstado !== 3) {
-                                    <span
-                                      class="text-danger fw-bold"
-                                      style="font-size: 0.6rem"
-                                    >
-                                      <i class="bi bi-lock-fill"></i> Ocup
-                                    </span>
-                                    <button
-                                      class="btn btn-link p-0 text-success fw-bold text-decoration-none"
-                                      style="font-size: 0.6rem"
-                                      (click)="
-                                        marcarComoDisponible(
-                                          emp.id,
-                                          dia,
-                                          $index
-                                        );
-                                        toggleChip(item.uid)
-                                      "
-                                    >
-                                      Lib
-                                    </button>
-                                  }
-                                  @if (item.idEstado === 3) {
-                                    <span
-                                      class="text-success fw-bold"
-                                      style="font-size: 0.6rem"
-                                    >
-                                      <i class="bi bi-check2-all"></i> Lib
-                                    </span>
-                                    @if (item.tipoId !== 1) {
+                          @if (ausencia.tipo === "cumpleanos") {
+                            <span class="cake-icon">🎂</span>
+                            <span class="av-conf">🎉</span>
+                          }
+                          <span class="chip-label">
+                            @if (ausencia.tipo === "manual") {
+                              {{ ausencia.Motivo }}
+                            } @else if (ausencia.tipo === "cumpleanos") {
+                              Feliz Cumpleaños
+                            } @else {
+                              {{ ausencia.TipoAusencia }}
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="cell-scroll-inner">
+                        <div class="chips-grid">
+                          @for (item of items; track item.uid) {
+                            @if (!item.esNueva) {
+                              <div
+                                class="asig-chip mb-1"
+                                [class.chip-ocupado]="
+                                  item.idEstado !== 3 && item.tipoId !== 0
+                                "
+                                [class.chip-libre]="item.idEstado === 3"
+                                [class.chip-expanded]="
+                                  chipExpandido.has(item.uid)
+                                "
+                                (click)="toggleChip(item.uid)"
+                              >
+                                <div class="chip-row">
+                                  <span
+                                    class="chip-dot"
+                                    [class.dot-sede]="item.tipoId === 1"
+                                    [class.dot-metro]="item.tipoId === 2"
+                                    [class.dot-interior]="item.tipoId === 3"
+                                    [class.dot-exterior]="item.tipoId === 4"
+                                  ></span>
+                                  <span class="chip-label-mini text-truncate">
+                                    {{ getNombreTipo(item.tipoId) }}
+                                    @if (item.tipoId === 1 && item.cantidad) {
+                                      {{ item.cantidad }}t
+                                    }
+                                    @if (item.tipoId === 2 && item.dias) {
+                                      {{ item.dias }}
+                                    }
+                                    @if (
+                                      item.tipoId === 3 || item.tipoId === 4
+                                    ) {
+                                      {{ item.dias }}d {{ item.IdZonaGeo }}
+                                    }
+                                  </span>
+                                  <span
+                                    class="chip-estado ms-auto flex-shrink-0"
+                                  >
+                                    {{ item.idEstado !== 3 ? "🔴" : "🟢" }}
+                                  </span>
+                                  <button
+                                    class="btn-icon-xs text-danger flex-shrink-0"
+                                    title="Eliminar"
+                                    (click)="
+                                      $event.stopPropagation();
+                                      eliminarAsignacion(emp.id, dia, $index)
+                                    "
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+
+                                @if (chipExpandido.has(item.uid)) {
+                                  <div
+                                    class="chip-detail mt-1 pt-1 border-top d-flex justify-content-between align-items-center"
+                                    (click)="$event.stopPropagation()"
+                                  >
+                                    @if (item.idEstado !== 3) {
+                                      <span
+                                        class="text-danger fw-bold"
+                                        style="font-size: 0.6rem"
+                                      >
+                                        <i class="bi bi-lock-fill"></i> Ocup
+                                      </span>
                                       <button
-                                        class="btn btn-link p-0 text-danger fw-bold text-decoration-none"
+                                        class="btn btn-link p-0 text-success fw-bold text-decoration-none"
                                         style="font-size: 0.6rem"
                                         (click)="
-                                          marcarComoOcupado(
+                                          marcarComoDisponible(
                                             emp.id,
                                             dia,
                                             $index
@@ -362,147 +561,317 @@
                                           toggleChip(item.uid)
                                         "
                                       >
-                                        Ocup
+                                        Lib
                                       </button>
                                     }
+                                    @if (item.idEstado === 3) {
+                                      <span
+                                        class="text-success fw-bold"
+                                        style="font-size: 0.6rem"
+                                      >
+                                        <i class="bi bi-check2-all"></i> Lib
+                                      </span>
+                                      @if (item.tipoId !== 1) {
+                                        <button
+                                          class="btn btn-link p-0 text-danger fw-bold text-decoration-none"
+                                          style="font-size: 0.6rem"
+                                          (click)="
+                                            marcarComoOcupado(
+                                              emp.id,
+                                              dia,
+                                              $index
+                                            );
+                                            toggleChip(item.uid)
+                                          "
+                                        >
+                                          Ocup
+                                        </button>
+                                      }
+                                    }
+                                  </div>
+                                }
+                              </div>
+                            }
+                          }
+                        </div>
+                        @for (item of items; track item.uid) {
+                          @if (item.esNueva) {
+                            <div class="asignacion-popup">
+                              <div
+                                class="d-flex justify-content-between align-items-center mb-1"
+                              >
+                                <span class="fw-bold" style="font-size: 0.68rem"
+                                  >Nueva asignación</span
+                                >
+                                <button
+                                  class="btn-icon-xs text-danger flex-shrink-0 ms-1"
+                                  title="Eliminar"
+                                  (click)="
+                                    eliminarAsignacion(emp.id, dia, $index)
+                                  "
+                                >
+                                  ✕
+                                </button>
+                              </div>
+
+                              <select
+                                class="form-select compact-select w-100 mb-1 shadow-none"
+                                name="tipo"
+                                [ngModel]="item.tipoId"
+                                (ngModelChange)="
+                                  item.tipoId = $event; marcarModificado(item)
+                                "
+                              >
+                                <option [ngValue]="0">- Tipo -</option>
+                                @for (
+                                  t of tiposDisponibles(emp.id, dia, item);
+                                  track t.IdTipo
+                                ) {
+                                  <option [ngValue]="t.IdTipo">
+                                    {{ t.nombre }}
+                                  </option>
+                                }
+                              </select>
+
+                              @if (item.tipoId === 1) {
+                                <input
+                                  type="number"
+                                  min="0"
+                                  class="form-control form-control-xs text-center border-primary w-100 mb-1"
+                                  placeholder="Cantidad de tareas"
+                                  [(ngModel)]="item.cantidad"
+                                  (ngModelChange)="marcarModificado(item)"
+                                />
+                              }
+
+                              @if (item.tipoId === 2) {
+                                <div
+                                  class="input-group input-group-sm w-100 mb-1"
+                                >
+                                  <span
+                                    class="input-group-text border-0 px-1"
+                                    style="
+                                      font-size: 0.6rem;
+                                      background: var(--bg-muted);
+                                      color: var(--text-secondary);
+                                    "
+                                    >🚇</span
+                                  >
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    class="form-control form-control-xs text-center border-0"
+                                    placeholder="Rutas"
+                                    [(ngModel)]="item.dias"
+                                    (ngModelChange)="marcarModificado(item)"
+                                  />
+                                </div>
+                                <div class="d-flex gap-1 w-100 mb-1">
+                                  <div class="flex-fill">
+                                    <label class="tiny-label">Inicio</label>
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-xs border-secondary"
+                                      [(ngModel)]="item.fechaInicio"
+                                      (ngModelChange)="marcarModificado(item)"
+                                    />
+                                  </div>
+                                  <div class="flex-fill">
+                                    <label class="tiny-label">Fin</label>
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-xs border-secondary"
+                                      [(ngModel)]="item.fechaFin"
+                                      (ngModelChange)="marcarModificado(item)"
+                                    />
+                                  </div>
+                                </div>
+                                <input
+                                  type="text"
+                                  class="form-control form-control-xs w-100 mb-1"
+                                  placeholder="Chofer"
+                                  [(ngModel)]="item.chofer"
+                                  (ngModelChange)="marcarModificado(item)"
+                                />
+                                <input
+                                  type="text"
+                                  class="form-control form-control-xs w-100 mb-1"
+                                  placeholder="Placa"
+                                  [(ngModel)]="item.placa"
+                                  (ngModelChange)="marcarModificado(item)"
+                                />
+                              }
+
+                              @if (item.tipoId === 3) {
+                                <input
+                                  type="number"
+                                  min="0"
+                                  class="form-control form-control-xs w-100 mb-1 border-warning text-center"
+                                  placeholder="Días de viaje"
+                                  [(ngModel)]="item.dias"
+                                  (ngModelChange)="marcarModificado(item)"
+                                />
+                                <div class="d-flex gap-1 w-100 mb-1">
+                                  <div class="flex-fill">
+                                    <label class="tiny-label">Inicio</label>
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-xs border-warning"
+                                      [(ngModel)]="item.fechaInicio"
+                                      (ngModelChange)="marcarModificado(item)"
+                                    />
+                                  </div>
+                                  <div class="flex-fill">
+                                    <label class="tiny-label">Fin</label>
+                                    <input
+                                      type="date"
+                                      class="form-control form-control-xs border-warning"
+                                      [(ngModel)]="item.fechaFin"
+                                      (ngModelChange)="marcarModificado(item)"
+                                    />
+                                  </div>
+                                </div>
+                                <div class="centros-lista mb-1">
+                                  <div
+                                    class="d-flex justify-content-between align-items-center mb-1"
+                                  >
+                                    <span class="tiny-label mb-0"
+                                      >Centros de cedulación</span
+                                    >
+                                    <button
+                                      class="btn btn-outline-warning btn-xs py-0 px-1"
+                                      style="font-size: 0.58rem"
+                                      (click)="agregarCentro(item)"
+                                    >
+                                      + Centro
+                                    </button>
+                                  </div>
+
+                                  @for (centro of item.centros; track $index) {
+                                    <div
+                                      class="d-flex align-items-center gap-1 mb-1"
+                                    >
+                                      <span class="orden-badge">{{
+                                        $index + 1
+                                      }}</span>
+
+                                      <!-- INICIO DEL NUEVO SELECTOR BUSCABLE -->
+                                      <ng-select
+                                        class="flex-fill custom-border-warning"
+                                        [(ngModel)]="centro.idCentroCedulacion"
+                                        (ngModelChange)="
+                                          onCentroSeleccionado(item, $index)
+                                        "
+                                        [items]="centrosCedulacion"
+                                        bindValue="IdCentroCedulacion"
+                                        placeholder="— Centro —"
+                                        [searchable]="true"
+                                        [clearable]="false"
+                                        [searchFn]="buscadorPersonalizado"
+                                        appendTo="body"
+                                        notFoundText="No se encontraron centros"
+                                      >
+                                        <!-- Cómo se ve la opción en la lista desplegable -->
+                                        <ng-template ng-option-tmp let-c="item">
+                                          {{ c.Centro }} › {{ c.ZonaGeo }}
+                                        </ng-template>
+
+                                        <!-- Cómo se ve la opción una vez está seleccionada -->
+                                        <ng-template ng-label-tmp let-c="item">
+                                          {{ c.Centro }} › {{ c.ZonaGeo }}
+                                        </ng-template>
+                                      </ng-select>
+                                      <!-- FIN DEL NUEVO SELECTOR -->
+
+                                      <button
+                                        class="btn-icon-xs text-danger flex-shrink-0"
+                                        (click)="quitarCentro(item, $index)"
+                                        title="Quitar centro"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
                                   }
+
+                                  @if (item.centros.length === 0) {
+                                    <div
+                                      class="text-muted text-center"
+                                      style="font-size: 0.6rem"
+                                    >
+                                      Sin centros — agrega al menos uno
+                                    </div>
+                                  }
+                                </div>
+                                <div class="d-flex gap-1 w-100 mb-1">
+                                  <input
+                                    type="text"
+                                    class="form-control form-control-xs w-50"
+                                    placeholder="Nro. Ticket"
+                                    [(ngModel)]="item.nroTicket"
+                                    (ngModelChange)="marcarModificado(item)"
+                                  />
+                                  <input
+                                    type="text"
+                                    class="form-control form-control-xs w-50"
+                                    placeholder="Título"
+                                    [(ngModel)]="item.titulo"
+                                    (ngModelChange)="marcarModificado(item)"
+                                  />
+                                </div>
+                                <div class="d-flex gap-1 w-100 mb-1">
+                                  <input
+                                    type="text"
+                                    class="form-control form-control-xs w-50"
+                                    placeholder="Chofer"
+                                    [(ngModel)]="item.chofer"
+                                    (ngModelChange)="marcarModificado(item)"
+                                  />
+                                  <input
+                                    type="text"
+                                    class="form-control form-control-xs w-50"
+                                    placeholder="Placa"
+                                    [(ngModel)]="item.placa"
+                                    (ngModelChange)="marcarModificado(item)"
+                                  />
+                                </div>
+                              }
+
+                              @if (item.tipoId !== 0) {
+                                <button
+                                  class="btn btn-primary btn-xs w-100 py-0"
+                                  style="font-size: 0.62rem; height: 18px"
+                                  (click)="guardarCelda(emp.id, dia, $index)"
+                                >
+                                  Guardar
+                                </button>
+                              }
+
+                              @if (item.guardadoOk) {
+                                <div
+                                  class="text-success text-center fw-bold mt-1"
+                                  style="font-size: 0.62rem"
+                                >
+                                  ✅ Guardado
                                 </div>
                               }
                             </div>
                           }
                         }
+
+                        <button
+                          class="btn btn-outline-secondary btn-xs w-100 mt-auto"
+                          style="
+                            font-size: 0.62rem;
+                            height: 20px;
+                            line-height: 0;
+                            border-style: dashed;
+                          "
+                          (click)="agregarAsignacion(emp.id, dia)"
+                        >
+                          + Agregar
+                        </button>
                       </div>
-                      <!-- FIN chips-grid -->
-
-                      <!-- FORMULARIOS de nueva asignación (ancho completo, fuera del grid) -->
-                      @for (item of items; track item.uid) {
-                        @if (item.esNueva) {
-                          <div class="asignacion-popup">
-                            <div
-                              class="d-flex justify-content-between align-items-center mb-1"
-                            >
-                              <span class="fw-bold" style="font-size: 0.68rem"
-                                >Nueva asignación</span
-                              >
-                              <button
-                                class="btn-icon-xs text-danger flex-shrink-0 ms-1"
-                                title="Eliminar"
-                                (click)="
-                                  eliminarAsignacion(emp.id, dia, $index)
-                                "
-                              >
-                                ✕
-                              </button>
-                            </div>
-
-                            <select
-                              class="form-select compact-select w-100 mb-1 shadow-none"
-                              [ngModel]="item.tipoId"
-                              (ngModelChange)="
-                                item.tipoId = $event; marcarModificado(item)
-                              "
-                            >
-                              <option [ngValue]="0">- Tipo -</option>
-                              @for (
-                                t of tiposDisponibles(emp.id, dia, item);
-                                track t.IdTipo
-                              ) {
-                                <option [ngValue]="t.IdTipo">
-                                  {{ t.nombre }}
-                                </option>
-                              }
-                            </select>
-                              <!-- SEDE (1): solo cantidad de tareas -->
-                            @if (item.tipoId === 1) {
-                              <input
-                                type="number"
-                                min="0"
-                                class="form-control form-control-xs text-center border-primary w-100 mb-1"
-                                placeholder="Cantidad de tareas"
-                                [(ngModel)]="item.cantidad"
-                                (ngModelChange)="marcarModificado(item)"
-                              />
-                            }
-                            <!-- METRO (2): solo días -->
-                            @if (item.tipoId === 2) {
-                              <div
-                                class="input-group input-group-sm w-100 mb-1"
-                              >
-                                <span
-                                  class="input-group-text bg-secondary text-white border-0 px-1"
-                                  style="font-size: 0.6rem"
-                                  >🚇</span
-                                >
-                                <input
-                                  type="number"
-                                  min="0"
-                                  class="form-control form-control-xs text-center border-0"
-                                  placeholder="Rutas"
-                                  [(ngModel)]="item.dias"
-                                  (ngModelChange)="marcarModificado(item)"
-                                />
-                              </div>
-                            }
-                            <!-- INTERIOR (3): días + zona -->
-                            @if (item.tipoId === 3) {
-                              <div class="d-flex gap-1 w-100 mb-1">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  class="form-control form-control-xs w-50 border-warning px-1 text-center"
-                                  placeholder="Días"
-                                  [(ngModel)]="item.dias"
-                                  (ngModelChange)="marcarModificado(item)"
-                                />
-                                <select
-                                      class="form-select form-select-xs w-50 border-warning px-1 text-center"
-                                      [(ngModel)]="item.IdZonaGeo"
-                                      (ngModelChange)="marcarModificado(item)"
-                                    >
-                                      <option [value]="0">Zona</option>
-                                      @for (zona of zonasGeo; track zona.IdZonaGeo) {
-                                        <option [ngValue]="zona.IdZonaGeo">{{ zona.Descripcion }}</option>
-                                      }
-                                    </select>
-                              </div>
-                            }
-
-                            @if (item.tipoId !== 0) {
-                              <button
-                                class="btn btn-primary btn-xs w-100 py-0"
-                                style="font-size: 0.62rem; height: 18px"
-                                (click)="guardarCelda(emp.id, dia, $index)"
-                              >
-                                Guardar
-                              </button>
-                            }
-
-                            @if (item.guardadoOk) {
-                              <div
-                                class="text-success text-center fw-bold mt-1"
-                                style="font-size: 0.62rem"
-                              >
-                                ✅ Guardado
-                              </div>
-                            }
-                          </div>
-                        }
-                      }
-
-                      <!-- BOTÓN AGREGAR — siempre al fondo gracias a mt-auto -->
-                      <button
-                        class="btn btn-outline-secondary btn-xs w-100 mt-auto"
-                        style="
-                          font-size: 0.62rem;
-                          height: 20px;
-                          line-height: 0;
-                          border-style: dashed;
-                        "
-                        (click)="agregarAsignacion(emp.id, dia)"
-                      >
-                        + Agregar
-                      </button>
-                    </div>
+                    }
                   </td>
                 }
               </tr>

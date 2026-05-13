@@ -1,0 +1,160 @@
+:host {
+  display: block;
+  height: 100%;
+
+  /* Paleta del widget */
+  --orange: #f59e0b;
+  --orange-s: #fef3c7;
+  --red: #dc2626;
+  --red-s: #fee2e2;
+  --green: #16a34a;
+  --green-s: #dcfce7;
+}
+
+/* 🌙 Dark mode */
+:host-context([data-theme="dark"]) {
+  --orange-s: rgba(245, 158, 11, 0.15);
+  --red-s:    rgba(220, 38, 38, 0.15);
+  --green-s:  rgba(22, 163, 74, 0.15);
+}
+
+.wrap {
+  height: 100%;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.hd-l { display: flex; align-items: center; gap: 10px; }
+.hd-ico { font-size: 1.5rem; }
+.hd-title { margin: 0; font-size: .85rem; font-weight: 700; color: var(--text-primary); }
+.hd-sub { font-size: .7rem; color: var(--text-muted); }
+
+.badge {
+  background: var(--green); color: #fff;
+  font-size: .65rem; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px;
+  animation: popIn .35s ease both;
+}
+
+/* Lista */
+.scroll {
+  flex: 1; overflow-y: auto;
+  max-height: 250px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-soft) transparent;
+}
+
+.person {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background .15s;
+}
+.person:last-child { border-bottom: none; }
+.person:hover { background: var(--bg-hover); cursor: default; }
+.person-actual {
+  background: linear-gradient(90deg, rgba(22, 163, 74, .07) 0%, transparent 100%);
+}
+
+/* Avatar circular con color según tipo */
+.av {
+  position: relative; width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .8rem; flex-shrink: 0;
+  color: #fff;
+}
+.av.tipo-permiso    { background: linear-gradient(135deg, var(--orange), #d97706); }
+.av.tipo-licencia   { background: linear-gradient(135deg, var(--red), #b91c1c); }
+.av.tipo-vacaciones { background: linear-gradient(135deg, var(--green), #15803d); }
+
+.av-conf {
+  position: absolute; top: -5px; right: -5px;
+  font-size: .68rem;
+  background: var(--bg-card);
+  border-radius: 50%;
+  padding: 2px;
+  line-height: 1;
+}
+
+/* Info */
+.pinfo { flex: 1; min-width: 0; }
+.pname {
+  margin: 0; font-size: .75rem; font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pname-actual { color: var(--green); }
+.pmeta { margin: 1px 0 0; font-size: .65rem; color: var(--text-muted); }
+
+/* Píldora a la derecha */
+.p-right { margin-left: auto; flex-shrink: 0; }
+.pill {
+  font-size: .6rem; font-weight: 600;
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.pill-actual {
+  background: var(--green-s); color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 30%, transparent);
+}
+.pill-futuro {
+  background: var(--orange-s); color: var(--orange);
+  border-color: color-mix(in srgb, var(--orange) 30%, transparent);
+}
+.pill-pasado {
+  background: var(--bg-muted); color: var(--text-muted);
+}
+
+/* Vacío */
+.empty-day {
+  padding: 20px;
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Footer */
+.ft {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-hover);
+}
+.ft span { font-size: .72rem; color: var(--text-secondary); }
+.ft strong { color: var(--green); font-weight: 700; }
+
+/* SKELETON */
+.sk-person { display: flex; align-items: center; gap: 11px; padding: 10px 16px; }
+.sk-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg-muted);
+  animation: skeleton 1.2s infinite;
+}
+.sk-lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.sk-line {
+  height: 10px; border-radius: 4px;
+  background: var(--bg-muted);
+  animation: skeleton 1.2s infinite;
+}
+.sk-line.w60 { width: 60%; }
+.sk-line.w40 { width: 40%; animation-delay: .15s; }
+
+/* Animaciones */
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes skeleton {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}

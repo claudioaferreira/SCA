@@ -35,6 +35,9 @@ getEmpleadosPorTipo(inicio: string, fin: string): Observable<any> {
   return this.http.get(`${this.apiUrl}/asignaciones/empleadosPorTipo?inicio=${inicio}&fin=${fin}`);
 }
 
+getCentrosCedulacion(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/asignaciones/centros`);
+}
 
   guardarEmpleado(payload: any): Observable<any> {
     // console.log('Payload enviado al backend: desde services', payload);
@@ -86,4 +89,33 @@ getEmpleadosPorTipo(inicio: string, fin: string): Observable<any> {
   getCatalogoEquipos(): Observable<any> {
     return this.http.get(`${this.apiUrl}/empleados/equipos/catalogo`);
   }
+
+  getEmpleadosPorZona(inicio: string, fin: string, idTipo: number) {
+  return this.http.get<any[]>(
+    `${this.apiUrl}/empleados/empleados-zonas`,
+    {
+      params:  { inicio, fin, idTipo: idTipo.toString() },
+      observe: 'response',
+    }
+  );
+}
+ getResumenZonasExterior(inicio: string, fin: string) {
+  return this.http.get<any[]>(
+    `${this.apiUrl}/empleados/zonas-exterior`,
+    {
+      params:  { inicio, fin },
+      observe: 'response',
+    }
+  );
+}
+
+getRankingDisponibilidad(inicio: string, fin: string) {
+  return this.http.get<any[]>(
+    `${this.apiUrl}/empleados/ranking-disponibilidad`,
+    {
+      params:  { inicio, fin },
+      observe: 'response',
+    }
+  );
+}
 }

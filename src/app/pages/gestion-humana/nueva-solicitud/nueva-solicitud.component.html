@@ -1,0 +1,307 @@
+<div class="page-container">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────── -->
+  <div class="page-header-card">
+    <div class="page-brand">
+      <i class="bi bi-arrow-left page-brand-icon"
+         style="cursor: pointer"
+         (click)="cancelar()"></i>
+      <div class="page-brand-text">
+        <span class="page-title">Nueva solicitud</span>
+        <span class="page-subtitle">Registrar permiso, licencia, incidencia o vacaciones</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FORMULARIO ─────────────────────────────────────────────────── -->
+  <form [formGroup]="formulario" (ngSubmit)="guardar()" class="form-card">
+
+    <!-- ▸▸ Sección: Datos generales -->
+    <div class="form-section">
+      <div class="form-section-title">
+        <i class="bi bi-person-vcard"></i> Datos generales
+      </div>
+
+      <div class="campo">
+        <label>Empleado *</label>
+        <select formControlName="idEmpleado" (change)="onEmpleadoChange()"
+                [class.is-invalid]="campoInvalido('idEmpleado')">
+          <option [ngValue]="null">— Seleccionar empleado —</option>
+          @for (e of empleados; track e.id) {
+            <option [ngValue]="e.id">{{ e.nombre }} · {{ e.codigo }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Tipo de solicitud *</label>
+        <select formControlName="idTipoSolicitud" (change)="onTipoChange()"
+                [class.is-invalid]="campoInvalido('idTipoSolicitud')">
+          <option [ngValue]="null">— Seleccionar tipo —</option>
+          @for (t of tipos; track t.IdTipoSolicitud) {
+            <option [ngValue]="t.IdTipoSolicitud">{{ t.Descripcion }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <!-- ▸▸ Sección: PERMISO -->
+    @if (esTipoPermiso()) {
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="bi bi-pause-circle"></i> Datos del permiso
+        </div>
+
+        <div class="campo">
+          <label>Tipo de permiso *</label>
+          <select formControlName="idSubtipoPermiso">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (s of subtiposPermiso; track s.IdSubtipoPermiso) {
+              <option [ngValue]="s.IdSubtipoPermiso">{{ s.Descripcion }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Si es "Otros" pedimos especificar -->
+        @if (formulario.value.idSubtipoPermiso === 4) {
+          <div class="campo">
+            <label>Especificar</label>
+            <input type="text" formControlName="especificarOtro" placeholder="Detalle el motivo">
+          </div>
+        }
+
+        <!-- Toggle horas/día -->
+        <div class="campo">
+          <label>Modalidad *</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" formControlName="esPorHoras" [value]="false">
+              <span>Por día completo</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" formControlName="esPorHoras" [value]="true">
+              <span>Por horas</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Por horas -->
+        @if (formulario.value.esPorHoras) {
+          <div class="fila-doble">
+            <div class="campo">
+              <label>Cantidad de horas</label>
+              <input type="number" min="0" step="0.5" formControlName="cantidadHoras">
+            </div>
+            <div class="campo">
+              <label>Fecha del permiso</label>
+              <input type="date" formControlName="fechaPermiso">
+            </div>
+          </div>
+          <div class="fila-doble">
+            <div class="campo">
+              <label>Hora inicio</label>
+              <input type="time" formControlName="horarioInicio">
+            </div>
+            <div class="campo">
+              <label>Hora fin</label>
+              <input type="time" formControlName="horarioFin">
+            </div>
+          </div>
+        }
+
+        <!-- Por día completo -->
+        @if (!formulario.value.esPorHoras) {
+          <div class="campo">
+            <label>Cantidad de días</label>
+            <input type="number" min="1" formControlName="cantidadDias">
+          </div>
+          <div class="fila-doble">
+            <div class="campo">
+              <label>Fecha de inicio</label>
+              <input type="date" formControlName="fechaInicio">
+            </div>
+            <div class="campo">
+              <label>Fecha de reintegro</label>
+              <input type="date" formControlName="fechaReintegro">
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ▸▸ Sección: LICENCIA -->
+    @if (esTipoLicencia()) {
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="bi bi-file-medical"></i> Datos de la licencia
+        </div>
+
+        <div class="campo">
+          <label>Tipo de licencia *</label>
+          <select formControlName="idSubtipoLicencia">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (s of subtiposLicencia; track s.IdSubtipoLicencia) {
+              <option [ngValue]="s.IdSubtipoLicencia">{{ s.Descripcion }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label>Cantidad de días</label>
+          <input type="number" min="1" formControlName="cantidadDias">
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Fecha de inicio</label>
+            <input type="date" formControlName="fechaInicio">
+          </div>
+          <div class="campo">
+            <label>Fecha de reintegro</label>
+            <input type="date" formControlName="fechaReintegro">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label class="checkbox-option">
+            <input type="checkbox" formControlName="documentoEntregado">
+            <span>Documento soporte entregado</span>
+          </label>
+        </div>
+      </div>
+    }
+
+    <!-- ▸▸ Sección: INCIDENCIA -->
+    @if (esTipoIncidencia()) {
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="bi bi-exclamation-triangle"></i> Datos de la incidencia
+        </div>
+
+        <div class="campo">
+          <label>Tipo de incidencia *</label>
+          <select formControlName="idSubtipoIncidencia">
+            <option [ngValue]="null">— Seleccionar —</option>
+            @for (s of subtiposIncidencia; track s.IdSubtipoIncidencia) {
+              <option [ngValue]="s.IdSubtipoIncidencia">{{ s.Descripcion }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Fecha del evento</label>
+            <input type="date" formControlName="fechaEvento">
+          </div>
+          <div class="campo">
+            <label>Hora del evento (opcional)</label>
+            <input type="time" formControlName="horaEvento">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Motivo</label>
+          <textarea formControlName="motivo" rows="3" placeholder="Describí el incidente..."></textarea>
+        </div>
+
+        <div class="campo">
+          <label class="checkbox-option">
+            <input type="checkbox" formControlName="justificado">
+            <span>Justificado por el supervisor</span>
+          </label>
+        </div>
+      </div>
+    }
+
+    <!-- ▸▸ Sección: VACACIONES -->
+    @if (esTipoVacaciones()) {
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="bi bi-sun"></i> Datos de vacaciones
+        </div>
+
+        @if (saldoVacaciones) {
+          <div class="saldo-info">
+            <i class="bi bi-info-circle"></i>
+            Saldo de <strong>{{ saldoVacaciones.nombre }}</strong>:
+            <strong>{{ saldoVacaciones.DiasDisponibles }} de {{ saldoVacaciones.DiasAnuales }} días</strong>
+            disponibles este año
+          </div>
+        }
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Cantidad de días</label>
+            <input type="number" min="1" formControlName="cantidadDias">
+          </div>
+          <div class="campo">
+  <label>Año correspondiente *</label>
+
+  @if (aniosDisponibles.length === 0) {
+    <div class="info-card-warning">
+      <i class="bi bi-exclamation-triangle"></i>
+      Este empleado no tiene saldo disponible. Cargalo primero en
+      <strong>Saldos de Vacaciones</strong>.
+    </div>
+  } @else {
+    <select formControlName="anioCorrespondiente">
+      <option [ngValue]="null">— Seleccionar año —</option>
+      @for (a of aniosDisponibles; track a.Anio) {
+        <option [ngValue]="a.Anio">
+          {{ a.Anio }} — {{ a.DiasDisponibles }} día{{ a.DiasDisponibles !== 1 ? 's' : '' }} disponibles
+          @if (a.EstadoVencimiento === 'porVencer') {
+            ⚠ vence este año
+          }
+        </option>
+      }
+    </select>
+    <small class="hint">
+      Te recomendamos usar primero los años más viejos (vencen antes).
+    </small>
+  }
+</div>
+        </div>
+
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Fecha de inicio</label>
+            <input type="date" formControlName="fechaInicio">
+          </div>
+          <div class="campo">
+            <label>Fecha de reintegro</label>
+            <input type="date" formControlName="fechaReintegro">
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ▸▸ Sección: comentarios (siempre) -->
+    @if (tipoSeleccionado > 0) {
+      <div class="form-section">
+        <div class="form-section-title">
+          <i class="bi bi-chat-left-text"></i> Comentarios (opcional)
+        </div>
+        <div class="campo">
+          <textarea formControlName="comentarios" rows="3"
+                    placeholder="Notas adicionales..."></textarea>
+        </div>
+      </div>
+    }
+
+    <!-- ▸▸ Botones de acción -->
+    <div class="form-actions">
+      <button type="button" class="btn-cancelar" (click)="cancelar()" [disabled]="loading">
+        Cancelar
+      </button>
+      <button type="submit" class="btn-guardar" [disabled]="loading || formulario.invalid">
+        @if (loading) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+          Guardando...
+        } @else {
+          <i class="bi bi-check2 me-1"></i> Guardar solicitud
+        }
+      </button>
+    </div>
+
+  </form>
+</div>

@@ -1,0 +1,66 @@
+<div class="wrap">
+  <!-- Cabecera -->
+  <div class="hd">
+    <div class="hd-l">
+      <span class="hd-ico">🎂</span>
+      <div>
+        <h6 class="hd-title">Cumpleaños</h6>
+        <span class="hd-sub">Esta semana</span>
+      </div>
+    </div>
+    @if (totalHoy > 0) {
+      <span class="badge">{{ totalHoy }} hoy</span>
+    }
+  </div>
+
+  <!-- Contenedor scrolleable (Lista Plana) -->
+  <div class="scroll">
+    @if (cargando) {
+      @for (i of [1,2,3,4]; track i) {
+        <div class="sk-person">
+          <div class="sk-av"></div>
+          <div class="sk-lines">
+            <div class="sk-line w60"></div>
+            <div class="sk-line w40"></div>
+          </div>
+        </div>
+      }
+    } @else if (personas.length === 0) {
+      <div class="empty-day" style="padding: 20px; text-align: center;">
+        Sin cumpleaños esta semana
+      </div>
+    } @else {
+      <!-- BUCLE PLANO DE PERSONAS -->
+      @for (p of personas; track p.codigo) {
+        <div class="person" [class.person-hoy]="p.esHoy">
+          <!-- Avatar -->
+          <div class="av" [class.av-hoy]="p.esHoy" [class.av-norm]="!p.esHoy">
+            <span>{{ inicial(p.nombre) }}</span>
+            @if (p.esHoy) { <span class="av-conf">🎉</span> }
+          </div>
+          
+          <!-- Info -->
+          <div class="pinfo">
+            <p class="pname" [class.pname-hoy]="p.esHoy">{{ p.nombre }}</p>
+            <p class="pmeta">Cód. {{ p.codigo }} · {{ p.edad }} años</p>
+          </div>
+          
+          <!-- Píldora de Fecha a la derecha -->
+          <div class="p-right">
+            <span class="pill" 
+                  [class.pill-hoy]="p.esHoy"
+                  [class.pill-past]="p.diasFaltantes < 0"
+                  [class.pill-pronto]="p.diasFaltantes > 0">
+              {{ p.etiquetaDia }}
+            </span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Pie de panel -->
+  <div class="ft">
+    <span>Total esta semana: <strong>{{ totalSemana }}</strong> cumpleaños</span>
+  </div>
+</div>

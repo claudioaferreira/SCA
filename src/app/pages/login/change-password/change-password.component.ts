@@ -1,0 +1,121 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule }      from '@angular/common';
+import { FormsModule }       from '@angular/forms';
+import { Router }            from '@angular/router';
+import { UserService } from '../../../services/user/user.service';
+// import { AuthService }    from '@core/services/auth.service';
+
+interface PasswordRules {
+  length:    boolean;
+  uppercase: boolean;
+  number:    boolean;
+  special:   boolean;
+}
+
+@Component({
+  selector: 'app-change-password',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './change-password.component.html',
+  styleUrls: ['./change-password.component.scss'],
+})
+export class ChangePasswordComponent implements OnInit {
+
+  form = { newPassword: '', confirm: '' };
+
+  showNew     = false;
+  showConfirm = false;
+  isLoading   = false;
+  errorMessage = '';
+  currentYear  = new Date().getFullYear();
+
+  // Estado de reglas (para los checks en vivo)
+  rules: PasswordRules = {
+    length:    false,
+    uppercase: false,
+    number:    false,
+    special:   false,
+  };
+
+  // Fortaleza: 'weak' | 'fair' | 'good' | 'strong'
+  strengthLevel = 'weak';
+  strengthLabel = 'Débil';
+  strengthPct   = 0;
+
+  private _userService = inject(UserService);
+
+
+  constructor(
+    private router: Router,
+    // private authService: AuthService,
+  ) {}
+
+  ngOnInit(): void {
+    // Proteger la ruta: si el usuario llega sin token, redirigir al login
+    
+    
+    const token = localStorage.getItem('sca_token');
+    if (!token) {
+      this.router.navigate(['/login']);
+    }
+
+
+  }
+
+  // Valida las reglas en tiempo real mientras el usuario escribe
+  validatePassword(value: string): void {
+    this.rules = {
+      length:    value.length >= 8,
+      uppercase: /[A-Z]/.test(value),
+      number:    /[0-9]/.test(value),
+      special:   /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value),
+    };
+
+    const score = Object.values(this.rules).filter(Boolean).length;
+
+    const levels: Record<number, { level: string; label: string; pct: number }> = {
+      0: { level: 'weak',   label: 'Débil',    pct: 10  },
+      1: { level: 'weak',   label: 'Débil',    pct: 25  },
+      2: { level: 'fair',   label: 'Regular',  pct: 50  },
+      3: { level: 'good',   label: 'Buena',    pct: 75  },
+      4: { level: 'strong', label: 'Excelente',pct: 100 },
+    };
+
+    const { level, label, pct } = levels[score];
+    this.strengthLevel = level;
+    this.strengthLabel = label;
+    this.strengthPct   = pct;
+  }
+
+  // Verifica que el formulario está listo para enviar
+  isFormValid(): boolean {
+    return (
+      this.form.newPassword.length >= 8 &&
+      this.form.newPassword === this.form.confirm &&
+      Object.values(this.rules).every(Boolean)
+    );
+  }
+
+  onSubmit(): void {
+
+  if (!this.isFormValid()) return;
+
+  this.isLoading = true;
+  this.errorMessage = '';
+
+  this._userService.changePassword(this.form.newPassword)
+    .subscribe({
+      next: () => {
+        this.isLoading = false;
+
+        this.router.navigate(['/home']);
+      },
+
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage =
+          err.message ?? 'No se pudo cambiar la contraseña.';
+      }
+    });
+}
+}

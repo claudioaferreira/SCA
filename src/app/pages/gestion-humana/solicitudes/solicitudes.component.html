@@ -1,0 +1,170 @@
+<div class="page-container">
+
+  <!-- ── HEADER + FILTROS ────────────────────────────────────── -->
+  <div class="toolbar-card">
+    <div class="toolbar-row-top">
+      <div class="toolbar-brand">
+        <i class="bi bi-person-vcard toolbar-icon"></i>
+        <span class="toolbar-title">Solicitudes de Personal</span>
+      </div>
+
+      <!-- Buscador -->
+      <div class="toolbar-search">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por empleado o código…"
+          [(ngModel)]="filtroTexto" />
+      </div>
+
+      <!-- Filtro por tipo -->
+      <select class="select-filtro" [(ngModel)]="filtroIdTipo">
+        <option [value]="0">Todos los tipos</option>
+        <option [value]="1">Permiso</option>
+        <option [value]="2">Licencia</option>
+        <option [value]="3">Incidencia</option>
+        <option [value]="4">Vacaciones</option>
+      </select>
+
+      <!-- Filtro por estado -->
+      <select class="select-filtro" [(ngModel)]="filtroIdEstado">
+        <option [value]="0">Todos los estados</option>
+        <option [value]="1">Pendiente</option>
+        <option [value]="2">Aprobada</option>
+        <option [value]="3">Rechazada</option>
+        <option [value]="4">En Curso</option>
+        <option [value]="5">Finalizada</option>
+        <option [value]="6">Cancelada</option>
+      </select>
+
+      <button class="btn-reset" (click)="limpiarFiltros()" title="Limpiar filtros">
+        <i class="bi bi-arrow-counterclockwise"></i>
+        <span>Limpiar</span>
+      </button>
+
+<button class="btn-primary-custom" (click)="irANuevaSolicitud()">
+  <i class="bi bi-plus-lg me-1"></i> Nueva solicitud
+</button>
+    </div>
+  </div>
+
+
+  <!-- ── ESTADO: CARGANDO ────────────────────────────────────── -->
+  @if (loading) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+      Cargando solicitudes…
+    </div>
+  }
+
+
+  <!-- ── ESTADO: VACÍO ───────────────────────────────────────── -->
+  @if (!loading && solicitudesFiltradas().length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-inbox"></i>
+      <p>
+        @if (solicitudes.length === 0) {
+          No hay solicitudes registradas todavía.
+        } @else {
+          No se encontraron solicitudes con esos filtros.
+        }
+      </p>
+    </div>
+  }
+
+
+  <!-- ── TABLA ──────────────────────────────────────────────── -->
+  @if (!loading && solicitudesFiltradas().length > 0) {
+    <div class="tabla-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Empleado</th>
+            <th>Tipo</th>
+            <th>Período</th>
+            <th class="text-center">Cantidad</th>
+            <th>Estado</th>
+            <th>Solicitud</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of solicitudesFiltradas(); track s.IdSolicitud) {
+            <tr>
+              <!-- EMPLEADO -->
+              <td>
+                <div class="empleado-info">
+                  <img
+                            [src]="'img/empleados/' + s.CodigoEmpleado + '.png'"
+                            class="pop-foto"
+                            alt="Foto"
+                            (error)="foto.style.display='none'; avatarFallback.style.display='flex'"
+                            #foto
+                          >
+
+                          <div class="avatar"
+                              #avatarFallback
+                              style="display: none;">
+                            {{ iniciales(s.Empleado) }}
+                          </div>
+
+                          <div>
+                            <div class="nombre">{{ s.Empleado }}</div>
+                            <div class="text-muted">{{ s.CodigoEmpleado }}</div>
+                          </div>
+
+                        </div>
+
+                
+              </td>
+
+              <!-- TIPO + SUBTIPO -->
+              <td>
+                <span class="badge-tipo" [ngClass]="claseTipo(s.IdTipoSolicitud)">
+                  {{ getTipoCompleto(s) }}
+                </span>
+              </td>
+
+              <!-- PERÍODO -->
+              <td>{{ getPeriodo(s) }}</td>
+
+              <!-- CANTIDAD -->
+              <td class="text-center">
+                <strong>{{ getCantidad(s) }}</strong>
+              </td>
+
+              <!-- ESTADO -->
+              <td>
+                <span class="badge-estado" [ngClass]="claseEstado(s.IdEstadoSolicitud)">
+                  {{ s.EstadoSolicitud }}
+                </span>
+              </td>
+
+              <!-- FECHA SOLICITUD -->
+              <td>
+                <span class="text-muted">
+                  {{ s.FechaSolicitud | date:'dd MMM yyyy' }}
+                </span>
+              </td>
+
+              <!-- ACCIONES (placeholder por ahora) -->
+              <td class="text-center">
+                <button class="btn-accion ver" title="Ver detalle" disabled>
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn-accion editar" title="Editar" disabled>
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-accion eliminar" title="Eliminar" disabled>
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>

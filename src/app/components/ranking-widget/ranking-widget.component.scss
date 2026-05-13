@@ -1,0 +1,451 @@
+/* ═══════════════════════════════════════════════════════════════
+   ranking-widget.component.scss
+   Diseño premium · soporte light + dark · usa el design system SCA
+   ═══════════════════════════════════════════════════════════════ */
+
+:host {
+  display: block;
+  height: 100%;
+
+  /* Colores de aptitud — usados en todo el componente */
+  --apt-top-color:   #22c55e;
+  --apt-top-soft:    rgba(34, 197, 94, 0.12);
+  --apt-top-border:  rgba(34, 197, 94, 0.25);
+  --apt-top-text:    #16a34a;
+
+  --apt-mid-color:   #f59e0b;
+  --apt-mid-soft:    rgba(245, 158, 11, 0.12);
+  --apt-mid-border:  rgba(245, 158, 11, 0.25);
+  --apt-mid-text:    #d97706;
+
+  --apt-low-color:   #ef4444;
+  --apt-low-soft:    rgba(239, 68, 68, 0.12);
+  --apt-low-border:  rgba(239, 68, 68, 0.25);
+  --apt-low-text:    #dc2626;
+}
+
+/* Ajuste Dark Mode automático (igual que bday-widget) */
+:host-context([data-theme="dark"]) {
+  --apt-top-text:  #4ade80;
+  --apt-mid-text:  #fde047;
+  --apt-low-text:  #fca5a5;
+}
+
+/* ── Contenedor principal ──────────────────────────────────────── */
+.wrap {
+  height: 100%;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Cabecera ──────────────────────────────────────────────────── */
+.hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+
+.hd-l        { display: flex; align-items: center; gap: 10px; }
+.hd-ico      { font-size: 1.5rem; line-height: 1; }
+.hd-title    { margin: 0; font-size: .85rem; font-weight: 700; color: var(--text-primary); }
+.hd-sub      { font-size: .7rem; color: var(--text-muted); }
+
+.badge-count {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, transparent);
+}
+
+/* ── Tabs por nivel ────────────────────────────────────────────── */
+.tabs-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 6px;
+  border: none;
+  background: transparent;
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+
+  &:hover:not(.tab-activa) {
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+  }
+}
+
+/* Borde inferior según nivel cuando está activa */
+.tab-btn.tab-activa {
+  color: var(--text-primary);
+}
+.tab-btn.tab-activa .dot-top ~ * { color: var(--text-primary); }
+
+.tab-activa-top  { border-bottom-color: var(--apt-top-color) !important; }
+.tab-activa-mid  { border-bottom-color: var(--apt-mid-color) !important; }
+.tab-activa-low  { border-bottom-color: var(--apt-low-color) !important; }
+
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-top { background: var(--apt-top-color); }
+.dot-mid { background: var(--apt-mid-color); }
+.dot-low { background: var(--apt-low-color); }
+
+/* Contadores en las tabs */
+.tab-count {
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  line-height: 1.6;
+}
+.tab-count-top { background: var(--apt-top-soft);  color: var(--apt-top-text);  border: 1px solid var(--apt-top-border); }
+.tab-count-mid { background: var(--apt-mid-soft);  color: var(--apt-mid-text);  border: 1px solid var(--apt-mid-border); }
+.tab-count-low { background: var(--apt-low-soft);  color: var(--apt-low-text);  border: 1px solid var(--apt-low-border); }
+
+/* ── Scroll container ──────────────────────────────────────────── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 250px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-soft) transparent;
+}
+
+/* ── Fila de persona ───────────────────────────────────────────── */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background var(--transition-fast);
+  cursor: default;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover { background: var(--bg-hover); }
+
+  /* Top 3: fondo sutil diferenciado */
+  &.person-top3 {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--brand-soft) 60%, transparent) 0%,
+      transparent 100%
+    );
+    &:hover {
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--brand-soft) 80%, transparent) 0%,
+        var(--bg-hover) 100%
+      );
+    }
+  }
+}
+
+/* ── Número / medalla ──────────────────────────────────────────── */
+.rank-num {
+  width: 22px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.medal    { font-size: 1rem; line-height: 1; }
+
+.rank-idx {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+}
+
+/* ── Avatar ────────────────────────────────────────────────────── */
+.av {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: .82rem;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast);
+}
+
+.av-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.av-top {
+  background: var(--apt-top-soft);
+  color: var(--apt-top-text);
+  border-color: var(--apt-top-border);
+}
+.av-mid {
+  background: var(--apt-mid-soft);
+  color: var(--apt-mid-text);
+  border-color: var(--apt-mid-border);
+}
+.av-low {
+  background: var(--apt-low-soft);
+  color: var(--apt-low-text);
+  border-color: var(--apt-low-border);
+}
+
+/* ── Info del empleado ─────────────────────────────────────────── */
+.pinfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.pname {
+  margin: 0;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pmeta {
+  margin: 2px 0 5px;
+  font-size: .65rem;
+  color: var(--text-muted);
+
+  strong { color: var(--text-secondary); font-weight: 700; }
+}
+
+.meta-sep {
+  margin: 0 3px;
+  opacity: .4;
+}
+
+/* ── Barra de progreso ─────────────────────────────────────────── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width .5s cubic-bezier(.4, 0, .2, 1);
+}
+
+.fill-top { background: var(--apt-top-color); }
+.fill-mid { background: var(--apt-mid-color); }
+.fill-low { background: var(--apt-low-color); }
+
+.progress-pct {
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Píldora de score (derecha) ────────────────────────────────── */
+.p-right {
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-size: .72rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  letter-spacing: -.01em;
+}
+
+.pill-unit {
+  font-size: .55rem;
+  font-weight: 600;
+  opacity: .75;
+  margin-left: 1px;
+}
+
+.pill-top {
+  background: var(--apt-top-soft);
+  color: var(--apt-top-text);
+  border-color: var(--apt-top-border);
+}
+.pill-mid {
+  background: var(--apt-mid-soft);
+  color: var(--apt-mid-text);
+  border-color: var(--apt-mid-border);
+}
+.pill-low {
+  background: var(--apt-low-soft);
+  color: var(--apt-low-text);
+  border-color: var(--apt-low-border);
+}
+
+/* ── Estado vacío ──────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-muted);
+}
+
+.empty-ico { font-size: 1.8rem; }
+
+.empty-state p {
+  margin: 0;
+  font-size: .78rem;
+  font-weight: 500;
+}
+
+/* ── Pie ───────────────────────────────────────────────────────── */
+.ft {
+  padding: 9px 16px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-hover);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ft span, .ft i {
+  font-size: .7rem;
+  color: var(--text-muted);
+}
+
+.ft-sep { opacity: .4; }
+
+.ft-nivel { font-weight: 700; }
+.ft-top   { color: var(--apt-top-text) !important; }
+.ft-mid   { color: var(--apt-mid-text) !important; }
+.ft-low   { color: var(--apt-low-text) !important; }
+
+/* ── Skeleton de carga ─────────────────────────────────────────── */
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.sk-rank {
+  width: 22px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  animation: skeleton 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.sk-av {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  animation: skeleton 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.sk-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sk-line {
+  height: 9px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+  animation: skeleton 1.2s ease-in-out infinite;
+}
+
+.sk-bar {
+  height: 4px;
+  width: 80%;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  animation: skeleton 1.2s ease-in-out infinite;
+  animation-delay: .2s;
+}
+
+.sk-pill {
+  width: 44px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  animation: skeleton 1.2s ease-in-out infinite;
+  animation-delay: .1s;
+  flex-shrink: 0;
+}
+
+.sk-line.w65 { width: 65%; }
+.sk-line.w45 { width: 45%; animation-delay: .15s; }
+
+/* ── Animaciones ───────────────────────────────────────────────── */
+@keyframes skeleton {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 1; }
+}

@@ -1,49 +1,167 @@
 <aside class="sidebar-container d-flex flex-column flex-shrink-0">
-  
-  <div class="sidebar-header">
-    <button class="btn btn-toggle" (click)="onToggleSidebar()">
-      <i class="bi bi-list"></i>
+
+  <!-- ── TOGGLE ─────────────────────────────────────── -->
+  <div class="sidebar-toggle-wrap">
+    <button class="btn-toggle" (click)="onToggleSidebar()" title="Colapsar menú">
+      <span class="nav-icon"><i class="bi bi-layout-sidebar-reverse"></i></span>
+      <span class="nav-text">Colapsar</span>
     </button>
   </div>
-  <hr class="sidebar-divider">
 
-  <div class="sidebar-nav-scroll">
-    <ul class="nav nav-pills flex-column">
-      <li class="nav-category-title">
-        <small>MENÚ PRINCIPAL</small>
-      </li>
-      <li class="nav-item">
-        <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
-          <i class="bi bi-house-door me-2"></i>
-          <span>Inicio</span>
-        </a>
-      </li>
-      <li>
-        <a routerLink="/registrar-trabajo" routerLinkActive="active" class="nav-link">
-          <i class="bi bi-journal-plus me-2"></i>
-          <span>Registrar Trabajo</span>
-        </a>
-      </li>
-      <li class="nav-category-title mt-3">
-        <small>GESTIÓN</small>
-      </li>
-      <li><a href="#" class="nav-link"><i class="bi bi-card-checklist me-2"></i><span>Checklists</span></a></li>
-      <li><a href="#" class="nav-link"><i class="bi bi-building me-2"></i><span>Centros</span></a></li>
-      <li><a href="#" class="nav-link"><i class="bi bi-bar-chart-line me-2"></i><span>Reportes</span></a></li>
-    </ul>
+  <div class="nav-sep"></div>
+
+  <!-- ── NAV SCROLL ─────────────────────────────────── -->
+  <nav class="sidebar-nav-scroll" aria-label="Navegación principal">
+
+    <!-- OPERACIONES -->
+    <div class="nav-group">
+      <span class="nav-group-label">Operaciones</span>
+      <ul class="nav-list">
+        <li>
+          <a routerLink="/home" routerLinkActive="active"
+             [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-house-door"></i></span>
+            <span class="nav-text">Inicio</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/asignaciones" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-calendar2-week"></i></span>
+            <span class="nav-text">Asignaciones</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/disponibilidad" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-person-check"></i></span>
+            <span class="nav-text">Disponibilidad</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- MANTENIMIENTOS -->
+    <div class="nav-group">
+      <span class="nav-group-label">Mantenimientos</span>
+      <ul class="nav-list">
+        <li>
+          <a routerLink="/mantenimientos" routerLinkActive="active"
+             [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-tools"></i></span>
+            <span class="nav-text">General</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/mantenimientos/empleados" routerLinkActive="active"
+             class="nav-link nav-link--child">
+            <span class="nav-icon"><i class="bi bi-people"></i></span>
+            <span class="nav-text">Empleados</span>
+          </a>
+        </li>
+        <!-- futuros sub-ítems de Mantenimientos aquí -->
+      </ul>
+    </div>
+
+    <!-- GESTIÓN HUMANA -->
+    <div class="nav-group">
+      <span class="nav-group-label">Gestión Humana</span>
+      <ul class="nav-list">
+        <li>
+          <a routerLink="/gestion-humana/solicitudes" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+             class="nav-link nav-link--child">
+            <span class="nav-icon"><i class="bi bi-inbox"></i></span>
+            <span class="nav-text">Solicitudes</span>
+          </a>
+        </li>
+        <!-- futuros sub-ítems de Gestión Humana aquí -->
+         <li>
+          <a routerLink="gestion-humana/solicitudes/nueva" routerLinkActive="active"
+             class="nav-link nav-link--child">
+            <span class="nav-icon"><i class="bi bi-plus-circle"></i></span>
+            <span class="nav-text">Nueva Solicitud</span>
+          </a>
+        </li>
+           <li>
+          <a routerLink="/gestion-humana/saldos-vacaciones" routerLinkActive="active"
+             class="nav-link nav-link--child">
+            <span class="nav-icon"><i class="bi bi-calendar2-check me-2"></i></span>
+            <span class="nav-text">Saldos de Vacaciones</span>
+          </a>
+        </li>
+
+
+         
+      </ul>
+    </div>
+
+    <!-- ANÁLISIS -->
+    <div class="nav-group">
+      <span class="nav-group-label">Análisis</span>
+      <ul class="nav-list">
+        <li>
+          <a routerLink="/reportes" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-bar-chart-line"></i></span>
+            <span class="nav-text">Reportes</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/centros" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-building"></i></span>
+            <span class="nav-text">Centros</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/checklists" routerLinkActive="active" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-card-checklist"></i></span>
+            <span class="nav-text">Checklists</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+  </nav>
+
+  <!-- ── FOOTER ─────────────────────────────────────── -->
+  <div class="sidebar-footer">
+
+    <div class="footer-row">
+      <span class="nav-icon"><i class="bi bi-circle-half"></i></span>
+      <span class="footer-label">Tema</span>
+      <div class="ms-auto">
+
+      </div>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <div class="dropup">
+      <a href="#" class="user-row dropdown-toggle"
+         data-bs-toggle="dropdown" aria-expanded="false">
+        <div class="user-avatar">
+          <i class="bi bi-person-circle"></i>
+        </div>
+        <div class="user-meta">
+          <span class="user-name">Usuario</span>
+          <span class="user-role">Administrador</span>
+        </div>
+        <i class="bi bi-chevron-up chevron-up"></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark shadow">
+        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a
+            class="dropdown-item item-danger"
+            href="#"
+            (click)="logout($event)"
+          >
+            <i class="bi bi-box-arrow-left me-2"></i>
+            Cerrar Sesión
+          </a>
+        </li>
+      </ul>
+    </div>
+
   </div>
-  
-  <hr class="sidebar-divider mt-auto">
-  <div class="dropup"> 
-    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle p-2" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="bi bi-person-circle me-2 fs-4"></i>
-      <strong>Usuario</strong>
-    </a>
-    <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-      <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-      <li><a class="dropdown-item" href="#">Configuración</a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="#">Cerrar Sesión</a></li>
-    </ul>
-  </div>
+
 </aside>

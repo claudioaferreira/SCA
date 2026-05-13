@@ -1,13 +1,212 @@
-<div class="list-group">
-  @for (emp of empleadosMaster; track emp.id) {
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-      <span>{{ emp.nombre }}</span>
-      
-      @if (verificar(emp.id)) {
-        <span class="badge bg-success">✅ Disponible</span>
-      } @else {
-        <span class="badge bg-danger">🚚 En Ruta (Ocupado)</span>
+<div class="page-container">
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <div class="page-header-card">
+    <div class="page-brand">
+      <i class="bi bi-people-fill page-brand-icon"></i>
+      <div class="page-brand-text">
+        <span class="page-title">Disponibilidad de Personal</span>
+        <span class="page-subtitle">Hoy · {{ hoy | date:'longDate' }}</span>
+      </div>
+    </div>
+
+    <div class="header-stats">
+      <div class="stat-pill stat-disponible">
+        <i class="bi bi-check-circle-fill"></i>
+        <strong>{{ totalDisponibles }}</strong>
+        <span>Disponibles</span>
+      </div>
+      <div class="stat-pill stat-ocupado">
+        <i class="bi bi-dash-circle-fill"></i>
+        <strong>{{ totalOcupados }}</strong>
+        <span>Ocupados</span>
+      </div>
+    </div>
+
+    <button class="btn-primary-custom" (click)="abrirModalBloquear()">
+      <i class="bi bi-plus-lg me-1"></i>
+      Bloquear empleado
+    </button>
+  </div>
+
+
+  <!-- ── FILTROS ────────────────────────────────────────────── -->
+  <div class="filtros-card">
+    <div class="toolbar-search">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" class="search-input"
+             placeholder="Buscar por nombre o código…"
+             [(ngModel)]="filtroTexto" />
+    </div>
+
+    <div class="filtros-chips">
+      <button class="chip-filtro" [class.active]="filtroEstado === 'todos'"
+              (click)="filtroEstado = 'todos'">
+        Todos · {{ empleados.length }}
+      </button>
+      <button class="chip-filtro chip-disponible" [class.active]="filtroEstado === 'disponible'"
+              (click)="filtroEstado = 'disponible'">
+        🟢 Disponibles · {{ contarPorEstado('disponible') }}
+      </button>
+      <button class="chip-filtro chip-asignacion" [class.active]="filtroEstado === 'asignacion'"
+              (click)="filtroEstado = 'asignacion'">
+        🚚 En ruta · {{ contarPorEstado('asignacion') }}
+      </button>
+      <button class="chip-filtro chip-ausencia" [class.active]="filtroEstado === 'ausencia'"
+              (click)="filtroEstado = 'ausencia'">
+        🌴 Ausentes · {{ contarPorEstado('ausencia') }}
+      </button>
+      <button class="chip-filtro chip-manual" [class.active]="filtroEstado === 'manual'"
+              (click)="filtroEstado = 'manual'">
+        🚫 Bloqueados · {{ contarPorEstado('manual') }}
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ── LOADING ────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>
+      Cargando…
+    </div>
+  }
+
+
+  <!-- ── EMPTY ──────────────────────────────────────────────── -->
+  @if (!loading && empleadosFiltrados().length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-inbox"></i>
+      <p>No hay empleados con esos filtros.</p>
+    </div>
+  }
+
+
+  <!-- ── LISTA DENSA ────────────────────────────────────────── -->
+  @if (!loading && empleadosFiltrados().length > 0) {
+    <div class="empleados-list">
+      @for (e of empleadosFiltrados(); track e.id) {
+        <div class="emp-row" [ngClass]="'estado-' + e.Estado">
+
+          <!-- Foto con fallback a iniciales -->
+          <div class="emp-photo">
+            @if (mostrarFoto(e.codigo)) {
+              <img [src]="'img/empleados/' + e.codigo + '.png'"
+                   (error)="onImgError(e.codigo)"
+                   [alt]="e.nombre">
+            } @else {
+              <div class="emp-initials">{{ iniciales(e.nombre) }}</div>
+            }
+          </div>
+
+          <!-- Nombre + meta -->
+          <div class="emp-info">
+            <div class="emp-nombre">{{ e.nombre }}</div>
+            <div class="emp-meta">
+              {{ e.codigo }} · {{ e.cargo }} · 📍 {{ e.ubicacion }}
+            </div>
+          </div>
+
+          <!-- Estado y motivo -->
+          <div class="emp-estado-info">
+            <div class="badge-estado">
+              <i class="bi" [ngClass]="iconoEstado(e.Estado)"></i>
+              {{ textoEstado(e.Estado) }}
+            </div>
+            @if (e.Motivo || (e.FechaFin && e.Estado !== 'disponible')) {
+              <div class="estado-detalle" [title]="e.Motivo">
+                @if (e.Motivo) { {{ e.Motivo }} }
+                @if (e.FechaFin && e.Estado !== 'disponible') {
+                  · hasta {{ formatFechaCorta(e.FechaFin) }}
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Acciones -->
+          <div class="emp-actions">
+            @if (e.Estado === 'disponible') {
+              <button class="btn-icon-accion btn-icon-bloquear"
+                      (click)="abrirModalBloquear(e)"
+                      title="Marcar ocupado">
+                <i class="bi bi-hand-thumbs-down-fill"></i>
+              </button>
+            }
+            @if (e.Estado === 'manual') {
+              <button class="btn-icon-accion btn-icon-liberar"
+                      (click)="liberar(e)"
+                      title="Liberar">
+                <i class="bi bi-unlock-fill"></i>
+              </button>
+            }
+          </div>
+        </div>
       }
+    </div>
+  }
+
+
+  <!-- ── MODAL DE BLOQUEO MANUAL ────────────────────────────── -->
+  @if (modalAbierto) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div class="modal-header-brand">
+            <div class="modal-avatar-icon">
+              <i class="bi bi-hand-thumbs-down-fill"></i>
+            </div>
+            <div>
+              <h3>Bloquear empleado</h3>
+              <p class="modal-subtitle">El empleado no podrá ser asignado en las fechas indicadas</p>
+            </div>
+          </div>
+          <button class="btn-cerrar" (click)="cerrarModal()">✕</button>
+        </div>
+
+        <form [formGroup]="formBloqueo" (ngSubmit)="guardarBloqueo()">
+          <div class="modal-body">
+
+            <div class="campo">
+              <label>Empleado *</label>
+              <select formControlName="idEmpleado">
+                <option [ngValue]="null">— Seleccionar empleado —</option>
+                @for (e of empleadosDisponibles; track e.id) {
+                  <option [ngValue]="e.id">{{ e.codigo }} · {{ e.nombre }}</option>
+                }
+              </select>
+              <small class="hint">Sólo se listan empleados que ahora mismo están disponibles.</small>
+            </div>
+
+            <div class="fila-doble">
+              <div class="campo">
+                <label>Desde *</label>
+                <input type="date" formControlName="fechaInicio">
+              </div>
+              <div class="campo">
+                <label>Hasta *</label>
+                <input type="date" formControlName="fechaFin">
+              </div>
+            </div>
+
+            <div class="campo">
+              <label>Motivo *</label>
+              <textarea formControlName="motivo" rows="3"
+                        placeholder="Ej: 'En reunión con cliente todo el día'"></textarea>
+              <small class="hint">Mínimo 5 caracteres. Sé claro para los demás supervisores.</small>
+            </div>
+
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-guardar" [disabled]="formBloqueo.invalid">
+              <i class="bi bi-check2"></i>
+              Bloquear
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   }
 </div>
