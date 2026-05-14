@@ -5,6 +5,7 @@ import { Router }            from '@angular/router';
 import { UserService } from '../../../services/user/user.service';
 import { ILoginResponseToken } from '../../../interfaces/user/loginResponseToken';
 import { ILoginRequest, IUser } from '../../../interfaces/user/user';
+import { AuthService } from '../../../services/user/auth.service';
 
 // import { AuthService }    from '@core/services/auth.service'; // ← descomenta con tu servicio
 
@@ -30,10 +31,11 @@ export class LoginPageComponent implements OnInit {
   user: IUser[] = [];
 
   private _userService = inject(UserService);
+  private auth = inject(AuthService);
+  private router = inject(Router);
 
   constructor(
-    private router: Router,
-    // private authService: AuthService,
+
   ) {}
 
   ngOnInit(): void {
@@ -55,42 +57,25 @@ export class LoginPageComponent implements OnInit {
     
     this._userService.login(this.credentials).subscribe({
       next: (response:ILoginResponseToken) => {
-        console.log('Login exitoso:', response);
+        this.isLoading = false;
         this.handleLoginSuccess(response);
       },
       error: (err) => {
         this.isLoading    = false;
-        this.errorMessage = err.status === 401
-          ? 'Usuario o contraseña incorrectos.'
-          : 'Error del servidor. Intenta más tarde.';
+
       }
     });
     
-    // ── Simulación temporal (eliminar al integrar) ─────────
-
-    setTimeout(() => {
-      this.isLoading = false;
-
-      // // Simula respuesta del servidor con mustChangePassword
-      // const mockResponse = {
-      //   token: 'mock-token-abc123',
-      //   mustChangePassword: this.credentials.password === 'temp1234',
-      //   user: { id: 1, username: this.credentials.username },
-      // };
-
-      // this.handleLoginSuccess(mockResponse);
-    }, 1200);
   }
 
   private handleLoginSuccess(response: ILoginResponseToken): void {
     // Guardar token (ajusta a tu estrategia: localStorage, cookie httpOnly, etc.)
     // Guardar tokens
-    localStorage.setItem('sca_token', response.token);
-    localStorage.setItem('sca_refresh_token', response.refreshToken);
-
-    // Guardar usuario logueado
-    localStorage.setItem('sca_user', JSON.stringify(response.user));
-
+        this.auth.guardarSesion({
+        token: response.token,
+        refreshToken: response.refreshToken,
+        user: response.user
+      });
     // Guardar usuario si "Recordarme" está activo
     if (this.rememberMe) {
       localStorage.setItem('sca_username', this.credentials.username);

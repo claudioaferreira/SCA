@@ -8,6 +8,7 @@ import {
   TipoAsignacion,
   AsignacionCelda,
 } from '../../../interfaces/asignacion.interface';
+import { CatalogosService } from '../../../services/catalogos.service';
 
 
 @Component({
@@ -27,6 +28,7 @@ export class EmpleadosComponent implements OnInit {
   private empleadoIdActual = 0
 
   private _empleadosService = inject(EmpleadosService);
+  private _catalogosService = inject(CatalogosService);
   private _fb = inject(FormBuilder);
   formulario!: FormGroup;
 
@@ -52,17 +54,17 @@ export class EmpleadosComponent implements OnInit {
   }
   
   cargarExtras() {
-    this._empleadosService.getDepartamentos().subscribe({
-      next: (data) => {
+    this._catalogosService.getDepartamentos().subscribe({
+      next: (data:any) => {
          console.log('Primer depto:', data[0]); //
-        this.departamentosCatalogo = data;
+        this.departamentosCatalogo = data.body;
       },
       error: (err) => console.error('Error al cargar departamentos', err)
     });
-    this._empleadosService.getCargos().subscribe({
-      next: (data) => {
+    this._catalogosService.getCargos().subscribe({
+      next: (data : any) => {
         console.log('Primer cargo:', data[0]); // 
-        this.cargosCatalogo = data;
+        this.cargosCatalogo = data.body;
       },
       error: (err) => console.error('Error al cargar cargos', err)
     });
@@ -91,9 +93,9 @@ export class EmpleadosComponent implements OnInit {
     });
   }
   cargarCatalogoEquipos() {
-  this._empleadosService.getCatalogoEquipos().subscribe({
-    next: (data) => {
-      this.equiposDisponibles = data;
+  this._catalogosService.getEquipos().subscribe({
+    next: (data: any) => {
+      this.equiposDisponibles = data.body;
     },
     error: (err) => console.error('Error al cargar equipos', err)
   });

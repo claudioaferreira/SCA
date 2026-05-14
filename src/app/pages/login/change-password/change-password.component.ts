@@ -3,7 +3,8 @@ import { CommonModule }      from '@angular/common';
 import { FormsModule }       from '@angular/forms';
 import { Router }            from '@angular/router';
 import { UserService } from '../../../services/user/user.service';
-// import { AuthService }    from '@core/services/auth.service';
+import Swal from 'sweetalert2';
+import { AuthService } from '../../../services/user/auth.service';
 
 interface PasswordRules {
   length:    boolean;
@@ -43,22 +44,11 @@ export class ChangePasswordComponent implements OnInit {
   strengthPct   = 0;
 
   private _userService = inject(UserService);
+  private _auth = inject(AuthService);
+  private router = inject(Router);
 
-
-  constructor(
-    private router: Router,
-    // private authService: AuthService,
-  ) {}
 
   ngOnInit(): void {
-    // Proteger la ruta: si el usuario llega sin token, redirigir al login
-    
-    
-    const token = localStorage.getItem('sca_token');
-    if (!token) {
-      this.router.navigate(['/login']);
-    }
-
 
   }
 
@@ -108,7 +98,17 @@ export class ChangePasswordComponent implements OnInit {
       next: () => {
         this.isLoading = false;
 
-        this.router.navigate(['/home']);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Contraseña cambiada',
+          text: 'Tu contraseña ha sido actualizada exitosamente. Por favor, inicia sesión nuevamente.',
+          confirmButtonText: 'Ir al inicio',
+        }).then(() => {
+          this._auth.logout();
+          this.router.navigate(['/login']);
+        });
+
       },
 
       error: (err) => {

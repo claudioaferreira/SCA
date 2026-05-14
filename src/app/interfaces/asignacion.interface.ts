@@ -33,6 +33,7 @@ export interface EquipoAsignado {
 export interface TipoAsignacion {
   IdTipo: number;
   nombre: string;
+  BloqueaEmpleado: boolean;
 }
 
 export interface Asignacion {

@@ -44,7 +44,7 @@
             [class.tab-activa-low]="tabActiva === 'low'"
             (click)="setTab('low')">
       <span class="tab-dot dot-low"></span>
-      Disponibles
+      Bajo
       @if (!cargando) {
         <span class="tab-count tab-count-low">{{ grupoLow.length }}</span>
       }
@@ -143,7 +143,7 @@
   <!-- ── Pie ── -->
   <div class="ft">
     <i class="bi bi-info-circle"></i>
-    <span>🔴 Más viajes = Evitar · 🟢 Disponibles = Asignar primero</span>
+    <span> 🟢 Más viajes = Evitar · 🔴  Disponibles = Asignar primero</span>
     @if (!cargando) {
       <span class="ft-sep">·</span>
       <span class="ft-nivel"

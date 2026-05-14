@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
 import { ILoginRequest, IUser } from '../../interfaces/user/user';
@@ -12,32 +12,23 @@ export class UserService {
 
   private http: HttpClient = inject(HttpClient);
   private apiUrl = environment.apiUrl;
-  
-constructor() { 
-    
-  }
-  
+
 
   signIn(user : IUser):Observable<any>{
-    return this.http.post(`${this.apiUrl}/newuser`, user);
+    return this.http.post(`${this.apiUrl}/users/newuser`, user);
   }
 
 
   login(credentials: ILoginRequest) {
   return this.http.post<ILoginResponseToken>(
-    `${this.apiUrl}/user/login`,
+    `${this.apiUrl}/auth/login`,
     credentials
   );
 }
 
-  logout(){
-    localStorage.removeItem('sca_token');
-  localStorage.removeItem('sca_refresh_token');
-  localStorage.removeItem('sca_user');
-  }
 
   estaLogueado(): boolean {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('sca_token');
 
     if(!token){
       return false;
@@ -46,14 +37,14 @@ constructor() {
     const expiracionDate = new Date(expiracion);
 
     if(expiracionDate <= new Date()){
-      this.logout();
+
       return false;
     }
     return true;
   }
 
   obtenerCampoJWT (campo: string): string {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('sca_token');
     if(!token){
       return '';
     }
@@ -63,20 +54,15 @@ constructor() {
   }
 
   obtenerUsuarios():Observable<IUser[]>{
-    return this.http.get<IUser[]>(`${this.apiUrl}/user/getAllUsers`);
+    return this.http.get<IUser[]>(`${this.apiUrl}/users`);
   }
 
   obtenerUsuarioById(id: number):Observable<IUser>{
-    return this.http.get<IUser>(`${this.apiUrl}/user/getUser/${id}`);
+    return this.http.get<IUser>(`${this.apiUrl}/users/${id}`);
   }
 
   changePassword(newPassword: string): Observable<any> {
-     const token = localStorage.getItem('sca_token');
-
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`
-    });
-    return this.http.put(`${this.apiUrl}/user/change-password`, { newPassword }, { headers });
-  }
+  return this.http.put(`${this.apiUrl}/auth/change-password`, { newPassword });
+}
 
 }

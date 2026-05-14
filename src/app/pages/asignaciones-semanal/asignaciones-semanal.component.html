@@ -424,11 +424,14 @@
                   @let key = generarLlave(emp.id, dia);
                   @let items = dataTemporal[key];
                   @let ausencia = tieneAusencia(emp.id, dia);
+                  @let tardanza = tieneTardanza(emp.id, dia);
                   <td
                     [ngClass]="getClaseColor(key, dia)"
                     class="border-start assignment-cell day-cell position-relative"
                     [class.bg-ausencia]="ausencia"
                   >
+                  
+                  
                     @if (ausencia) {
                       <div class="ausencia-wrapper">
                         <div
@@ -484,6 +487,33 @@
                       </div>
                     } @else {
                       <div class="cell-scroll-inner">
+                        <!-- Chip fino de Tardanza/Incidencia · informativo, NO bloquea la celda -->
+                        @if (tardanza) {
+                          <div
+                            class="chip-incidencia"
+                            [style.background]="tardanza.Justificado ? 'rgba(16,185,129,0.18)' : 'rgba(245,158,11,0.18)'"
+                            [style.color]="tardanza.Justificado ? '#10b981' : '#f59e0b'"
+                            [style.border-color]="tardanza.Justificado ? 'rgba(16,185,129,0.45)' : 'rgba(245,158,11,0.45)'"
+                            style="display: inline-flex; align-items: center; gap: 3px;
+                                  padding: 1px 6px; border-radius: 10px;
+                                  border: 1px solid;
+                                  font-size: 0.55rem; font-weight: 700;
+                                  line-height: 1.4; letter-spacing: 0.3px;
+                                  text-transform: uppercase;
+                                  cursor: help; width: fit-content; max-width: 100%;
+                                  margin-bottom: 3px;"
+                            [title]="
+                              (tardanza.TipoAusencia || 'Incidencia') +
+                              (tardanza.HoraEvento ? ' · ' + tardanza.HoraEvento : '') +
+                              ' · ' + tardanza.FechaInicio +
+                              (tardanza.Motivo ? '\n📝 ' + tardanza.Motivo : '') +
+                              (tardanza.Justificado ? '\n✅ Justificada' : '\n⚠️ Sin justificar')
+                            "
+                          >
+                            <i class="bi bi-clock-fill" style="font-size: 0.5rem;"></i>
+                            <span class="text-truncate">{{ nombreCortoIncidencia(tardanza.TipoAusencia) }}</span>
+                          </div>
+                        } 
                         <div class="chips-grid">
                           @for (item of items; track item.uid) {
                             @if (!item.esNueva) {
@@ -519,6 +549,8 @@
                                     ) {
                                       {{ item.dias }}d {{ item.IdZonaGeo }}
                                     }
+
+                                    
                                   </span>
                                   <span
                                     class="chip-estado ms-auto flex-shrink-0"

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { EmpleadosService } from '../../../services/empleados.service';
 import { GestionHumanaService } from '../../../services/gestion-humana.service';
+import { CatalogosService } from '../../../services/catalogos.service';
 
 @Component({
   selector: 'app-nueva-solicitud',
@@ -40,6 +41,7 @@ export class NuevaSolicitudComponent implements OnInit {
   private ghService    = inject(GestionHumanaService);
   private empService   = inject(EmpleadosService);
   private router       = inject(Router);
+  private _catalogosService = inject(CatalogosService);
 
   ngOnInit(): void {
        this.construirFormulario();
@@ -130,16 +132,16 @@ export class NuevaSolicitudComponent implements OnInit {
 
    // ── CARGA DE DATOS DEL BACKEND ─────────────────────────────────────
   private cargarCatalogos(): void {
-    this.ghService.getTipos().subscribe({
+    this._catalogosService.getTiposSolicitud().subscribe({
       next: (res) => this.tipos = res.body ?? [],
     });
-    this.ghService.getSubtiposPermiso().subscribe({
+    this._catalogosService.getSubtiposPermiso().subscribe({
       next: (res) => this.subtiposPermiso = res.body ?? [],
     });
-    this.ghService.getSubtiposLicencia().subscribe({
+    this._catalogosService.getSubtiposLicencia().subscribe({
       next: (res) => this.subtiposLicencia = res.body ?? [],
     });
-    this.ghService.getSubtiposIncidencia().subscribe({
+    this._catalogosService.getSubtiposIncidencia().subscribe({
       next: (res) => this.subtiposIncidencia = res.body ?? [],
     });
   }

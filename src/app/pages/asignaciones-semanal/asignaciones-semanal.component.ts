@@ -1,7 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
 import { NgSelectModule } from '@ng-select/ng-select';
 import Swal from 'sweetalert2';
 
@@ -23,6 +22,7 @@ import {
   alertaTipoDuplicado,
 } from './alertas-asignacion.helper';
 import { GestionHumanaService } from '../../services/gestion-humana.service';
+import { CatalogosService } from '../../services/catalogos.service';
 
 @Component({
   selector: 'app-asignaciones-semanal',
@@ -32,6 +32,12 @@ import { GestionHumanaService } from '../../services/gestion-humana.service';
   styleUrls: ['./asignaciones-semanal.component.scss'],
 })
 export class AsignacionesSemanalComponent implements OnInit {
+
+  
+    // ---- INJECCIÓN DE SERVICIOS ----
+  private ghService = inject(GestionHumanaService);
+  private _catalogosService = inject(CatalogosService);
+  private _empleadosService = inject(EmpleadosService);
   // ─── ESTADO GENERAL ─────────────────────────────────────────────────────
   popoverAbierto: number | null = null;
   loading = false;
@@ -39,6 +45,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   private lunesActual!: Date;
 
   ausenciasMap = new Map<string, any>(); // clave: "empId-YYYY-MM-DD"
+  tardanzasMap = new Map<string, any>(); // clave: "empId-YYYY-MM-DD"
 
   // ─── EMPLEADOS ──────────────────────────────────────────────────────────
 
@@ -55,7 +62,7 @@ export class AsignacionesSemanalComponent implements OnInit {
    * Metro (2), Interior (3) y Exterior (4) solo se pueden asignar una vez.
    * Sede Central (1) NO bloquea — el técnico puede tener sede y otro tipo.
    */
-  private readonly TIPOS_CON_LIMITE: number[] = [2, 3, 4];
+  private tiposConLimiteIds: number[] = [];
 
   // ─── ASIGNACIONES (CELDAS) ──────────────────────────────────────────────
 
@@ -73,13 +80,6 @@ export class AsignacionesSemanalComponent implements OnInit {
 
   // ─── RANKING DE APTITUD (cache) ───────────────────────────────────
   rankingMap = new Map<string, number>();
-
-  // ─── CONSTRUCTOR ────────────────────────────────────────────────────────
-
-  constructor(private _empleadosService: EmpleadosService) {}
-
-  // ---- INJECCIÓN DE SERVICIOS ----
-  private ghService = inject(GestionHumanaService);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   //  CICLO DE VIDA
@@ -139,25 +139,43 @@ export class AsignacionesSemanalComponent implements OnInit {
   cargarAusenciasSemana(): void {
     const { inicio, fin } = this.getRangoSemana();
     this.ausenciasMap.clear();
+    this.tardanzasMap.clear();
 
     // 1) AUSENCIAS (Permiso · Licencia · Vacaciones)
-    this.ghService.getAusenciasRango(inicio, fin).subscribe({
-      next: (res) => {
-        const ausencias = res.body ?? [];
-        ausencias.forEach((a: any) => {
-          const desde = this.parsearFechaLocal(a.FechaInicio);
-          const hasta = this.parsearFechaLocal(a.FechaReintegro);
-          for (
-            let d = new Date(desde);
-            d <= hasta;
-            d.setDate(d.getDate() + 1)
-          ) {
-            const key = `${a.IdEmpleado}-${this.fechaLocalISO(d)}`;
-            this.ausenciasMap.set(key, { ...a, tipo: 'ausencia' });
-          }
-        });
-      },
+   this.ghService.getAusenciasRango(inicio, fin).subscribe({
+  next: (res) => {
+    const ausencias = res.body ?? [];
+    ausencias.forEach((a: any) => {
+      // Detecta si la fila es una tardanza / incidencia.
+      // El técnico SÍ vino (aunque tarde), así que no debe bloquear la celda.
+      const tipoStr = (a?.TipoAusencia ?? '').toLowerCase();
+      const esTardanza =
+        !a?.BloqueaAsignacion ||
+        tipoStr.includes('tardanza') ||
+        tipoStr.includes('incidencia');
+
+      const desde = this.parsearFechaLocal(a.FechaInicio);
+
+      if (esTardanza) {
+        // Las tardanzas solo aplican al día indicado (FechaReintegro puede venir null).
+        const key = `${a.IdEmpleado}-${this.fechaLocalISO(desde)}`;
+        this.tardanzasMap.set(key, { ...a, tipo: 'tardanza' });
+        return;
+      }
+
+      // FechaReintegro = día en que el empleado REGRESA al trabajo (exclusivo).
+      const hasta = this.parsearFechaLocal(a.FechaReintegro);
+      for (
+        let d = new Date(desde);
+        d < hasta;
+        d.setDate(d.getDate() + 1)
+      ) {
+        const key = `${a.IdEmpleado}-${this.fechaLocalISO(d)}`;
+        this.ausenciasMap.set(key, { ...a, tipo: 'ausencia' });
+      }
     });
+  },
+});
 
     // 2) BLOQUEOS MANUALES (override del supervisor)
     this.ghService.getBloqueosManualesRango(inicio, fin).subscribe({
@@ -228,6 +246,17 @@ export class AsignacionesSemanalComponent implements OnInit {
     return this.ausenciasMap.get(key) ?? null;
   }
 
+  tieneTardanza(empId: number, dia: Date): any | null {
+  const key = `${empId}-${this.fechaLocalISO(dia)}`;
+  return this.tardanzasMap.get(key) ?? null;
+}
+
+nombreCortoIncidencia(tipoAusencia: string | undefined): string {
+  if (!tipoAusencia) return 'Inc.';
+  const partes = tipoAusencia.split('·').map((s) => s.trim());
+  return partes[partes.length - 1] || tipoAusencia;
+}
+
   copiarDatosTecnico(emp: any) {
     const texto = `Nombre: ${emp.nombre} | Código: ${emp.codigo} | Cargo: ${emp.cargo} | Tel. Flota: ${emp.telefonoFlota || 'N/A'} | Tel. Personal: ${emp.telefonoPersonal || 'N/A'}`;
     navigator.clipboard.writeText(texto);
@@ -235,7 +264,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   }
 
   cargarCentrosCedulacion() {
-    this._empleadosService.getCentrosCedulacion().subscribe({
+    this._catalogosService.getCentrosCedulacion().subscribe({
       next: (res: any) => {
         this.centrosCedulacion = res.body ?? [];
       },
@@ -309,7 +338,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
 
   cargarZonasGeo() {
-    this._empleadosService.getZonaGeo().subscribe({
+    this._catalogosService.getZonasGeo().subscribe({
       next: (res: any) => {
         this.zonasGeo = res.body ?? [];
       },
@@ -318,17 +347,18 @@ export class AsignacionesSemanalComponent implements OnInit {
   }
 
   obtenerTiposAsignaciones() {
-    this._empleadosService.getTipoAsignaciones().subscribe({
-      next: (res: any) => {
-        this.tipos = (res.body ?? []).map((t: any) => ({
-          IdTipo: t.IdTipo,
-          nombre: t.nombre,
-        }));
-      },
-      error: (err) => console.error('Error al cargar tipos:', err),
-    });
-  }
+  this._catalogosService.getTiposAsignacion().subscribe({
+    next: (res: any) => {
+      this.tipos = res.body ?? [];
 
+      // ✅ Se deriva de la BD, sin hardcodear nada
+      this.tiposConLimiteIds = this.tipos
+        .filter(t => t.BloqueaEmpleado)
+        .map(t => t.IdTipo);
+    },
+    error: (err) => console.error('Error al cargar tipos:', err),
+  });
+}
   /** Devuelve el nombre del tipo según su ID (ej: 2 → 'Metro') */
   getNombreTipo(tipoId: number): string {
     const nombre = this.tipos.find((t) => t.IdTipo === tipoId)?.nombre ?? '';
@@ -353,18 +383,18 @@ export class AsignacionesSemanalComponent implements OnInit {
           (i) =>
             !i.esNueva &&
             i.uid !== itemActual?.uid &&
-            this.TIPOS_CON_LIMITE.includes(i.tipoId),
+            this.tiposConLimiteIds.includes(i.tipoId),
         )
         .map((i) => i.tipoId),
     );
 
     return this.tipos.filter((t) => {
-      if (!this.TIPOS_CON_LIMITE.includes(t.IdTipo)) return true;
+      if (!this.tiposConLimiteIds.includes(t.IdTipo)) return true;
       return !tiposYaUsados.has(t.IdTipo);
     });
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━══
   //  EMPLEADOS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -420,7 +450,7 @@ export class AsignacionesSemanalComponent implements OnInit {
     return this.diasSemana.some((dia) => {
       const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
       return items.some(
-        (i) => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId),
+        (i) => i.idEstado !== 3 && this.tiposConLimiteIds.includes(i.tipoId),
       );
     });
   }
@@ -649,7 +679,7 @@ export class AsignacionesSemanalComponent implements OnInit {
         (i) =>
           !i.esNueva &&
           i.idEstado !== 3 &&
-          this.TIPOS_CON_LIMITE.includes(i.tipoId),
+          this.tiposConLimiteIds.includes(i.tipoId),
       );
       if (asigOcupada) {
         this.mostrarAlertaTecnicoOcupado(diaSemana, asigOcupada);
@@ -659,9 +689,9 @@ export class AsignacionesSemanalComponent implements OnInit {
 
     // Valida que no estén todos los tipos cubiertos para ese día
     const tiposGuardados = items
-      .filter((i) => !i.esNueva && this.TIPOS_CON_LIMITE.includes(i.tipoId))
+      .filter((i) => !i.esNueva && this.tiposConLimiteIds.includes(i.tipoId))
       .map((i) => i.tipoId);
-    const todosUsados = this.TIPOS_CON_LIMITE.every((t) =>
+    const todosUsados = this.tiposConLimiteIds.every((t) =>
       tiposGuardados.includes(t),
     );
 
@@ -690,7 +720,7 @@ export class AsignacionesSemanalComponent implements OnInit {
     if (!item || item.tipoId === 0) return;
 
     // Evita guardar el mismo tipo dos veces en el mismo día
-    if (this.TIPOS_CON_LIMITE.includes(item.tipoId)) {
+    if (this.tiposConLimiteIds.includes(item.tipoId)) {
       const duplicado = this.dataTemporal[key].some(
         (i) => i.uid !== item.uid && i.tipoId === item.tipoId && !i.esNueva,
       );
@@ -1010,7 +1040,7 @@ export class AsignacionesSemanalComponent implements OnInit {
   getClaseColor(key: string, fecha: Date): string {
     const items = this.dataTemporal[key] ?? [];
     const tieneOcupado = items.some(
-      (i) => i.idEstado !== 3 && this.TIPOS_CON_LIMITE.includes(i.tipoId),
+      (i) => i.idEstado !== 3 && this.tiposConLimiteIds.includes(i.tipoId),
     );
     let clases = '';
     if (this.esDiaPasado(fecha)) clases += 'bg-dia-pasado ';

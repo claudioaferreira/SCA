@@ -28,32 +28,32 @@ export class GestionHumanaService {
     return this.http.get(`${this.apiUrl}/gestion-humana/solicitudes`);
   }
 
-  // Catálogos (los vamos a usar en el form más adelante, los dejo listos)
-  getTipos(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/gestion-humana/catalogos/tipos`);
-  }
+  // // Catálogos (los vamos a usar en el form más adelante, los dejo listos)
+  // getTipos(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/gestion-humana/catalogos/tipos`);
+  // }
 
-  getSubtiposPermiso(): Observable<any> {
-    return this.http.get(
-      `${this.apiUrl}/gestion-humana/catalogos/subtipos-permiso`,
-    );
-  }
+  // getSubtiposPermiso(): Observable<any> {
+  //   return this.http.get(
+  //     `${this.apiUrl}/gestion-humana/catalogos/subtipos-permiso`,
+  //   );
+  // }
 
-  getSubtiposLicencia(): Observable<any> {
-    return this.http.get(
-      `${this.apiUrl}/gestion-humana/catalogos/subtipos-licencia`,
-    );
-  }
+  // getSubtiposLicencia(): Observable<any> {
+  //   return this.http.get(
+  //     `${this.apiUrl}/gestion-humana/catalogos/subtipos-licencia`,
+  //   );
+  // }
 
-  getSubtiposIncidencia(): Observable<any> {
-    return this.http.get(
-      `${this.apiUrl}/gestion-humana/catalogos/subtipos-incidencia`,
-    );
-  }
+  // getSubtiposIncidencia(): Observable<any> {
+  //   return this.http.get(
+  //     `${this.apiUrl}/gestion-humana/catalogos/subtipos-incidencia`,
+  //   );
+  // }
 
-  getEstados(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/gestion-humana/catalogos/estados`);
-  }
+  // getEstados(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/gestion-humana/catalogos/estados`);
+  // }
 
   // Otros endpoints (para futuras pantallas)
   getDisponibilidadHoy(): Observable<any> {

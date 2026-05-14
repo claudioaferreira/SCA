@@ -1,39 +1,13 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/user/auth.service'; // ajusta la ruta
 
 export const authGuard: CanActivateFn = () => {
-
+  const auth = inject(AuthService);
   const router = inject(Router);
-  const token = localStorage.getItem('sca_token');
-  if (!token) {
-    router.navigate(['/login']);
-    return false;
-  }
 
-  try {
+  if (auth.isLoggedIn()) return true;
 
-    // validar formato JWT
-    const tokenParts = token.split('.');
-    if (tokenParts.length !== 3) {
-      localStorage.clear();
-      router.navigate(['/login']);
-      return false;
-    }
-
-    // leer payload
-    const payload = JSON.parse(atob(tokenParts[1]));
-    // validar expiración
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (payload.exp < currentTime) {
-      localStorage.clear();
-      router.navigate(['/login']);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    localStorage.clear();
-    router.navigate(['/login']);
-    return false;
-  }
+  auth.logout(); // limpia storage y manda a /login
+  return false;
 };

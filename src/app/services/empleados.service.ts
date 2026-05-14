@@ -20,9 +20,11 @@ export class EmpleadosService {
     return this.http.get<Empleado[]>(`${this.apiUrl}/empleados`);
   }
 
-  getZonaGeo(): Observable<ZonaGeo[]> {
-    return this.http.get<ZonaGeo[]>(`${this.apiUrl}/asignaciones/zonageo`);
-  }
+  // getZonaGeo(): Observable<ZonaGeo[]> {
+  //   return this.http.get<ZonaGeo[]>(`${this.apiUrl}/asignaciones/zonageo`);
+  // }
+
+
   getResumenHome(inicio: string, fin: string): Observable<any> {
   return this.http.get(`${this.apiUrl}/asignaciones/resumen?inicio=${inicio}&fin=${fin}`);
 }
@@ -35,9 +37,9 @@ getEmpleadosPorTipo(inicio: string, fin: string): Observable<any> {
   return this.http.get(`${this.apiUrl}/asignaciones/empleadosPorTipo?inicio=${inicio}&fin=${fin}`);
 }
 
-getCentrosCedulacion(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/asignaciones/centros`);
-}
+// getCentrosCedulacion(): Observable<any[]> {
+//     return this.http.get<any[]>(`${this.apiUrl}/asignaciones/centros`);
+// }
 
   guardarEmpleado(payload: any): Observable<any> {
     // console.log('Payload enviado al backend: desde services', payload);
@@ -53,19 +55,20 @@ getCentrosCedulacion(): Observable<any[]> {
       params: { inicio, fin },
     });
   }
-  getDepartamentos(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/empleados/departamentos/catalogo`);
-  }
 
-  getTipoAsignaciones(): Observable<TipoAsignacion[]> {
-    return this.http.get<TipoAsignacion[]>(
-      `${this.apiUrl}/asignaciones//tipoasignaciones`,
-    );
-  }
+  // getDepartamentos(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/empleados/departamentos/catalogo`);
+  // }
 
-  getCargos(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/empleados/cargos/catalogo`);
-  }
+  // getTipoAsignaciones(): Observable<TipoAsignacion[]> {
+  //   return this.http.get<TipoAsignacion[]>(
+  //     `${this.apiUrl}/asignaciones//tipoasignaciones`,
+  //   );
+  // }
+
+  // getCargos(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/empleados/cargos/catalogo`);
+  // }
 
   // ← nuevo: historial acumulado sin filtro de fecha
   getHistorialEmpleados(): Observable<any> {
@@ -75,6 +78,7 @@ getCentrosCedulacion(): Observable<any[]> {
   actualizarEstadoAsignacion(
     idAsignacion: number,
     idEstado: number,
+  
   ): Observable<any> {
     return this.http.patch(`${this.apiUrl}/asignaciones/estado`, {
       idAsignacion,
@@ -86,9 +90,9 @@ getCentrosCedulacion(): Observable<any[]> {
     return this.http.delete(`${this.apiUrl}/asignaciones/${idAsignacion}`);
   }
 
-  getCatalogoEquipos(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/empleados/equipos/catalogo`);
-  }
+  // getCatalogoEquipos(): Observable<any> {
+  //   return this.http.get(`${this.apiUrl}/empleados/equipos/catalogo`);
+  // }
 
   getEmpleadosPorZona(inicio: string, fin: string, idTipo: number) {
   return this.http.get<any[]>(

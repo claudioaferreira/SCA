@@ -6,11 +6,15 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 
 import { registerLocaleData } from '@angular/common';
 import localeEsDO from '@angular/common/locales/es-DO';
+import { authInterceptor } from '../app/interceptor/auth.interceptor';
+
+
+
 registerLocaleData(localeEsDO, 'es-DO');
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }), 
     provideRouter(routes),
-  HttpClient, provideHttpClient(withInterceptors([])),
+  HttpClient, provideHttpClient(withInterceptors([authInterceptor])),
 { provide: LOCALE_ID, useValue: 'es-DO' }]
 };

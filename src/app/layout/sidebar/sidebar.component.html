@@ -17,20 +17,20 @@
     <div class="nav-group">
       <span class="nav-group-label">Operaciones</span>
       <ul class="nav-list">
-        <li>
+        <li *ngIf="auth.hasRole(1,2,3,4)">
           <a routerLink="/home" routerLinkActive="active"
              [routerLinkActiveOptions]="{exact: true}" class="nav-link">
             <span class="nav-icon"><i class="bi bi-house-door"></i></span>
             <span class="nav-text">Inicio</span>
           </a>
         </li>
-        <li>
+        <li *ngIf="auth.hasRole(1)">
           <a routerLink="/asignaciones" routerLinkActive="active" class="nav-link">
             <span class="nav-icon"><i class="bi bi-calendar2-week"></i></span>
             <span class="nav-text">Asignaciones</span>
           </a>
         </li>
-        <li>
+        <li  *ngIf="auth.hasRole(1,2)">
           <a routerLink="/disponibilidad" routerLinkActive="active" class="nav-link">
             <span class="nav-icon"><i class="bi bi-person-check"></i></span>
             <span class="nav-text">Disponibilidad</span>
@@ -43,14 +43,14 @@
     <div class="nav-group">
       <span class="nav-group-label">Mantenimientos</span>
       <ul class="nav-list">
-        <li>
+        <li *ngIf="auth.hasRole(1)">
           <a routerLink="/mantenimientos" routerLinkActive="active"
              [routerLinkActiveOptions]="{exact: true}" class="nav-link">
             <span class="nav-icon"><i class="bi bi-tools"></i></span>
             <span class="nav-text">General</span>
           </a>
         </li>
-        <li>
+        <li *ngIf="auth.hasRole(1,2,3,4)">
           <a routerLink="/mantenimientos/empleados" routerLinkActive="active"
              class="nav-link nav-link--child">
             <span class="nav-icon"><i class="bi bi-people"></i></span>
@@ -62,7 +62,7 @@
     </div>
 
     <!-- GESTIÓN HUMANA -->
-    <div class="nav-group">
+    <div class="nav-group"  *ngIf="auth.hasRole(1,4)">
       <span class="nav-group-label">Gestión Humana</span>
       <ul class="nav-list">
         <li>
@@ -94,7 +94,7 @@
     </div>
 
     <!-- ANÁLISIS -->
-    <div class="nav-group">
+    <div class="nav-group"  *ngIf="auth.hasRole(1)">
       <span class="nav-group-label">Análisis</span>
       <ul class="nav-list">
         <li>
@@ -140,8 +140,8 @@
           <i class="bi bi-person-circle"></i>
         </div>
         <div class="user-meta">
-          <span class="user-name">Usuario</span>
-          <span class="user-role">Administrador</span>
+          <span class="user-name">{{ username() }}</span>
+          <span class="user-role">{{ nombreRol() }}</span>
         </div>
         <i class="bi bi-chevron-up chevron-up"></i>
       </a>
