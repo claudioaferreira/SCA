@@ -44,10 +44,14 @@ export class RankingWidgetComponent implements OnChanges {
     const dias = [...this.ranking]
       .map(r => r.DiasAcumulados)
       .sort((a, b) => b - a);
+
     const t1 = Math.floor(dias.length / 3);
     const t2 = Math.floor((dias.length * 2) / 3);
-    this.umbralAlto = dias[t1]  ?? 0;
-    this.umbralMid  = dias[t2]  ?? 0;
+
+    // Ajuste: 1 día es suficiente para ser "Top" y tener medalla.
+    // Los que tienen 0 días caen automáticamente en "Bajo".
+    this.umbralAlto = Math.max(dias[t1] ?? 0, 1);
+    this.umbralMid  = Math.max(dias[t2] ?? 0, 1);
   }
 
   // ── Grupos (más viajes = Alto = evitar) ───────────────────────
@@ -96,18 +100,18 @@ export class RankingWidgetComponent implements OnChanges {
 
   private cargarRanking(): void {
     this.cargando = true;
-    const anioRef    = new Date(this.fin).getFullYear();
-    const inicioAnio = `${anioRef}-01-01`;
-    const finAnio    = `${anioRef}-12-31`;
+    
 
-    this._svc.getRankingDisponibilidad(inicioAnio, finAnio).subscribe({
+    this._svc.getRankingDisponibilidad(this.inicio, this.fin).subscribe({
       next: (res) => {
         this.ranking = res.body ?? [];
         this.calcularUmbrales();
+        
         // Abrir automáticamente la tab que tenga datos
         if (this.grupoTop.length > 0)       this.tabActiva = 'top';
         else if (this.grupoMid.length > 0)  this.tabActiva = 'mid';
-        else                                 this.tabActiva = 'low';
+        else                                this.tabActiva = 'low';
+        
         this.cargando = false;
       },
       error: () => { this.cargando = false; }

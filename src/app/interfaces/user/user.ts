@@ -8,6 +8,9 @@ export interface IUser {
   departamento: number;
   cargo: number;
   rol: number;
+   nombreRol:   string;  
+  permisos:    string[];  
+
 }
 
 export interface ILoginRequest {

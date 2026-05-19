@@ -6,89 +6,76 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment.development';
 import { HttpClient } from '@angular/common/http';
 
-
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
-  private http = inject(HttpClient);
-   private apiUrl = environment.apiUrl;
+  private http   = inject(HttpClient);
+  private apiUrl = environment.apiUrl;
 
-  // Keys que ya usa tu app
-  private readonly KEY_TOKEN = 'sca_token';
+  private readonly KEY_TOKEN   = 'sca_token';
   private readonly KEY_REFRESH = 'sca_refresh_token';
-  private readonly KEY_USER = 'sca_user';
+  private readonly KEY_USER    = 'sca_user';
 
-  /** Usuario actual como signal (reactivo en templates con just {{ user() }}) */
   readonly user = signal<IUser | null>(this.leerUsuarioStorage());
 
-  /** Atajos derivados */
-  readonly nombre = computed(() => this.user()?.nombre ?? '');
-  readonly username = computed(() => this.user()?.username ?? '');
+  // ── Atajos derivados (signals) ────────────────────────────────────────
+  readonly nombre     = computed(() => this.user()?.nombre    ?? '');
+  readonly username   = computed(() => this.user()?.username  ?? '');
   readonly empleadoId = computed(() => this.user()?.empleadoId ?? null);
-  readonly rolId = computed(() => this.user()?.rol ?? null);
-  readonly nombreRol = computed(() => this.mapearRol(this.rolId()));
+  readonly rolId      = computed(() => this.user()?.rol        ?? null);
 
-  // ─── LECTURA / VERIFICACIÓN ───────────────────────────────────────────
-  getToken(): string | null {
-    return localStorage.getItem(this.KEY_TOKEN);
-  }
-  getRefreshToken(): string | null {
-    return localStorage.getItem(this.KEY_REFRESH);
-  }
-  getUser(): IUser | null {
-    return this.user();
-  }
-  getEmpleadoId(): number | null {
-    return this.empleadoId();
-  }
-  getUserId(): number | null {
-    return this.user()?.userId ?? null;
+  // Antes: venía de un mapa hardcodeado. Ahora viene de la BD directamente.
+  readonly nombreRol  = computed(() => this.user()?.nombreRol ?? '');
+
+  // Lista de claves de permiso del usuario logueado
+  readonly permisos   = computed(() => this.user()?.permisos  ?? []);
+
+  // ── Verificación de PERMISOS (el nuevo sistema) ───────────────────────
+
+  /**
+   * Pregunta: ¿tiene el usuario este permiso específico?
+   *
+   * En el template usa la directiva:  *hasPermiso="'asignaciones.ver'"
+   * En el componente (TypeScript):    if (this.auth.hasPermiso('usuarios.crear'))
+   */
+  hasPermiso(clave: string): boolean {
+    return this.permisos().includes(clave);
   }
 
-   // PARA EL TEMPLATE: ¿Tiene alguno de estos roles? (ej: *ngIf="auth.hasRole(1,2)")
+  // ── Verificación de ROLES (se mantiene para no romper código existente) ─
+  // Iremos reemplazando estos usos poco a poco en Fases 4 y 5.
+
   hasRole(...roles: number[]): boolean {
-  const rol = this.rolId();
-  return rol != null && roles.includes(rol);
-}
+    const rol = this.rolId();
+    return rol != null && roles.includes(rol);
+  }
 
- // Atajos específicos por rol (ej: *ngIf="auth.isAdmin()")
   hasAnyRole(roles: number[]): boolean {
-  const rol = this.rolId();
-  return rol != null && roles.includes(rol);
-}
+    const rol = this.rolId();
+    return rol != null && roles.includes(rol);
+  }
 
-isAdmin(): boolean {
-  return this.rolId() === 1;
-}
+  isAdmin():      boolean { return this.rolId() === 1; }
+  isSupervisor(): boolean { return this.rolId() === 2; }
+  isConsulta():   boolean { return this.rolId() === 3; }
+  isVacaciones(): boolean { return this.rolId() === 4; }
 
-isSupervisor(): boolean {
-  return this.rolId() === 2;
-}
-
-isConsulta(): boolean {
-  return this.rolId() === 3;
-}
-
-isVacaciones(): boolean {
-  return this.rolId() === 4;
-}
+  // ── Sesión ────────────────────────────────────────────────────────────
 
   isLoggedIn(): boolean {
-  // Mientras exista un token o un refresh token, consideramos que hay una sesión que se puede usar o restaurar
-  return !!this.getToken() || !!this.getRefreshToken();
-}
+    return !!this.getToken() || !!this.getRefreshToken();
+  }
 
-  // ─── ESCRITURA / LOGIN ────────────────────────────────────────────────
-  /** Llámalo desde tu pantalla de login al recibir la respuesta del backend */
-  guardarSesion(payload: {
-    token: string;
-    refreshToken: string;
-    user: IUser;
-  }): void {
-    localStorage.setItem(this.KEY_TOKEN, payload.token);
+  getToken():        string | null { return localStorage.getItem(this.KEY_TOKEN);   }
+  getRefreshToken(): string | null { return localStorage.getItem(this.KEY_REFRESH); }
+  getUser():         IUser | null  { return this.user(); }
+  getEmpleadoId():   number | null { return this.empleadoId(); }
+  getUserId():       number | null { return this.user()?.userId ?? null; }
+
+  guardarSesion(payload: { token: string; refreshToken: string; user: IUser }): void {
+    localStorage.setItem(this.KEY_TOKEN,   payload.token);
     localStorage.setItem(this.KEY_REFRESH, payload.refreshToken);
-    localStorage.setItem(this.KEY_USER, JSON.stringify(payload.user));
+    localStorage.setItem(this.KEY_USER,    JSON.stringify(payload.user));
     this.user.set(payload.user);
   }
 
@@ -100,7 +87,15 @@ isVacaciones(): boolean {
     this.router.navigate(['/login']);
   }
 
-  // ─── HELPERS ──────────────────────────────────────────────────────────
+  verificarPin(userId: number, pin: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/verify-pin`, { userId, pin });
+  }
+
+  refreshAccessToken(refreshToken: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/refresh`, { refreshToken });
+  }
+
+  // ── Helper privado ────────────────────────────────────────────────────
   private leerUsuarioStorage(): IUser | null {
     try {
       const raw = localStorage.getItem(this.KEY_USER);
@@ -109,27 +104,4 @@ isVacaciones(): boolean {
       return null;
     }
   }
-
-  /** Ajusta este mapa a tus roles reales de la tabla Cat_Rol / Roles */
-  private mapearRol(rolId: number | null): string {
-    if (rolId == null) return '';
-    const map: Record<number, string> = {
-      1: 'Adm',
-      2: 'Supervisor',
-      3: 'Consulta',
-      4: 'Vacaciones',
-      // ...agrega los que tengas
-    };
-    return map[rolId] ?? `Rol ${rolId}`;
-  }
-
-
-  verificarPin(userId: number, pin: string): Observable<any> {
-  return this.http.post(`${this.apiUrl}/auth/verify-pin`, { userId, pin });
-}
-
-// En tu auth.service.ts
-refreshAccessToken(refreshToken: string): Observable<any> {
-  return this.http.post(`${this.apiUrl}/auth/refresh`, { refreshToken });
-}
 }

@@ -92,7 +92,8 @@ export class DesplieguesComponent implements OnInit, OnDestroy {
       //console.log('📢 Actualización en tiempo real recibida:', cambio);
       
       // 1. Siempre recargamos la lista general de fondo para mantenerla fresca
-      this.cargar(false);
+      this.cargar();
+
       // 2. Si el usuario está viendo el detalle de un despliegue en este momento...
       if (this.vista === 'detalle' && this.detalleActual) {
         

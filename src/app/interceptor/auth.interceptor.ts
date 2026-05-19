@@ -32,7 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         const refreshTokenVal = authService.getRefreshToken();
 
         if (refreshTokenVal) {
-          //console.warn('⚠️ [Interceptor] Access Token expirado. Intentando renovar sesión bajo cuerda...');
+          console.warn('⚠️ [Interceptor] Access Token expirado. Intentando renovar sesión bajo cuerda...');
           return authService.refreshAccessToken(refreshTokenVal).pipe(
             switchMap((res: any) => {
               //console.log('✅ [Interceptor] Sesión renovada con éxito. Reintentando petición original con nuevo token.');

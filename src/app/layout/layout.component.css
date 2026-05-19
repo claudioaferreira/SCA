@@ -19,7 +19,7 @@ app-sidebar {
 
 .content-wrapper {
   flex-grow: 1;
-  padding: 20px;
+  padding: 10px;
   overflow-y: auto;
   background-color: var(--bg-app);
   color: var(--text-primary);

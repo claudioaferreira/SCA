@@ -1,0 +1,363 @@
+<div class="page-container">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar-card">
+    <div class="toolbar-row-top" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="toolbar-brand">
+        <i class="bi bi-shield-check toolbar-icon"></i>
+        <span class="toolbar-title">Permisos por Rol</span>
+      </div>
+      
+      <button class="btn-action" (click)="abrirModalCrearPermiso()">
+        <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Permiso
+      </button>
+    </div>
+    <div class="toolbar-row-bottom" style="margin-top: 5px;">
+      <span class="toolbar-hint">
+        Selecciona un rol y marca qué puede hacer. Los cambios se guardan al instante.
+      </span>
+    </div>
+  </div>
+
+  <div class="layout-dos-col">
+
+    <!-- COLUMNA IZQUIERDA: lista de roles -->
+    <div class="panel-roles">
+      <p class="panel-label">Roles</p>
+
+      @if (cargandoRoles) {
+        <div class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-secondary"></div>
+        </div>
+      }
+
+      @for (rol of roles; track rol.IdRol) {
+        <button class="btn-rol"
+                [class.btn-rol--activo]="rolSeleccionado?.IdRol === rol.IdRol"
+                (click)="seleccionarRol(rol)">
+          <i class="bi bi-shield me-2"></i>{{ rol.descripcion }}
+        </button>
+      }
+    </div>
+
+    <!-- COLUMNA DERECHA: permisos -->
+    <div class="panel-permisos">
+
+      @if (!rolSeleccionado) {
+        <div class="empty-state">
+          <div class="empty-icon-wrapper animate-pulse">
+            <i class="bi bi-shield-lock text-brand" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="empty-title">Gestión de Seguridad</h5>
+          <p class="empty-text">Selecciona un rol de la columna izquierda para ver y editar sus permisos de acceso.</p>
+        </div>
+      }
+
+      @if (rolSeleccionado && cargandoPermisos) {
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm me-2 text-primary"></div>
+          Cargando catálogo de permisos…
+        </div>
+      }
+
+      @if (rolSeleccionado && !cargandoPermisos) {
+        
+        <!-- CABECERA DEL PANEL -->
+        <div class="panel-permisos-header">
+          <div class="header-info">
+            <span class="header-rol-label">Rol: </span>
+            <strong class="header-rol-name">{{ rolSeleccionado.descripcion }}</strong>
+            <span class="active-badge-pill">
+              {{ permisosDelRol.size }} de {{ todosLosPermisos.length }} activos
+            </span>
+          </div>
+          
+          <div class="header-actions">
+            <button class="btn-link-action" (click)="toggleTodosLosModulos(false)" title="Abrir todas las secciones">
+              <i class="bi bi-chevron-expand me-1"></i> Expandir todo
+            </button>
+            <span class="divider">|</span>
+            <button class="btn-link-action" (click)="toggleTodosLosModulos(true)" title="Cerrar todas las secciones">
+              <i class="bi bi-chevron-contract me-1"></i> Colapsar todo
+            </button>
+          </div>
+        </div>
+
+        <!-- BARRA DE BÚSQUEDA FLUIDA -->
+        <div class="search-box-container">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" 
+                 class="search-input" 
+                 placeholder="Buscar por módulo, clave o descripción de permiso..." 
+                 [(ngModel)]="filtroBusqueda">
+          @if (filtroBusqueda) {
+            <button class="search-clear-btn" (click)="filtroBusqueda = ''" title="Limpiar búsqueda">
+              <i class="bi bi-x-circle-fill"></i>
+            </button>
+          }
+        </div>
+
+        <!-- LISTADO DE GRUPOS DE PERMISOS -->
+        <div class="grupos-container">
+          
+          @for (grupo of grupos; track grupo.modulo) {
+            @if (grupoTienePermisosVisibles(grupo)) {
+              
+              <div class="grupo-card" [class.grupo-card--collapsed]="moduloEstaColapsado(grupo.modulo)">
+                
+                <!-- Encabezado del Módulo (Hacer clic colapsa/expande) -->
+                <div class="grupo-header" (click)="toggleModulo(grupo.modulo)">
+                  <div class="grupo-header-left">
+                    <i class="bi bi-chevron-right chevron-icon"></i>
+                    <i class="bi bi-folder2-open me-2 icon-modulo"></i>
+                    <span class="grupo-modulo-title">{{ grupo.modulo }}</span>
+                  </div>
+                  <div class="grupo-header-right">
+                    <span class="grupo-badge" 
+                          [class.grupo-badge--all]="obtenerActivosEnGrupo(grupo) === grupo.permisos.length" 
+                          [class.grupo-badge--none]="obtenerActivosEnGrupo(grupo) === 0">
+                      {{ obtenerActivosEnGrupo(grupo) }} de {{ grupo.permisos.length }} activos
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Listado de permisos del grupo -->
+                <div class="grupo-body">
+                  @for (permiso of grupo.permisos; track permiso.IdPermiso) {
+                    @if (cumpleFiltro(permiso)) {
+                      
+                      <!-- Fila del permiso (al hacer clic cambia su estado si no está guardando) -->
+                      <div class="permiso-row-wrapper" 
+                           [class.permiso-row-wrapper--active]="tienePermiso(permiso.IdPermiso)"
+                           [class.permiso-row-wrapper--loading]="estaEnProceso(permiso.IdPermiso)"
+                           (click)="estaEnProceso(permiso.IdPermiso) ? null : togglePermiso(permiso)">
+                        
+                        <div class="permiso-row-left">
+                          <!-- Interruptor Deslizante (Toggle Switch) -->
+                          <div class="toggle-switch">
+                            @if (estaEnProceso(permiso.IdPermiso)) {
+                              <div class="toggle-spinner">
+                                <span class="spinner-border spinner-border-sm text-brand"></span>
+                              </div>
+                            } @else {
+                              <input type="checkbox"
+                                     [checked]="tienePermiso(permiso.IdPermiso)"
+                                     (click)="$event.stopPropagation()"
+                                     (change)="togglePermiso(permiso)">
+                              <span class="toggle-slider"></span>
+                            }
+                          </div>
+                          
+                          <div class="permiso-info">
+                            <span class="permiso-desc">{{ permiso.descripcion }}</span>
+                            <code class="permiso-clave">{{ permiso.clave }}</code>
+                          </div>
+                        </div>
+
+                        <!-- Indicador rápido visual -->
+                        <div class="permiso-row-right">
+                          @if (tienePermiso(permiso.IdPermiso) && !estaEnProceso(permiso.IdPermiso)) {
+                            <span class="badge-status-active">
+                              <i class="bi bi-shield-check me-1"></i>Activo
+                            </span>
+                          }
+                        </div>
+
+                      </div>
+                    }
+                  }
+                </div>
+
+              </div>
+            }
+          }
+          
+          <!-- Si se buscó algo pero no hubo resultados -->
+          @if (filtroBusqueda && !hayResultadosDeBusqueda()) {
+            <div class="text-center py-5 text-muted bg-card-empty-search">
+              <i class="bi bi-search-heart" style="font-size: 2.2rem; display: block; margin-bottom: 10px; color: var(--text-muted);"></i>
+              <p class="mb-0">No encontramos permisos que coincidan con "<strong>{{ filtroBusqueda }}</strong>".</p>
+              <button class="btn-secondary btn-sm mt-3" (click)="filtroBusqueda = ''" style="padding: 6px 12px; font-size: 0.75rem;">
+                Limpiar Búsqueda
+              </button>
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL ELEGANTE Y PASO A PASO SIN SWEETALERT -->
+  <!-- ========================================== -->
+  @if (mostrarModalCrear) {
+    <div class="modal-overlay" (click)="cerrarModalCrearPermiso()">
+      <div class="modal-container" (click)="$event.stopPropagation()">
+        
+        <!-- HEADER (Cabecera con botón de cerrar) -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <i class="bi bi-shield-plus modal-header-icon"></i>
+            <span class="modal-title">Crear Nuevo Permiso</span>
+          </div>
+          <button class="btn-close-modal" (click)="cerrarModalCrearPermiso()" title="Cerrar modal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- PROGRESS STEPS (Indicador visual de progreso) -->
+        <div class="step-indicator">
+          <!-- Paso 1 -->
+          <div class="step-item" [class.step-item--active]="pasoModal === 1" [class.step-item--completed]="pasoModal > 1">
+            <div class="step-number">
+              @if (pasoModal > 1) {
+                <i class="bi bi-check-lg"></i>
+              } @else {
+                1
+              }
+            </div>
+            <span class="step-label">1. Catálogo General</span>
+          </div>
+          
+          <div class="step-line" [class.step-line--active]="pasoModal > 1"></div>
+          
+          <!-- Paso 2 -->
+          <div class="step-item" [class.step-item--active]="pasoModal === 2">
+            <div class="step-number">2</div>
+            <span class="step-label">2. Asignación de Rol</span>
+          </div>
+        </div>
+
+        <!-- BODY (Contenido del modal) -->
+        <div class="modal-body">
+          
+          <!-- MENSAJES DE ERROR LOCALES -->
+          @if (errorModal) {
+            <div class="modal-alert-danger">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span>{{ errorModal }}</span>
+            </div>
+          }
+
+          <!-- PASO 1: Formulario General del Permiso -->
+          @if (pasoModal === 1) {
+            <div class="modal-step-content">
+              <p class="step-description">
+                Registra los datos básicos del nuevo permiso en el catálogo global del sistema.
+              </p>
+
+              <div class="form-group">
+                <label for="clave" class="form-label">
+                  Clave del Permiso <span class="required">*</span>
+                </label>
+                <input type="text" id="clave" name="clave"
+                       class="form-control"
+                       placeholder="Ej: mantenimientos.ver"
+                       [(ngModel)]="nuevoPermisoClave"
+                       (input)="errorModal = ''">
+                <span class="form-hint">Debe ser en minúsculas y usar formato <code>modulo.accion</code> (ej: <code>usuarios.crear</code>)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="descripcion" class="form-label">
+                  Descripción <span class="required">*</span>
+                </label>
+                <input type="text" id="descripcion" name="descripcion"
+                       class="form-control"
+                       placeholder="Ej: Ver pantalla de mantenimientos"
+                       [(ngModel)]="nuevoPermisoDesc"
+                       (input)="errorModal = ''">
+                <span class="form-hint">Explica brevemente qué acción autoriza este permiso.</span>
+              </div>
+
+              <div class="form-group">
+                <label for="modulo" class="form-label">
+                  Módulo Organizador <span class="required">*</span>
+                </label>
+                <input type="text" id="modulo" name="modulo"
+                       class="form-control"
+                       placeholder="Ej: Mantenimientos"
+                       [(ngModel)]="nuevoPermisoModulo"
+                       (input)="errorModal = ''">
+                <span class="form-hint">Sección o grupo donde se organizará visualmente este permiso.</span>
+              </div>
+            </div>
+          }
+
+          <!-- PASO 2: Relación y Asignación de Rol -->
+          @if (pasoModal === 2) {
+            <div class="modal-step-content text-center">
+              <div class="success-icon-wrapper animate-bounce">
+                <i class="bi bi-check-circle-fill text-success"></i>
+              </div>
+              <h4 class="step-success-title">¡Permiso Guardado con Éxito!</h4>
+              <p class="step-description">
+                El permiso se registró en el catálogo general con el <strong>ID: {{ nuevoPermisoId }}</strong>.
+              </p>
+              
+              <div class="alert-info-box text-start">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                Para que la aplicación pueda utilizarlo en la pantalla, ahora debemos asignarlo en la tabla de relaciones (<code>Rol_Permisos</code>).
+              </div>
+
+              <div class="form-group text-start" style="margin-top: 20px;">
+                <label for="rolAsignar" class="form-label font-bold">
+                  Selecciona el Rol que recibirá este permiso de inmediato:
+                </label>
+                <select id="rolAsignar" name="rolAsignar" 
+                        class="form-select"
+                        [(ngModel)]="rolSeleccionadoParaAsignar"
+                        (change)="errorModal = ''">
+                  <option [value]="null" disabled selected>-- Elige un Rol --</option>
+                  @for (rol of roles; track rol.IdRol) {
+                    <option [value]="rol.IdRol">{{ rol.descripcion }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          }
+
+        </div>
+
+        <!-- FOOTER (Acciones/Botones) -->
+        <div class="modal-footer">
+          <!-- Botones Paso 1 -->
+          @if (pasoModal === 1) {
+            <button type="button" class="btn-secondary" (click)="cerrarModalCrearPermiso()">
+              Cancelar
+            </button>
+            <button type="button" class="btn-primary" 
+                    [disabled]="!nuevoPermisoClave || !nuevoPermisoDesc || !nuevoPermisoModulo || guardandoPaso1"
+                    (click)="guardarPaso1()">
+              @if (guardandoPaso1) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Creando...
+              } @else {
+                Siguiente Paso <i class="bi bi-arrow-right ms-1"></i>
+              }
+            </button>
+          }
+
+          <!-- Botones Paso 2 -->
+          @if (pasoModal === 2) {
+            <button type="button" class="btn-secondary" (click)="omitirAsignacionPaso2()">
+              Omitir asignación por ahora
+            </button>
+            <button type="button" class="btn-primary" 
+                    [disabled]="!rolSeleccionadoParaAsignar || guardandoPaso2"
+                    (click)="guardarPaso2()">
+              @if (guardandoPaso2) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Asignando...
+              } @else {
+                <i class="bi bi-shield-check me-1"></i> Asignar y Finalizar
+              }
+            </button>
+          }
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

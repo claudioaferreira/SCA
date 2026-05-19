@@ -1,0 +1,911 @@
+.page-container { padding: 8px; background: var(--bg-app); min-height: 100vh; }
+
+.toolbar-card {
+  background: var(--bg-card); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); padding: 10px 16px;
+  margin-bottom: 0.75rem; box-shadow: var(--shadow-sm);
+}
+.toolbar-row-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.toolbar-brand   { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.toolbar-icon    { font-size: 15px; color: var(--brand); }
+.toolbar-title   { font-size: 15px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.toolbar-hint    { font-size: 0.8rem; color: var(--text-muted); }
+
+// Dos columnas
+.layout-dos-col {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+// Panel izquierdo — lista de roles
+.panel-roles {
+  background: var(--bg-card); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); padding: 12px; box-shadow: var(--shadow-sm);
+}
+.panel-label {
+  font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 10px;
+}
+.btn-rol {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 12px; border: none; border-radius: var(--radius-md);
+  background: transparent; color: var(--text-primary); font-size: 0.85rem;
+  cursor: pointer; margin-bottom: 4px; transition: background .12s;
+  &:hover { background: var(--bg-hover); }
+  &.btn-rol--activo {
+    background: var(--brand-soft); color: var(--brand-dark);
+    font-weight: 700; border: 1px solid var(--brand);
+  }
+}
+
+// Ajuste para que el toolbar separe el título a la izquierda y el botón a la derecha
+.toolbar-row-top { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; // <-- Esto empuja el botón a la derecha
+  gap: 12px; 
+  flex-wrap: wrap; 
+}
+
+// Nueva clase para botones de acción en la cabecera (limpio, sin inline-styles)
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-md, 6px);
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+
+  &:hover {
+    background: var(--brand);
+    color: #ffffff; // Texto blanco al pasar el mouse
+  }
+}
+
+// ==========================================
+// PANEL DERECHO - LISTADO DE PERMISOS PREMIUM
+// ==========================================
+
+.panel-permisos {
+  background: var(--bg-card); 
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); 
+  padding: 20px;
+  box-shadow: var(--shadow-sm); 
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+// Cabecera interna del Panel de Permisos
+.panel-permisos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 16px;
+
+  .header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    
+    .header-rol-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .header-rol-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .active-badge-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      border: 1px solid var(--brand);
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .divider {
+      color: var(--border-default);
+      font-size: 0.8rem;
+    }
+    .btn-link-action {
+      background: transparent;
+      border: none;
+      color: var(--brand-dark);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm, 4px);
+      transition: background 0.15s, color 0.15s;
+
+      &:hover {
+        background: var(--brand-soft);
+        color: var(--brand);
+      }
+    }
+  }
+}
+
+// Caja de Búsqueda Fluida e Instantánea
+.search-box-container {
+  position: relative;
+  margin-bottom: 18px;
+  width: 100%;
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 10px 40px 10px 36px;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md, 8px);
+    outline: none;
+    transition: all 0.2s ease;
+
+    &:focus {
+      background: var(--bg-card);
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-soft);
+    }
+  }
+
+  .search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+
+    &:hover {
+      color: #ef4444; // Rojo para indicar borrar
+    }
+  }
+}
+
+// Tarjeta de Grupo de Módulos (Colapsable)
+.grupo-card {
+  margin-bottom: 14px; 
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg, 8px); 
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  background: var(--bg-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--border-default);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+}
+
+// Encabezado del Módulo (Interactivo)
+.grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--bg-hover);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--brand-soft);
+    
+    .grupo-modulo-title {
+      color: var(--brand-dark);
+    }
+    .chevron-icon {
+      color: var(--brand);
+    }
+  }
+
+  .grupo-header-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .chevron-icon {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotate(90deg); // Rotación por defecto (Expandido)
+      margin-right: 4px;
+    }
+
+    .icon-modulo {
+      font-size: 0.95rem;
+      color: var(--brand);
+    }
+
+    .grupo-modulo-title {
+      font-size: 0.78rem; 
+      font-weight: 700; 
+      text-transform: uppercase;
+      letter-spacing: 0.04em; 
+      color: var(--text-primary);
+      transition: color 0.15s;
+    }
+  }
+
+  .grupo-header-right {
+    .grupo-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--border-default);
+      color: var(--text-primary);
+
+      &.grupo-badge--all {
+        background: #dcfce7;
+        color: #15803d; // Verde si todos están activos
+      }
+      &.grupo-badge--none {
+        background: var(--bg-muted);
+        color: var(--text-muted);
+      }
+    }
+  }
+}
+
+// Estilo cuando el grupo está colapsado
+.grupo-card--collapsed {
+  .grupo-header {
+    border-bottom: none;
+    
+    .chevron-icon {
+      transform: rotate(0deg); // Apunta a la derecha
+    }
+  }
+  .grupo-body {
+    display: none; // Oculta el contenido
+  }
+}
+
+// Contenedor de permisos de la sección
+.grupo-body {
+  background: var(--bg-card);
+  animation: slideDownFade 0.2s ease-out;
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Fila de Permiso (Premium e interactiva)
+.permiso-row-wrapper {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  padding: 10px 16px; 
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-soft); 
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:last-child { 
+    border-bottom: none; 
+  }
+  
+  // Efecto hover sobre la fila
+  &:hover:not(.permiso-row-wrapper--loading) { 
+    background: var(--bg-hover); 
+    
+    .toggle-switch .toggle-slider {
+      border-color: var(--brand);
+    }
+  }
+
+  // Fila cuando está Activo (Checked)
+  &.permiso-row-wrapper--active {
+    background: var(--brand-soft);
+    border-left: 4px solid var(--brand);
+    padding-left: 12px; // Compensa el grosor del borde
+  }
+
+  // Fila cuando está en proceso de Guardado (Loading)
+  &.permiso-row-wrapper--loading {
+    cursor: not-allowed;
+    opacity: 0.75;
+    background: var(--bg-hover);
+  }
+
+  .permiso-row-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-grow: 1;
+  }
+
+  .permiso-info { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 3px; 
+  }
+  
+  .permiso-desc { 
+    font-size: 0.84rem; 
+    font-weight: 500;
+    color: var(--text-primary); 
+  }
+  
+  .permiso-clave {
+    font-size: 0.7rem; 
+    color: var(--text-muted);
+    background: var(--bg-muted); 
+    padding: 1px 6px;
+    border-radius: var(--radius-sm, 4px); 
+    font-family: monospace;
+    align-self: flex-start;
+  }
+
+  .permiso-row-right {
+    .badge-status-active {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      border: 1px solid var(--brand);
+      padding: 1px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+  }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+// ==========================================
+// INTERRUPTOR DESLIZANTE DE DISEÑO (TOGGLE SWITCH)
+// ==========================================
+
+.toggle-switch {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    
+    // Al chequear, mueve el circulito y pinta el fondo
+    &:checked + .toggle-slider {
+      background-color: var(--brand);
+      
+      &:before {
+        transform: translateX(18px);
+        background-color: #ffffff;
+      }
+    }
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--border-default);
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: var(--text-muted);
+      border-radius: 50%;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  // Micro Spinner de carga dentro del switch
+  .toggle-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    
+    .spinner-border {
+      width: 14px;
+      height: 14px;
+      border-width: 2px;
+    }
+  }
+}
+
+// Estado Vacío de Búsqueda
+.bg-card-empty-search {
+  border: 1.5px dashed var(--border-default);
+  border-radius: var(--radius-lg, 8px);
+  padding: 30px 20px;
+  background: var(--bg-hover);
+  margin-top: 10px;
+}
+
+// ==========================================
+// ESTADO VACÍO ORIGINAL REDISEÑADO PREMIUM
+// ==========================================
+
+.empty-state {
+  text-align: center; 
+  padding: 70px 24px; 
+  color: var(--text-muted);
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-hover);
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .empty-icon-wrapper {
+    width: 68px;
+    height: 68px;
+    background: var(--bg-card);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+    border: 1px solid var(--border-soft);
+  }
+
+  .empty-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .empty-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    max-width: 320px;
+    line-height: 1.4;
+    margin: 0;
+  }
+}
+
+.text-center { text-align: center; }
+.text-muted   { color: var(--text-muted); }
+.text-brand   { color: var(--brand-dark); font-weight: 700; }
+.py-3 { padding-top: 1rem; padding-bottom: 1rem; }
+.py-5 { padding-top: 3rem; padding-bottom: 3rem; }
+.me-2 { margin-right: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.font-bold { font-weight: 600; }
+
+// Animación de pulso discreto
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+// ==========================================
+// MODAL ESTILIZADO Y PROFESIONAL
+// ==========================================
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg, 12px);
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-card);
+}
+
+.modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-header-icon {
+  font-size: 1.15rem;
+  color: var(--brand);
+}
+
+.modal-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-md, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+// Indicador visual de Pasos (1 y 2)
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &.step-item--active {
+    color: var(--brand-dark);
+    font-weight: 700;
+    
+    .step-number {
+      background: var(--brand);
+      color: #ffffff;
+      border-color: var(--brand);
+    }
+  }
+
+  &.step-item--completed {
+    color: var(--text-primary);
+    
+    .step-number {
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      border-color: var(--brand);
+    }
+  }
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.step-label {
+  white-space: nowrap;
+}
+
+.step-line {
+  flex-grow: 1;
+  max-width: 60px;
+  height: 2px;
+  background: var(--border-soft);
+  margin: 0 16px;
+  transition: all 0.2s ease;
+
+  &.step-line--active {
+    background: var(--brand);
+  }
+}
+
+// Cuerpo del Modal
+.modal-body {
+  padding: 20px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.step-description {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+// Campos y Formularios Estilizados
+.form-group {
+  margin-bottom: 14px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+}
+
+.required {
+  color: #f43f5e;
+}
+
+.form-control, .form-select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.3;
+
+  code {
+    background: var(--bg-muted);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.68rem;
+    color: var(--text-primary);
+  }
+}
+
+// Mensaje de Error dentro del Modal
+.modal-alert-danger {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: var(--radius-md, 6px);
+  color: #991b1b;
+  font-size: 0.78rem;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  animation: shake 0.2s ease-in-out;
+  
+  i {
+    font-size: 1rem;
+    margin-top: 1px;
+  }
+}
+
+// Estilo de Éxito en Paso 2
+.success-icon-wrapper {
+  margin: 10px auto 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 2rem;
+  }
+}
+
+.step-success-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.alert-info-box {
+  background: var(--brand-soft);
+  border: 1px solid var(--brand);
+  color: var(--brand-dark);
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 6px);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+// Pie del Modal (Botones)
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: var(--bg-card);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-md, 6px);
+  background: var(--brand);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+
+  &:disabled {
+    background: var(--border-default);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md, 6px);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+}
+
+// ==========================================
+// ANIMACIONES ADICIONALES
+// ==========================================
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { transform: translateY(15px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}

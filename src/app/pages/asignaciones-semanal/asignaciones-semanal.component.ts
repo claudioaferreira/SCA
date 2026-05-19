@@ -828,39 +828,53 @@ getExteriorSemana(empId: number): number {
 
     this._empleadosService.guardarAsignacionCelda(payload).subscribe({
       next: (res: any) => {
-        item.idAsignacion = res.body?.idAsignacion ?? null;
-        item.uid = `saved-${item.idAsignacion}`;
+        const idGenerado = res.body?.idAsignacion ?? null;
+        const nuevoUid = `saved-${idGenerado}`;
+
+        // 🛡️ BARRERA ANTI-CLONES (Evita el NG0955) 🛡️
+        // Si el Socket fue más rápido que esta respuesta y ya inyectó 
+        // la asignación, la buscamos y la eliminamos para quedarnos 
+        // únicamente con nuestra tarjeta original sin duplicar llaves.
+        const arr = this.dataTemporal[key];
+        if (arr) {
+          const clonIndex = arr.findIndex(i => (i.uid === nuevoUid || i.idAsignacion === idGenerado) && i !== item);
+          if (clonIndex !== -1) {
+            arr.splice(clonIndex, 1); // Eliminamos el clon silenciosamente
+          }
+        }
+        // -----------------------------------------------------
+
+        item.idAsignacion = idGenerado;
+        item.uid = nuevoUid;
+        item.idEstado = item.idEstado ?? 1;
         item.modificado = false;
         item.esNueva = false;
         item.guardadoOk = true;
+        
         this.cargarHistorialDesdeBD();
-        this.cargarAsignacionesSemana();
+
         setTimeout(() => {
           item.guardadoOk = false;
         }, 2000);
-        //console.log('Payload guardado:', payload);
       },
       error: (err) => {
+       
         console.error('Error al guardar:', err);
 
-        // 👇 AQUÍ ATRAPAMOS EL MENSAJE EXACTO DEL BACKEND 👇
         if (err.status === 409 && err.error && err.error.message) {
-          // Si es el error 409 de Ausencia que configuramos en Node
           Swal.fire({
             icon: 'error',
             title: 'Asignación Bloqueada',
-            text: err.error.message, // Mostrará: "Bloqueado: El empleado figura con..."
+            text: err.error.message,
             confirmButtonColor: '#d33',
           });
         } else if (err.status === 400 && err.error && err.error.message) {
-          // Por si también quieres atrapar las validaciones de "Falta fecha", etc.
           Swal.fire({
             icon: 'warning',
             title: 'Datos incompletos',
             text: err.error.message,
           });
         } else {
-          // Si es otro error (ej. se cayó el internet o error 500 del servidor)
           alertaErrorGuardar();
         }
       },
@@ -925,15 +939,23 @@ getExteriorSemana(empId: number): number {
   marcarComoDisponible(empId: number, dia: Date, index: number) {
     const key = this.generarLlave(empId, dia);
     const item = this.dataTemporal[key][index];
-    item.idEstado = 3;
 
-    if (!item.idAsignacion) return;
+    // Si aún no se ha guardado en BD, solo actualizamos el local y salimos
+    if (!item.idAsignacion) {
+      item.idEstado = 3;
+      return; 
+    }
+
+    // 1. ACTUALIZACIÓN OPTIMISTA: Pintamos TODA la ruta de libre (verde) al instante
+    this.actualizarEstadoEnTodaLaSemana(empId, item.idAsignacion, 3);
 
     this._empleadosService
       .actualizarEstadoAsignacion(item.idAsignacion, 3)
       .subscribe({
         error: () => {
-          item.idEstado = 1; // Revierte si falla
+          // 2. REVERSIÓN GLOBAL: Si la BD falló, volvemos a poner TODA la ruta ocupada (rojo)
+          this.actualizarEstadoEnTodaLaSemana(empId, item.idAsignacion, 1);
+          
           Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -950,15 +972,23 @@ getExteriorSemana(empId: number): number {
     const item = this.dataTemporal[key][index];
 
     if (item.tipoId === 1) return; // Sede Central no bloquea al técnico
-    item.idEstado = 1;
 
-    if (!item.idAsignacion) return;
+    // Si aún no se ha guardado en BD, solo actualizamos el local y salimos
+    if (!item.idAsignacion) {
+      item.idEstado = 1;
+      return;
+    }
+
+    // 1. ACTUALIZACIÓN OPTIMISTA: Pintamos TODA la ruta de ocupada (rojo) al instante
+    this.actualizarEstadoEnTodaLaSemana(empId, item.idAsignacion, 1);
 
     this._empleadosService
       .actualizarEstadoAsignacion(item.idAsignacion, 1)
       .subscribe({
         error: () => {
-          item.idEstado = 3; // Revierte si falla
+          // 2. REVERSIÓN GLOBAL: Si la BD falló, volvemos a poner TODA la ruta libre (verde)
+          this.actualizarEstadoEnTodaLaSemana(empId, item.idAsignacion, 3);
+          
           Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -1325,4 +1355,22 @@ private aplicarEliminadoExterno(cambio: any): void {
     );
   });
 }
+
+
+private actualizarEstadoEnTodaLaSemana(empId: number, idAsignacion: number | null, nuevoEstado: number) {
+    if (!idAsignacion) return; // Si no tiene ID, no hacemos nada global
+
+    this.diasSemana.forEach((dia) => {
+      const key = this.generarLlave(empId, dia);
+      
+      if (this.dataTemporal[key]) {
+        // Buscamos si en este día existe esta misma asignación
+        this.dataTemporal[key].forEach(i => {
+          if (i.idAsignacion === idAsignacion) {
+            i.idEstado = nuevoEstado; // Pintamos del nuevo color
+          }
+        });
+      }
+    });
+  }
 }
