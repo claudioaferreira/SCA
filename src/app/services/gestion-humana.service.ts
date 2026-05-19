@@ -151,4 +151,31 @@ export class GestionHumanaService {
       `${this.apiUrl}/gestion-humana/bloqueos/rango?inicio=${inicio}&fin=${fin}`,
     );
   }
+
+  updateEstadoSolicitud(
+    id: number,
+    idEstadoSolicitud: number,
+  ): Observable<any> {
+    return this.http.patch(
+      `${this.apiUrl}/gestion-humana/solicitudes/${id}/estado`,
+      { idEstadoSolicitud },
+    );
+  }
+
+  deleteSolicitud(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/gestion-humana/solicitudes/${id}`);
+  }
+
+  subirImagen(idSolicitud: number, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    return this.http.post(
+      `${this.apiUrl}/gestion-humana/solicitudes/${idSolicitud}/imagen`,
+      formData,
+    );
+  }
+
+  getImagenUrl(idSolicitud: number): string {
+    return `${this.apiUrl}/gestion-humana/solicitudes/${idSolicitud}/imagen`;
+  }
 }

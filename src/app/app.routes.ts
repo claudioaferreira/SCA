@@ -13,6 +13,9 @@ import { ChangePasswordComponent } from './pages/login/change-password/change-pa
 
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/roluser.guard';
+import { UsuariosComponent } from './pages/mantenimientos/usuarios/usuarios.component';
+import { PinVerificationComponent } from './pages/login/pin-verification/pin-verification.component';
+import { DesplieguesComponent } from './pages/despliegues/despliegues.component';
 
 export const routes: Routes = [
 
@@ -21,6 +24,11 @@ export const routes: Routes = [
     component: LoginPageComponent,
     title: 'Iniciar sesión — SCA',
   },
+       {
+  path: 'verify-pin',
+  component: PinVerificationComponent,
+  // Sin authGuard — es parte del flujo de login
+},
 
   {
     path: 'change-password',
@@ -52,7 +60,7 @@ export const routes: Routes = [
         title: 'Asignaciones Semanales',
         canActivate: [
           authGuard,
-          roleGuard([1])
+          roleGuard([1, 2])
         ],
       },
 
@@ -65,6 +73,12 @@ export const routes: Routes = [
           authGuard,
           roleGuard([1, 2])
         ],
+      },
+      {
+        path: 'despliegues',
+        component: DesplieguesComponent,
+        canActivate: [authGuard, roleGuard([1, 2])],
+        title: 'Despliegues',
       },
 
       // SOLO ADMIN
@@ -110,6 +124,15 @@ export const routes: Routes = [
           roleGuard([1, 4])
         ],
       },
+
+      {
+        path: 'mantenimientos/usuarios',
+        component: UsuariosComponent,
+        canActivate: [authGuard, roleGuard([1])],
+        title: 'Registrar Usuario',
+      },
+
+ 
 
       // ADMIN Y VACACIONES
       {

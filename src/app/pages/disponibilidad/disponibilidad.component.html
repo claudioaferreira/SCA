@@ -60,6 +60,10 @@
               (click)="filtroEstado = 'manual'">
         🚫 Bloqueados · {{ contarPorEstado('manual') }}
       </button>
+      <button class="chip-filtro chip-despliegue" [class.active]="filtroEstado === 'despliegue'"
+        (click)="filtroEstado = 'despliegue'">
+  🗺️ Despliegue · {{ contarPorEstado('despliegue') }}
+</button>
     </div>
   </div>
 
@@ -74,7 +78,7 @@
 
 
   <!-- ── EMPTY ──────────────────────────────────────────────── -->
-  @if (!loading && empleadosFiltrados().length === 0) {
+  @if (!loading && empleadosFiltrados.length === 0) {
     <div class="empty-state">
       <i class="bi bi-inbox"></i>
       <p>No hay empleados con esos filtros.</p>
@@ -83,15 +87,15 @@
 
 
   <!-- ── LISTA DENSA ────────────────────────────────────────── -->
-  @if (!loading && empleadosFiltrados().length > 0) {
+  @if (!loading && empleadosFiltrados.length > 0) {
     <div class="empleados-list">
-      @for (e of empleadosFiltrados(); track e.id) {
+      @for (e of empleadosFiltrados; track e.id) {
         <div class="emp-row" [ngClass]="'estado-' + e.Estado">
 
           <!-- Foto con fallback a iniciales -->
           <div class="emp-photo">
             @if (mostrarFoto(e.codigo)) {
-              <img [src]="'img/empleados/' + e.codigo + '.png'"
+              <img [src]="FOTO_BASE + e.codigo + '.png'"
                    (error)="onImgError(e.codigo)"
                    [alt]="e.nombre">
             } @else {

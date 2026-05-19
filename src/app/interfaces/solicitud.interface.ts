@@ -20,6 +20,8 @@ export interface SolicitudListado {
   EstadoSolicitud:    string;     // 'Pendiente', 'Aprobada', etc.
   FechaSolicitud:     string;     // 'YYYY-MM-DD'
   Comentarios:        string | null;
+  TieneImagen:        boolean;  
+
 
   // ── Datos de Ausencia (Permiso día completo, Licencia, Vacaciones) ──
   IdSubtipoPermiso:        number | null;

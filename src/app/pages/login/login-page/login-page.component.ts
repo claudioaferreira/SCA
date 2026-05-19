@@ -6,6 +6,7 @@ import { UserService } from '../../../services/user/user.service';
 import { ILoginResponseToken } from '../../../interfaces/user/loginResponseToken';
 import { ILoginRequest, IUser } from '../../../interfaces/user/user';
 import { AuthService } from '../../../services/user/auth.service';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 // import { AuthService }    from '@core/services/auth.service'; // ← descomenta con tu servicio
 
@@ -15,6 +16,14 @@ import { AuthService } from '../../../services/user/auth.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.scss'],
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-6px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
 export class LoginPageComponent implements OnInit {
 
@@ -47,26 +56,42 @@ export class LoginPageComponent implements OnInit {
     }
   }
 
-  onLogin(): void {
-    if (!this.credentials.username || !this.credentials.password) return;
+ onLogin(): void {
+  if (!this.credentials.username || !this.credentials.password) return;
 
-    this.isLoading  = true;
-    this.errorMessage = '';
+  this.isLoading    = true;
+  this.errorMessage = '';
 
-    // ── Integra aquí tu AuthService ────────────────────────
-    
-    this._userService.login(this.credentials).subscribe({
-      next: (response:ILoginResponseToken) => {
-        this.isLoading = false;
-        this.handleLoginSuccess(response);
-      },
-      error: (err) => {
-        this.isLoading    = false;
+  this._userService.login(this.credentials).subscribe({
+    next: (response: ILoginResponseToken) => {
+      this.isLoading = false;
 
+      if (this.rememberMe) {
+        localStorage.setItem('sca_username', this.credentials.username);
+      } else {
+        localStorage.removeItem('sca_username');
       }
-    });
-    
-  }
+
+      if (response.mustChangePassword) {
+        // Guardar userId temporalmente para la pantalla de PIN
+        sessionStorage.setItem('sca_pin_userId', String(response.userId));
+        sessionStorage.setItem('sca_pin_msg',    response.message ?? '');
+        this.router.navigate(['/verify-pin']);
+      } else {
+        this.auth.guardarSesion({
+          token:        response.token,
+          refreshToken: response.refreshToken,
+          user:         response.user,
+        });
+        this.router.navigate(['/home']);
+      }
+    },
+    error: (err) => {
+      this.isLoading    = false;
+      this.errorMessage = err.error?.message ?? 'Error del servidor. Intenta más tarde.';
+    },
+  });
+}
 
   private handleLoginSuccess(response: ILoginResponseToken): void {
     // Guardar token (ajusta a tu estrategia: localStorage, cookie httpOnly, etc.)

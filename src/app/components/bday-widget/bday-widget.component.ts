@@ -45,7 +45,7 @@ export class BdayWidgetComponent implements OnInit {
         // 3. Pasamos el body a la nueva función que los procesa y ordena
         this.personas = this.procesarYOrdenar(response.body);
         this.cargando = false;
-        console.log('Respuesta procesada:', this.personas); 
+        //console.log('Respuesta procesada:', this.personas); 
       },
       error: () => { 
         this.cargando = false;

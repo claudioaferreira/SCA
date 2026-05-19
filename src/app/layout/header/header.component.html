@@ -1,35 +1,7 @@
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-<header class="main-header navbar navbar-expand-lg py-1 shadow-sm">
-    <div class="container-fluid">
-        <div class="logo-container">
-            <img src="logo.png" alt="Logo" class="logo">
-        </div>
-        
-        <a class="navbar-brand main-title" routerLink="/home">SCA - Control de Asignaciones</a>
-
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#headerNav">
-            <span class="navbar-toggler-icon" style="transform: scale(0.7);"></span> 
-        </button>
-
-        <div class="collapse navbar-collapse" id="headerNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/home">Inicio</a>
-                </li>
-                <li class="nav-item ms-lg-2">
-                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/asignaciones">Asignaciones</a>
-                </li>
-                <li class="nav-item ms-lg-2">
-                    <a class="nav-link px-2" routerLinkActive="active fw-bold" routerLink="/mantenimientos">Mantenimientos</a>
-                </li>
-                
-                 <div class="ms-auto d-flex align-items-center gap-2">
-    <app-theme-toggle></app-theme-toggle>
+<header class="main-header">
+  <div class="header-inner">
+    <img src="logo.png" alt="Logo SCA" class="logo"
+         #logoImg (error)="logoImg.hidden = true">
+    <span class="main-title">SCA - Control de Asignaciones</span>
   </div>
-            </ul>
-        </div>
-    </div>
 </header>

@@ -63,7 +63,7 @@
         </div>
 
         <!-- Si es "Otros" pedimos especificar -->
-        @if (formulario.value.idSubtipoPermiso === 4) {
+        @if (esSubtipoOtros()) {
           <div class="campo">
             <label>Especificar</label>
             <input type="text" formControlName="especificarOtro" placeholder="Detalle el motivo">
@@ -287,6 +287,44 @@
         </div>
       </div>
     }
+
+    <!-- ▸▸ Sección: Documento soporte (siempre visible si hay tipo) -->
+@if (tipoSeleccionado > 0) {
+  <div class="form-section">
+    <div class="form-section-title">
+      <i class="bi bi-paperclip"></i> Documento soporte (opcional)
+    </div>
+
+    <div class="campo">
+      <label>Imagen adjunta (JPG o PNG, máx. 3MB)</label>
+
+      @if (!imagenPreview) {
+        <label class="upload-area" for="inputImagen">
+          <i class="bi bi-cloud-arrow-up"></i>
+          <span>Clic para seleccionar imagen</span>
+          <small>JPG · PNG · Máx. 2 MB</small>
+          <input id="inputImagen" type="file" accept="image/jpeg,image/png"
+                 (change)="onImagenSeleccionada($event)" hidden>
+        </label>
+      }
+
+      @if (errorImagen) {
+        <div class="upload-error">
+          <i class="bi bi-exclamation-circle"></i> {{ errorImagen }}
+        </div>
+      }
+
+      @if (imagenPreview) {
+        <div class="upload-preview">
+          <img [src]="imagenPreview" alt="Vista previa">
+          <button type="button" class="upload-quitar" (click)="quitarImagen()">
+            <i class="bi bi-x-circle-fill"></i> Quitar imagen
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
 
     <!-- ▸▸ Botones de acción -->
     <div class="form-actions">

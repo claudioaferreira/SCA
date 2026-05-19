@@ -4,17 +4,17 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 
-import { registerLocaleData } from '@angular/common';
+import { registerLocaleData, DatePipe  } from '@angular/common';
 import localeEsDO from '@angular/common/locales/es-DO';
 import { authInterceptor } from '../app/interceptor/auth.interceptor';
-
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 
 registerLocaleData(localeEsDO, 'es-DO');
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }), 
-    provideRouter(routes),
+    provideRouter(routes), provideAnimations(),
   HttpClient, provideHttpClient(withInterceptors([authInterceptor])),
-{ provide: LOCALE_ID, useValue: 'es-DO' }]
+{ provide: LOCALE_ID, useValue: 'es-DO' }, DatePipe]
 };

@@ -29,6 +29,9 @@ export class RankingWidgetComponent implements OnChanges {
   ranking: RankingDisponibilidad[] = [];
   cargando = true;
 
+
+    private _svc = inject(EmpleadosService);
+
   /** Tab activa */
   tabActiva: NivelTab = 'top';
 
@@ -83,7 +86,7 @@ export class RankingWidgetComponent implements OnChanges {
     return 0;
   }
 
-  private _svc = inject(EmpleadosService);
+
 
   ngOnChanges(changes: SimpleChanges): void {
     if ((changes['inicio'] || changes['fin']) && this.inicio && this.fin) {

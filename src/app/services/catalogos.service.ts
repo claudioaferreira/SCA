@@ -51,4 +51,8 @@ export class CatalogosService {
   getCentrosCedulacion(): Observable<any> {
     return this.http.get(`${this.apiUrl}/centros-cedulacion`);
   }
+
+  getZonasOperativas(): Observable<any> {
+  return this.http.get(`${this.apiUrl}/zonas-operativas`);
+}
 }

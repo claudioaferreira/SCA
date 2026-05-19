@@ -28,27 +28,34 @@ export class MantenimientosComponent {
       ruta:        '/mantenimientos/empleados',
       color:       '#eff6ff',
     },
-       {
-      icono:       'bi-people-fill',
-      titulo:      'Gestion Humana',
-      descripcion: 'Vacaciones, Licencias, Permisos',
-      ruta:        '/mantenimientos/gestion-humana',
-      color:       '#fdf7f2',
-    },
     {
-      icono:       'bi-building',
-      titulo:      'Departamentos',
-      descripcion: 'Administrar las unidades organizativas',
-      ruta:        '/mantenimientos/departamentos',
-      color:       '#f0fdf4',
-    },
-    {
-      icono:       'bi-shield-lock-fill',
-      titulo:      'Roles',
-      descripcion: 'Controlar permisos y niveles de acceso',
-      ruta:        '/mantenimientos/roles',
-      color:       '#fdf2f8',
-    },
+    icono:       'bi-shield-lock-fill',      // ← nuevo
+    titulo:      'Usuarios',
+    descripcion: 'Crear y administrar accesos al sistema',
+    ruta:        '/mantenimientos/usuarios',
+    color:       '#fdf2f8',
+  },
+    //    {
+    //   icono:       'bi-people-fill',
+    //   titulo:      'Gestion Humana',
+    //   descripcion: 'Vacaciones, Licencias, Permisos',
+    //   ruta:        '/mantenimientos/gestion-humana',
+    //   color:       '#fdf7f2',
+    // },
+    // {
+    //   icono:       'bi-building',
+    //   titulo:      'Departamentos',
+    //   descripcion: 'Administrar las unidades organizativas',
+    //   ruta:        '/mantenimientos/departamentos',
+    //   color:       '#f0fdf4',
+    // },
+    // {
+    //   icono:       'bi-shield-lock-fill',
+    //   titulo:      'Roles',
+    //   descripcion: 'Controlar permisos y niveles de acceso',
+    //   ruta:        '/mantenimientos/roles',
+    //   color:       '#fdf2f8',
+    // },
  
   ];
 }

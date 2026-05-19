@@ -1,6 +1,5 @@
 <div class="page-container">
 
-  <!-- ── HEADER + FILTROS ────────────────────────────────────── -->
   <div class="toolbar-card">
     <div class="toolbar-row-top">
       <div class="toolbar-brand">
@@ -8,7 +7,6 @@
         <span class="toolbar-title">Solicitudes de Personal</span>
       </div>
 
-      <!-- Buscador -->
       <div class="toolbar-search">
         <i class="bi bi-search search-icon"></i>
         <input
@@ -18,24 +16,18 @@
           [(ngModel)]="filtroTexto" />
       </div>
 
-      <!-- Filtro por tipo -->
       <select class="select-filtro" [(ngModel)]="filtroIdTipo">
         <option [value]="0">Todos los tipos</option>
-        <option [value]="1">Permiso</option>
-        <option [value]="2">Licencia</option>
-        <option [value]="3">Incidencia</option>
-        <option [value]="4">Vacaciones</option>
+        @for (t of tipos; track t.IdTipoSolicitud) {
+          <option [value]="t.IdTipoSolicitud">{{ t.Descripcion }}</option>
+        }
       </select>
 
-      <!-- Filtro por estado -->
       <select class="select-filtro" [(ngModel)]="filtroIdEstado">
         <option [value]="0">Todos los estados</option>
-        <option [value]="1">Pendiente</option>
-        <option [value]="2">Aprobada</option>
-        <option [value]="3">Rechazada</option>
-        <option [value]="4">En Curso</option>
-        <option [value]="5">Finalizada</option>
-        <option [value]="6">Cancelada</option>
+        @for (e of estados; track e.IdEstadoSolicitud) {
+          <option [value]="e.IdEstadoSolicitud">{{ e.Descripcion }}</option>
+        }
       </select>
 
       <button class="btn-reset" (click)="limpiarFiltros()" title="Limpiar filtros">
@@ -43,14 +35,13 @@
         <span>Limpiar</span>
       </button>
 
-<button class="btn-primary-custom" (click)="irANuevaSolicitud()">
-  <i class="bi bi-plus-lg me-1"></i> Nueva solicitud
-</button>
+      <button class="btn-primary-custom" (click)="irANuevaSolicitud()">
+        <i class="bi bi-plus-lg me-1"></i> Nueva solicitud
+      </button>
     </div>
   </div>
 
 
-  <!-- ── ESTADO: CARGANDO ────────────────────────────────────── -->
   @if (loading) {
     <div class="text-center py-5 text-muted">
       <div class="spinner-border spinner-border-sm me-2" role="status"></div>
@@ -59,8 +50,7 @@
   }
 
 
-  <!-- ── ESTADO: VACÍO ───────────────────────────────────────── -->
-  @if (!loading && solicitudesFiltradas().length === 0) {
+  @if (!loading && solicitudesFiltradas.length === 0) {
     <div class="empty-state">
       <i class="bi bi-inbox"></i>
       <p>
@@ -74,8 +64,7 @@
   }
 
 
-  <!-- ── TABLA ──────────────────────────────────────────────── -->
-  @if (!loading && solicitudesFiltradas().length > 0) {
+  @if (!loading && solicitudesFiltradas.length > 0) {
     <div class="tabla-card">
       <table>
         <thead>
@@ -90,73 +79,66 @@
           </tr>
         </thead>
         <tbody>
-          @for (s of solicitudesFiltradas(); track s.IdSolicitud) {
+          @for (s of solicitudesFiltradas; track s.IdSolicitud) {
             <tr>
-              <!-- EMPLEADO -->
               <td>
                 <div class="empleado-info">
                   <img
-                            [src]="'img/empleados/' + s.CodigoEmpleado + '.png'"
-                            class="pop-foto"
-                            alt="Foto"
-                            (error)="foto.style.display='none'; avatarFallback.style.display='flex'"
-                            #foto
-                          >
+                    [src]="'img/empleados/' + s.CodigoEmpleado + '.png'"
+                    class="pop-foto"
+                    alt="Foto"
+                    (error)="foto.style.display='none'; avatarFallback.style.display='flex'"
+                    #foto
+                  >
 
-                          <div class="avatar"
-                              #avatarFallback
-                              style="display: none;">
-                            {{ iniciales(s.Empleado) }}
-                          </div>
+                  <div class="avatar"
+                       #avatarFallback
+                       style="display: none;">
+                    {{ iniciales(s.Empleado) }}
+                  </div>
 
-                          <div>
-                            <div class="nombre">{{ s.Empleado }}</div>
-                            <div class="text-muted">{{ s.CodigoEmpleado }}</div>
-                          </div>
-
-                        </div>
-
-                
+                  <div>
+                    <div class="nombre">{{ s.Empleado }}</div>
+                    <div class="text-muted">{{ s.CodigoEmpleado }}</div>
+                  </div>
+                </div>
               </td>
 
-              <!-- TIPO + SUBTIPO -->
               <td>
                 <span class="badge-tipo" [ngClass]="claseTipo(s.IdTipoSolicitud)">
                   {{ getTipoCompleto(s) }}
                 </span>
               </td>
 
-              <!-- PERÍODO -->
               <td>{{ getPeriodo(s) }}</td>
 
-              <!-- CANTIDAD -->
               <td class="text-center">
                 <strong>{{ getCantidad(s) }}</strong>
               </td>
 
-              <!-- ESTADO -->
               <td>
                 <span class="badge-estado" [ngClass]="claseEstado(s.IdEstadoSolicitud)">
                   {{ s.EstadoSolicitud }}
                 </span>
               </td>
 
-              <!-- FECHA SOLICITUD -->
               <td>
                 <span class="text-muted">
                   {{ s.FechaSolicitud | date:'dd MMM yyyy' }}
                 </span>
               </td>
 
-              <!-- ACCIONES (placeholder por ahora) -->
               <td class="text-center">
-                <button class="btn-accion ver" title="Ver detalle" disabled>
+                <button class="btn-accion ver" title="Ver detalle"
+                        (click)="verDetalle(s)">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn-accion editar" title="Editar" disabled>
+                <button class="btn-accion editar" title="Cambiar estado"
+                        (click)="abrirCambioEstado(s)">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn-accion eliminar" title="Eliminar" disabled>
+                <button class="btn-accion eliminar" title="Eliminar"
+                        (click)="eliminar(s)">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>
@@ -167,4 +149,154 @@
     </div>
   }
 
-</div>
+</div> @if (modalEstado) {
+  <div class="modal-overlay" (click)="modalEstado = null">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Cambiar estado</h3>
+        <button class="btn-cerrar" (click)="modalEstado = null">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>{{ modalEstado.Empleado }} — {{ getTipoCompleto(modalEstado) }}</p>
+        <div class="campo">
+          <label>Nuevo estado</label>
+          <select [(ngModel)]="nuevoEstado">
+            @for (e of estados; track e.IdEstadoSolicitud) {
+              <option [value]="e.IdEstadoSolicitud">{{ e.Descripcion }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="modalEstado = null">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarEstado()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}
+
+
+@if (modalDetalle) {
+  <div class="modal-overlay" (click)="cerrarDetalle()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>Detalle de solicitud</h3>
+        <button class="btn-cerrar" (click)="cerrarDetalle()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detalle-row">
+          <span class="detalle-label">Empleado</span>
+          <span class="detalle-valor">{{ modalDetalle.Empleado }} · {{ modalDetalle.CodigoEmpleado }}</span>
+        </div>
+
+        <div class="detalle-row">
+          <span class="detalle-label">Tipo</span>
+          <span class="badge-tipo" [ngClass]="claseTipo(modalDetalle.IdTipoSolicitud)">
+            {{ getTipoCompleto(modalDetalle) }}
+          </span>
+        </div>
+
+        <div class="detalle-row">
+          <span class="detalle-label">Estado</span>
+          <span class="badge-estado" [ngClass]="claseEstado(modalDetalle.IdEstadoSolicitud)">
+            {{ modalDetalle.EstadoSolicitud }}
+          </span>
+        </div>
+
+        <div class="detalle-row">
+          <span class="detalle-label">Período</span>
+          <span class="detalle-valor">{{ getPeriodo(modalDetalle) }}</span>
+        </div>
+
+        @if (getCantidad(modalDetalle) !== '—') {
+          <div class="detalle-row">
+            <span class="detalle-label">Cantidad</span>
+            <span class="detalle-valor">{{ getCantidad(modalDetalle) }}</span>
+          </div>
+        }
+
+        @if (modalDetalle.Comentarios) {
+          <div class="detalle-row">
+            <span class="detalle-label">Comentarios</span>
+            <span class="detalle-valor">{{ modalDetalle.Comentarios }}</span>
+          </div>
+        }
+
+        @if (modalDetalle.Motivo) {
+          <div class="detalle-row">
+            <span class="detalle-label">Motivo</span>
+            <span class="detalle-valor">{{ modalDetalle.Motivo }}</span>
+          </div>
+        }
+
+        <div class="detalle-row">
+          <span class="detalle-label">Registrada</span>
+          <span class="detalle-valor">{{ modalDetalle.FechaSolicitud | date:'dd MMM yyyy' }}</span>
+        </div>
+
+        <div class="detalle-row detalle-row--image">
+          <span class="detalle-label">Imagen adjunta</span>
+          
+          <div class="detalle-valor">
+            @if (modalDetalle.TieneImagen && !imagenPreview) {
+              <div class="zoom-container">
+                <img [src]="getImagenUrl(modalDetalle.IdSolicitud)"
+                     class="img-solicitud clickable" 
+                     (click)="imagenZoom = getImagenUrl(modalDetalle.IdSolicitud)"
+                     alt="Documento adjunto">
+                <span class="zoom-hint"><i class="bi bi-search"></i> Click para ampliar</span>
+              </div>
+            }
+
+            @if (imagenPreview) {
+              <div class="preview-wrap">
+                <img [src]="imagenPreview" class="img-solicitud" alt="Preview">
+                <div class="preview-actions">
+                   <button class="btn-guardar" (click)="subirImagenDetalle()" [disabled]="subiendoImg">
+                     @if (subiendoImg) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                     <i class="bi bi-cloud-upload"></i> Confirmar subida
+                   </button>
+                   <button class="btn-quitar ms-2" (click)="imagenPreview = null">Cancelar</button>
+                </div>
+              </div>
+            }
+
+            @if (!imagenPreview) {
+              <div class="upload-area mt-2">
+                <label class="upload-label" for="inputImgDetalle">
+                  <i class="bi bi-image"></i>
+                  <span>{{ modalDetalle.TieneImagen ? 'Reemplazar imagen' : 'Agregar imagen' }} (JPG/PNG, máx 3MB)</span>
+                </label>
+                <input id="inputImgDetalle" type="file" accept=".jpg,.jpeg,.png"
+                       (change)="onImagenSeleccionada($event)" style="display:none">
+              </div>
+            }
+
+            @if (errorImagen) {
+              <div class="upload-error mt-2">
+                <i class="bi bi-exclamation-circle"></i> {{ errorImagen }}
+              </div>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-guardar" (click)="cerrarDetalle()">Cerrar</button>
+      </div>
+
+    </div>
+  </div>
+}
+
+@if (imagenZoom) {
+  <div class="modal-overlay zoom-overlay" (click)="imagenZoom = null">
+    <div class="zoom-content">
+      <img [src]="imagenZoom" alt="Vista ampliada" (click)="$event.stopPropagation()">
+      <button class="btn-cerrar-zoom" (click)="imagenZoom = null">✕</button>
+    </div>
+  </div>
+}

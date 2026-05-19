@@ -1,0 +1,184 @@
+<div class="page-container">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar-card">
+    <div class="toolbar-row-top">
+      <div class="toolbar-brand">
+        <i class="bi bi-shield-lock toolbar-icon"></i>
+        <span class="toolbar-title">Gestión de Usuarios</span>
+      </div>
+      <div class="toolbar-search">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" class="search-input"
+               placeholder="Buscar por nombre, usuario o email…"
+               [(ngModel)]="filtroTexto">
+      </div>
+      <button class="btn-primary-custom" (click)="abrirModal()">
+        <i class="bi bi-person-plus me-1"></i> Nuevo usuario
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  @if (loading) {
+    <div class="text-center py-5 text-muted">
+      <div class="spinner-border spinner-border-sm me-2"></div>
+      Cargando usuarios…
+    </div>
+  }
+
+  <!-- VACÍO -->
+  @if (!loading && usuariosFiltrados.length === 0) {
+    <div class="empty-state">
+      <i class="bi bi-people"></i>
+      <p>No hay usuarios registrados.</p>
+    </div>
+  }
+
+  <!-- TABLA -->
+  @if (!loading && usuariosFiltrados.length > 0) {
+    <div class="tabla-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Empleado</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Contraseña</th>
+            <th>Creado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of usuariosFiltrados; track u.id) {
+            <tr [class.row-inactivo]="!u.isActive">
+              <td>
+                <div class="empleado-info">
+                  <div class="avatar">{{ iniciales(u.empleado) }}</div>
+                  <div>
+                    <div class="nombre">{{ u.empleado }}</div>
+                    <div class="text-muted">{{ u.codigo }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><code class="username-code">{{ u.username }}</code></td>
+              <td class="text-muted">{{ u.email }}</td>
+              <td>
+                <span class="badge-rol">{{ u.rol }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge-estado" [class.badge-activo]="u.isActive"
+                                           [class.badge-inactivo]="!u.isActive">
+                  {{ u.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="text-center">
+                @if (u.mustChangePassword) {
+                  <span class="badge-warning" title="Debe cambiar contraseña">
+                    <i class="bi bi-exclamation-triangle"></i> Pendiente
+                  </span>
+                } @else {
+                  <span class="text-muted">OK</span>
+                }
+              </td>
+              <td class="text-muted">{{ u.createdAt | date:'dd MMM yyyy' }}</td>
+              <td class="text-center">
+                <button class="btn-accion"
+                        [class.btn-desactivar]="u.isActive"
+                        [class.btn-activar]="!u.isActive"
+                        [title]="u.isActive ? 'Desactivar' : 'Activar'"
+                        (click)="toggleActive(u)">
+                  <i class="bi" [class.bi-person-dash]="u.isActive"
+                                [class.bi-person-check]="!u.isActive"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+</div>
+
+<!-- MODAL NUEVO USUARIO -->
+@if (modalAbierto) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-header-brand">
+          <i class="bi bi-person-plus-fill modal-icon"></i>
+          <div>
+            <h3>Crear usuario</h3>
+            <p class="modal-subtitle">
+              Se asignará contraseña temporal <strong>Temp123*</strong>
+            </p>
+          </div>
+        </div>
+        <button class="btn-cerrar" (click)="cerrarModal()">✕</button>
+      </div>
+
+      <form [formGroup]="formulario" (ngSubmit)="guardar()">
+        <div class="modal-body">
+
+          <!-- Empleado -->
+          <div class="campo" [class.campo-error]="campoInvalido('IdEmpleado')">
+            <label>Empleado *</label>
+            <select formControlName="IdEmpleado" (change)="onEmpleadoChange()">
+              <option [ngValue]="null">— Seleccionar empleado —</option>
+              @for (e of empleados; track e.id) {
+                <option [ngValue]="e.id">{{ e.nombre }} · {{ e.codigo }}</option>
+              }
+            </select>
+            @if (empleados.length === 0) {
+              <small class="hint-warn">
+                <i class="bi bi-info-circle"></i>
+                Todos los empleados activos ya tienen usuario.
+              </small>
+            }
+          </div>
+
+          <!-- Email -->
+          <div class="campo" [class.campo-error]="campoInvalido('email')">
+            <label>Email institucional *</label>
+            <input type="email" formControlName="email"
+                   placeholder="nombre.apellido@jce.do">
+            @if (campoInvalido('email')) {
+              <small class="error-msg">Ingresa un email válido</small>
+            }
+          </div>
+
+          <!-- Rol -->
+          <div class="campo" [class.campo-error]="campoInvalido('IdRol')">
+            <label>Rol *</label>
+            <select formControlName="IdRol">
+              <option [ngValue]="null">— Seleccionar rol —</option>
+              @for (r of roles; track r.IdRol) {
+                <option [ngValue]="r.IdRol">{{ r.descripcion }}</option>
+              }
+            </select>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancelar" (click)="cerrarModal()">
+            Cancelar
+          </button>
+          <button type="submit" class="btn-guardar"
+                  [disabled]="formulario.invalid || guardando">
+            @if (guardando) {
+              <span class="spinner-border spinner-border-sm me-1"></span> Creando...
+            } @else {
+              <i class="bi bi-check2 me-1"></i> Crear usuario
+            }
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+}

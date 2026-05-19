@@ -2,12 +2,17 @@ import { Injectable, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { IUser } from '../../interfaces/user/user';
+import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment.development';
+import { HttpClient } from '@angular/common/http';
 
 
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
+  private http = inject(HttpClient);
+   private apiUrl = environment.apiUrl;
 
   // Keys que ya usa tu app
   private readonly KEY_TOKEN = 'sca_token';
@@ -69,20 +74,10 @@ isVacaciones(): boolean {
   return this.rolId() === 4;
 }
 
-  /** ¿Hay sesión válida (token presente y no expirado)? */
   isLoggedIn(): boolean {
-    const token = this.getToken();
-    if (!token) return false;
-    try {
-      const partes = token.split('.');
-      if (partes.length !== 3) return false;
-      const payload = JSON.parse(atob(partes[1]));
-      const ahora = Math.floor(Date.now() / 1000);
-      return payload.exp > ahora;
-    } catch {
-      return false;
-    }
-  }
+  // Mientras exista un token o un refresh token, consideramos que hay una sesión que se puede usar o restaurar
+  return !!this.getToken() || !!this.getRefreshToken();
+}
 
   // ─── ESCRITURA / LOGIN ────────────────────────────────────────────────
   /** Llámalo desde tu pantalla de login al recibir la respuesta del backend */
@@ -127,4 +122,14 @@ isVacaciones(): boolean {
     };
     return map[rolId] ?? `Rol ${rolId}`;
   }
+
+
+  verificarPin(userId: number, pin: string): Observable<any> {
+  return this.http.post(`${this.apiUrl}/auth/verify-pin`, { userId, pin });
+}
+
+// En tu auth.service.ts
+refreshAccessToken(refreshToken: string): Observable<any> {
+  return this.http.post(`${this.apiUrl}/auth/refresh`, { refreshToken });
+}
 }

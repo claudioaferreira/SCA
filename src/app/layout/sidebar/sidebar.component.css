@@ -365,3 +365,15 @@
   padding: 0.42rem;
   gap: 0;
 }
+
+
+:host-context(.sidebar-collapsed) .footer-row .nav-icon {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:host-context(.sidebar-collapsed) .footer-row .ms-auto {
+  margin-left: 0;
+}

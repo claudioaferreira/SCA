@@ -87,35 +87,37 @@ export class ChangePasswordComponent implements OnInit {
   }
 
   onSubmit(): void {
-
   if (!this.isFormValid()) return;
 
-  this.isLoading = true;
+  this.isLoading    = true;
   this.errorMessage = '';
 
-  this._userService.changePassword(this.form.newPassword)
-    .subscribe({
-      next: () => {
-        this.isLoading = false;
+  this._userService.changePassword(this.form.newPassword).subscribe({
+    next: () => {
+      this.isLoading = false;
 
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Contraseña cambiada',
-          text: 'Tu contraseña ha sido actualizada exitosamente. Por favor, inicia sesión nuevamente.',
-          confirmButtonText: 'Ir al inicio',
-        }).then(() => {
-          this._auth.logout();
-          this.router.navigate(['/login']);
-        });
+      // Limpiar token temporal
+      sessionStorage.removeItem('sca_token_cambio');
 
-      },
+      // Primero cerrar sesión y navegar
+      this._auth.logout();
 
-      error: (err) => {
-        this.isLoading = false;
-        this.errorMessage =
-          err.message ?? 'No se pudo cambiar la contraseña.';
-      }
-    });
+      // Luego mostrar el toast (no bloquea la navegación)
+      Swal.fire({
+        icon:              'success',
+        title:             'Contraseña actualizada',
+        text:              'Inicia sesión con tu nueva contraseña.',
+        toast:             true,
+        position:          'top-end',
+        timer:             3500,
+        showConfirmButton: false,
+        timerProgressBar:  true,
+      });
+    },
+    error: (err) => {
+      this.isLoading    = false;
+      this.errorMessage = err?.error?.message ?? 'No se pudo cambiar la contraseña.';
+    },
+  });
 }
 }

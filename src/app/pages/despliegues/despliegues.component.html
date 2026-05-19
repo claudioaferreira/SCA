@@ -1,0 +1,508 @@
+<div class="page-container">
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA: LISTA
+  ══════════════════════════════════════════════════════ -->
+  @if (vista === 'lista') {
+
+    <div class="toolbar-card">
+      <div class="toolbar-row-top">
+        <div class="toolbar-brand">
+          <i class="bi bi-map toolbar-icon"></i>
+          <span class="toolbar-title">Despliegues</span>
+        </div>
+        <button class="btn-primary-custom" (click)="abrirCrear()">
+          <i class="bi bi-plus-lg me-1"></i> Nuevo despliegue
+        </button>
+      </div>
+    </div>
+
+    @if (loading) {
+      <div class="cargando">
+        <div class="spinner-border spinner-border-sm me-2"></div> Cargando...
+      </div>
+    }
+
+    @if (!loading && despliegues.length === 0) {
+      <div class="empty-state">
+        <i class="bi bi-map"></i>
+        <p>No hay despliegues registrados. Crea el primero.</p>
+      </div>
+    }
+
+    <div class="despliegues-grid">
+      @for (d of despliegues; track d.IdDespliegue) {
+        <div class="desp-card" (click)="verDetalle(d)">
+
+          <div class="desp-card-top">
+            <span class="badge-estado" [ngClass]="badgeEstado(d.Estado)">
+              {{ d.Estado }}
+            </span>
+            <span class="desp-fecha">{{ d.FechaCreacion | date:'dd MMM yyyy' }}</span>
+          </div>
+
+          <h3 class="desp-titulo">{{ d.Titulo }}</h3>
+
+          <div class="desp-periodo">
+            <i class="bi bi-calendar-range"></i>
+            {{ d.FechaInicio | date:'dd MMM' }} → {{ d.FechaFin | date:'dd MMM yyyy' }}
+          </div>
+
+          <div class="desp-stats">
+            <span><i class="bi bi-signpost-split"></i> {{ d.TotalRutas }} rutas</span>
+            <span><i class="bi bi-person-fill"></i> {{ d.TotalTecnicos }} técnicos</span>
+          </div>
+          
+
+          <!-- Acciones — stopPropagation para no abrir el detalle -->
+          <div class="desp-acciones" (click)="$event.stopPropagation()">
+            @if (d.Estado === 'Activo') {
+              <button class="btn-accion-card finalizar" (click)="finalizar(d)">
+                <i class="bi bi-check-all me-1"></i> Finalizar
+              </button>
+            }
+            <button class="btn-accion-card eliminar" (click)="eliminar(d, $event)">
+              <i class="bi bi-trash me-1"></i> Eliminar
+            </button>
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+
+  <!-- ══════════════════════════════════════════════════
+       VISTA: DETALLE (tabla tipo Excel)
+  ══════════════════════════════════════════════════════ -->
+  @if (vista === 'detalle' && detalleActual) {
+
+    <!-- Toolbar — oculto al imprimir -->
+    <div class="toolbar-card no-print">
+      <div class="toolbar-row-top">
+        <button class="btn-volver" (click)="volverALista()" title="Volver a la lista">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <div class="toolbar-brand">
+          <span class="toolbar-title">{{ detalleActual.Titulo }}</span>
+          <span class="desp-periodo-detalle">
+            {{ detalleActual.FechaInicio | date:'dd MMM' }} →
+            {{ detalleActual.FechaFin    | date:'dd MMM yyyy' }}
+          </span>
+          <span class="badge-estado" [ngClass]="badgeEstado(detalleActual.Estado)">
+            {{ detalleActual.Estado }}
+          </span>
+
+          @if (rutas.length > 0) {
+            <span class="badge-progreso"
+                  [class.completo]="resumenCentros.faltantes === 0">
+              <i class="bi bi-check-circle-fill me-1"></i>
+              {{ resumenCentros.listos }} listos
+              <span class="badge-progreso-sep">·</span>
+              <i class="bi bi-clock me-1"></i>
+              {{ resumenCentros.faltantes }} faltantes
+            </span>
+          }
+          
+        </div>
+        <div class="toolbar-acciones">
+
+          <!-- ── Buscador de detalle ─────────────────────────────── -->
+  <div class="detalle-search">
+    <i class="bi bi-search detalle-search-icon"></i>
+    <input
+      type="text"
+      class="detalle-search-input"
+      placeholder="Zona, técnico, centro, código…"
+      [(ngModel)]="terminoBusquedaDetalle"
+    />
+    @if (terminoBusquedaDetalle) {
+      <button class="detalle-search-clear" (click)="terminoBusquedaDetalle = ''" title="Limpiar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    }
+  </div>
+          @if (detalleActual.Estado === 'Activo') {
+            <button class="btn-add-ruta" (click)="abrirAddRuta()">
+              <i class="bi bi-plus"></i> Agregar ruta
+            </button>
+            <button class="btn-finalizar" (click)="finalizar(detalleActual)">
+              <i class="bi bi-check-all me-1"></i> Finalizar
+            </button>
+          }
+          <button class="btn-print" (click)="exportarExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cabecera solo para impresión -->
+    <div class="print-header only-print">
+  <h2>{{ detalleActual.Titulo }}</h2>
+  <p class="print-sub">
+    Período: {{ detalleActual.FechaInicio | date:'dd MMM yyyy' }} —
+    {{ detalleActual.FechaFin | date:'dd MMM yyyy' }}
+  </p>
+  <p class="print-fecha">
+    Impreso el {{ hoy | date:'dd/MM/yyyy HH:mm' }}
+  </p>
+</div>
+
+    @if (loadingDetalle) {
+      <div class="cargando">
+        <div class="spinner-border spinner-border-sm me-2"></div> Cargando rutas...
+      </div>
+    }
+
+    @if (!loadingDetalle && rutas.length === 0) {
+      <div class="empty-state">
+        <i class="bi bi-signpost-split"></i>
+        <p>Este despliegue no tiene rutas aún.</p>
+        @if (detalleActual.Estado === 'Activo') {
+          <button class="btn-primary-custom" (click)="abrirAddRuta()">
+            <i class="bi bi-plus me-1"></i> Agregar primera ruta
+          </button>
+        }
+      </div>
+    }
+
+    @if (!loadingDetalle && rutas.length > 0) {
+      <div class="tabla-card">
+        <table class="tabla-despliegue">
+          <thead>
+            <tr>
+              <th>NO.</th>
+              <th>ZONA</th>
+              <th>RUTA</th>
+              <th class="th-listo no-print">LISTO</th>
+              <th>CENTRO DE CEDULACIÓN</th>
+              <th>SOPORTE TÉCNICO</th>
+              <th>CÓDIGO</th>
+              <th>COMENTARIO</th>
+              
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filasTabla; track fila.no) {
+              @if (fila.esPrimera || rutaExpandida(fila.ruta.IdRuta)) {
+              <tr [class.fila-primera]="fila.esPrimera"
+              [class.fila-centro]="!fila.esPrimera"
+               [class.fila-lista]="getEstadoCentro(fila.centro.IdRutaCentro, fila.centro.Estado ?? null) === 'Listo'">
+                
+
+                <td class="td-num">{{ fila.no }}</td>
+
+                <td class="td-zona">
+                        @if (fila.esPrimera) {
+                          <button class="btn-expandir"
+                                  (click)="toggleRuta(fila.ruta.IdRuta); $event.stopPropagation()"
+                                  [title]="rutaExpandida(fila.ruta.IdRuta) ? 'Colapsar' : 'Expandir'">
+                            <i class="bi"
+                              [class.bi-chevron-right]="!rutaExpandida(fila.ruta.IdRuta)"
+                              [class.bi-chevron-down]="rutaExpandida(fila.ruta.IdRuta)"></i>
+                          </button>
+                          {{ fila.ruta.ZonaOperativa ?? '—' }}
+                        }
+                      </td>
+
+                <td class="td-ruta">
+                  {{ fila.esPrimera ? fila.ruta.NumeroRuta : '' }}
+                </td>
+
+               <td class="td-listo no-print">
+                  @if (fila.esPrimera && !rutaExpandida(fila.ruta.IdRuta)) {
+                    <!-- Colapsado: solo muestra check si todos están listos -->
+                    @if (todasListasPorRuta(fila.ruta)) {
+                      <i class="bi bi-check-circle-fill text-success" title="Todos los centros listos"></i>
+                    }
+
+                  } @else {
+                    <!-- Expandido O fila de centro: botón toggle individual -->
+                    @let estadoCentro = getEstadoCentro(fila.centro.IdRutaCentro, fila.centro.Estado ?? null);
+                    <button
+                      class="btn-listo"
+                      [class.listo]="estadoCentro === 'Listo'"
+                      [title]="estadoCentro === 'Listo' ? 'Marcar como pendiente' : 'Marcar como listo'"
+                      (click)="toggleCentroListo(fila.centro.IdRutaCentro, estadoCentro)">
+                      @if (estadoCentro === 'Listo') {
+                        <i class="bi bi-check-circle-fill"></i>
+                      } @else {
+                        <i class="bi bi-circle"></i>
+                      }
+                    </button>
+                  }
+                </td>
+
+                <td class="td-centro">
+                  @if (fila.esPrimera && !rutaExpandida(fila.ruta.IdRuta)) {
+                    <!-- Colapsado: resumen -->
+                    <span class="centros-pill">
+                      <i class="bi bi-geo-alt-fill me-1"></i>
+                      {{ contarCentros(fila.ruta) }} centros
+                      @if (contarListosPorRuta(fila.ruta) > 0) {
+                        <span class="centros-pill-listos">
+                          · {{ contarListosPorRuta(fila.ruta) }} ✓
+                        </span>
+                      }
+                    </span>
+                  } @else {
+                    {{ fila.centro.Centro }}
+                  }
+                </td>
+
+                <td class="td-tecnico">
+                  @if (fila.esPrimera) {
+                    @if (fila.ruta.Empleado) {
+                      <span class="tecnico-nombre">{{ fila.ruta.Empleado }}</span>
+                    } @else {
+                      <span class="sin-tecnico">Sin asignar</span>
+                    }
+                  }
+                </td>
+
+                <td class="td-codigo">
+                  {{ fila.esPrimera ? (fila.ruta.CodigoEmpleado ?? '') : '' }}
+                </td>
+
+                <td class="td-comentario">
+                  {{ fila.esPrimera ? (fila.ruta.Comentario ?? '') : '' }}
+                </td>
+
+                
+
+                <td class="no-print td-accion">
+                  @if (fila.esPrimera && detalleActual.Estado === 'Activo') {
+                    <button class="btn-editar-ruta" (click)="abrirEditarRuta(fila.ruta)" title="Editar ruta">
+                      <i class="bi bi-pencil-fill"></i>
+                    </button>
+                  }
+                </td>
+
+              </tr>
+            }
+          }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     MODAL: CREAR DESPLIEGUE
+══════════════════════════════════════════════════════ -->
+@if (modalCrear) {
+  <div class="modal-overlay" (click)="cerrarCrear()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-header-brand">
+          <i class="bi bi-map-fill modal-icon"></i>
+          <div>
+            <h3>Nuevo despliegue</h3>
+            <p class="modal-sub">Las rutas se agregan en el siguiente paso.</p>
+          </div>
+        </div>
+        <button class="btn-cerrar" (click)="cerrarCrear()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="campo">
+          <label>Título *</label>
+          <input type="text" [(ngModel)]="formCrear.titulo"
+                 placeholder="Ej: Despliegue BIOS Mayo 2026">
+        </div>
+        <div class="fila-doble">
+          <div class="campo">
+            <label>Fecha inicio *</label>
+            <input type="date" [(ngModel)]="formCrear.fechaInicio">
+          </div>
+          <div class="campo">
+            <label>Fecha fin *</label>
+            <input type="date" [(ngModel)]="formCrear.fechaFin">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarCrear()">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarDespliegue()" [disabled]="guardandoCrear">
+          @if (guardandoCrear) {
+            <span class="spinner-border spinner-border-sm me-1"></span> Creando...
+          } @else {
+            <i class="bi bi-check2 me-1"></i> Crear y agregar rutas
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+
+<!-- ══════════════════════════════════════════════════
+     MODAL: AGREGAR / EDITAR RUTA
+══════════════════════════════════════════════════════ -->
+@if (modalRuta) {
+  <div class="modal-overlay" (click)="cerrarModalRuta()">
+    <div class="modal-card modal-xl" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-header-brand">
+          <i class="bi bi-signpost-split-fill modal-icon"></i>
+          <div>
+            <h3>{{ rutaEditando ? 'Editar ruta ' + rutaEditando.NumeroRuta : 'Agregar ruta' }}</h3>
+            <p class="modal-sub">{{ detalleActual?.Titulo }}</p>
+          </div>
+        </div>
+        <button class="btn-cerrar" (click)="cerrarModalRuta()">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Fila 1: Datos básicos -->
+        <div class="fila-triple">
+          <div class="campo">
+            <label>Nombre de la ruta</label>
+            <input type="text" [(ngModel)]="formRuta.nombre"
+                   placeholder="Ej: CIBAO CENTRAL I">
+          </div>
+          <div class="campo">
+            <label>Técnico asignado</label>
+            <select [(ngModel)]="formRuta.idEmpleado">
+              <option [ngValue]="null">— Sin técnico aún —</option>
+              @for (e of empleados; track e.id) {
+                <option [ngValue]="e.id">{{ e.nombre }} · {{ e.codigo }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label>Comentario</label>
+            <input type="text" [(ngModel)]="formRuta.comentario"
+                   placeholder="Ej: Junta Electoral, centro de cedulación...">
+          </div>
+        </div>
+
+        <!-- Sección centros -->
+        <!-- Sección centros -->
+<div class="centros-section">
+
+  <div class="centros-toolbar">
+
+    <span class="centros-titulo">
+      Centros de cedulación
+      <span class="centros-count">{{ formRuta.centros.length }} seleccionados</span>
+    </span>
+
+    <div class="centros-controles">
+
+      <!-- Toggle: elige cómo filtrar los centros -->
+      <div class="toggle-zona">
+        <button
+          [class.activo]="formRuta.modoZona === 'operativa'"
+          (click)="formRuta.modoZona = 'operativa'; limpiarZona()">
+          Zona Operativa
+        </button>
+        <button
+          [class.activo]="formRuta.modoZona === 'geo'"
+          (click)="formRuta.modoZona = 'geo'; limpiarZona()">
+          Zona Geográfica
+        </button>
+      </div>
+
+      <!-- Selector condicional según el modo -->
+      @if (formRuta.modoZona === 'operativa') {
+        <select class="select-zona"
+                [(ngModel)]="formRuta.idZonaOperativa"
+                (ngModelChange)="onZonaChange($event)">
+          <option [ngValue]="null">— Zona operativa —</option>
+          @for (z of zonasOperativas; track z.IdZonasOperativas) {
+            <option [ngValue]="z.IdZonasOperativas">{{ z.Descripcion }}</option>
+          }
+        </select>
+      } @else {
+        <select class="select-zona"
+                [(ngModel)]="formRuta.idZonaGeo"
+                (ngModelChange)="onZonaGeoChange($event)">
+          <option [ngValue]="null">— Zona geográfica —</option>
+          @for (z of zonasGeo; track z.IdZonaGeo) {
+            <option [ngValue]="z.IdZonaGeo">{{ z.Descripcion }}</option>
+          }
+        </select>
+      }
+
+      <!-- Botón para ver centros de todas las zonas -->
+      <button class="btn-toggle-todos"
+              [class.activo]="verTodosLosCentros"
+              (click)="verTodosLosCentros = !verTodosLosCentros"
+              title="Ver centros de otras zonas también">
+        <i class="bi bi-grid-3x3"></i>
+        {{ verTodosLosCentros ? 'Solo zona' : 'Ver todos' }}
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Lista de centros agrupada por zona -->
+  <div class="centros-lista">
+    @for (grupo of centrosAgrupados; track grupo.zona) {
+      <div class="grupo-zona">
+
+        <div class="grupo-zona-header">
+          <span class="grupo-zona-nombre">{{ grupo.zona }}</span>
+          <div class="grupo-zona-acciones">
+            @if (zonaFiltroModal > 0 && !verTodosLosCentros) {
+              <button class="btn-sel-todos"
+                      (click)="todosDeLaZonaSeleccionados(zonaFiltroModal)
+                               ? deseleccionarTodosDeZona(zonaFiltroModal)
+                               : seleccionarTodosDeZona(zonaFiltroModal)">
+                {{ todosDeLaZonaSeleccionados(zonaFiltroModal) ? 'Deseleccionar todos' : 'Seleccionar todos' }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="grupo-centros-grid">
+          @for (c of grupo.centros; track c.IdCentroCedulacion) {
+            <label class="centro-item" [class.checked]="centroSeleccionado(c.IdCentroCedulacion)">
+              <input type="checkbox"
+                     [checked]="centroSeleccionado(c.IdCentroCedulacion)"
+                     (change)="toggleCentro(c.IdCentroCedulacion)">
+              <span class="centro-nombre">{{ c.Centro }}</span>
+            </label>
+          }
+        </div>
+
+      </div>
+    }
+
+    @if (centrosAgrupados.length === 0) {
+      <div class="sin-centros">
+        Selecciona una zona para ver sus centros.
+      </div>
+    }
+  </div>
+
+</div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModalRuta()">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarRuta()" [disabled]="guardandoRuta">
+          @if (guardandoRuta) {
+            <span class="spinner-border spinner-border-sm me-1"></span> Guardando...
+          } @else {
+            <i class="bi bi-check2 me-1"></i>
+            {{ rutaEditando ? 'Guardar cambios' : 'Agregar ruta' }}
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user/user.service';
 import { AuthService } from '../../services/user/auth.service';
 import { NgIf } from '@angular/common';
+import { ThemeToggleComponent } from "../../shared/theme-toggle/theme-toggle.component";
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLinkActive, RouterLink, NgIf],
+  imports: [RouterLinkActive, RouterLink, NgIf, ThemeToggleComponent],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.css'
 })
@@ -32,11 +33,7 @@ export class SidebarComponent {
   }
 
   logout(event: Event): void {
-
   event.preventDefault();
-
   this.auth.logout();
-
-  this.router.navigate(['/login']);
 }
 }

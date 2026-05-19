@@ -1,0 +1,82 @@
+<div class="cp-wrapper">
+  <div class="bg-orb bg-orb--1"></div>
+  <div class="bg-orb bg-orb--2"></div>
+
+  <div class="cp-card">
+    <div class="card-accent-line"></div>
+
+    <!-- Ícono -->
+    <div class="cp-icon-wrap">
+      <div class="cp-icon-ring">
+        <i class="bi bi-envelope-check-fill cp-icon"></i>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="cp-header">
+      <h1 class="cp-title">Verifica tu identidad</h1>
+      <p class="cp-subtitle">{{ mensaje }}</p>
+    </div>
+
+    <!-- Contador -->
+    <div class="pin-timer" [class.timer-danger]="segundosRestantes < 60">
+      <i class="bi bi-clock"></i>
+      <span>{{ pinExpirado ? 'PIN expirado' : 'Expira en ' + tiempoFormateado }}</span>
+    </div>
+
+    <!-- Error -->
+    @if (errorMessage) {
+      <div class="alert-error">
+        <i class="bi bi-exclamation-circle"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+    }
+
+    @if (!pinExpirado) {
+
+      <!-- OTP Inputs -->
+      <div class="form-group">
+        <label class="form-label">Código de verificación</label>
+        <div class="otp-wrap">
+          @for (d of pinDigits; track $index) {
+            <input
+              type="text"
+              inputmode="numeric"
+              maxlength="1"
+              class="otp-box"
+              [class.otp-filled]="pinDigits[$index]"
+              [value]="pinDigits[$index]"
+              (input)="onDigitInput($event, $index)"
+              (keydown)="onKeyDown($event, $index)"
+              (paste)="onPaste($event)"
+              #digitInputs
+            />
+          }
+        </div>
+      </div>
+
+      <button class="btn-primary-sca"
+              [disabled]="pin.length !== 6 || isLoading"
+              (click)="verificar()">
+        @if (isLoading) {
+          <span class="btn-loader">
+            <span class="spinner"></span> Verificando...
+          </span>
+        } @else {
+          Verificar PIN <i class="bi bi-arrow-right ms-2"></i>
+        }
+      </button>
+
+    }
+
+    <button class="btn-volver" (click)="volverAlLogin()">
+      <i class="bi bi-arrow-left me-1"></i>
+      {{ pinExpirado ? 'Volver al login para recibir un nuevo PIN' : 'Volver al login' }}
+    </button>
+
+  </div>
+
+  <footer class="cp-footer">
+    Sistema de Control de Asignaciones (SCA) &copy; {{ currentYear }}
+  </footer>
+</div>

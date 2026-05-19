@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { EmpleadosService } from '../../../services/empleados.service';
 import { GestionHumanaService } from '../../../services/gestion-humana.service';
 import { CatalogosService } from '../../../services/catalogos.service';
+import { AnioDisponible, Empleado, EstadoSolicitud, SaldoVacaciones, SubtipoIncidencia, SubtipoLicencia, SubtipoPermiso, TipoAsignacion, TipoSolicitud } from '../../../interfaces/asignacion.interface';
 
 @Component({
   selector: 'app-nueva-solicitud',
@@ -16,22 +17,28 @@ import { CatalogosService } from '../../../services/catalogos.service';
 })
 export class NuevaSolicitudComponent implements OnInit {
 
+  // ── IMAGEN ──────────────────────────────────────────────────────
+imagenSeleccionada: File | null = null;
+imagenPreview:      string | null = null;
+errorImagen                     = '';
+private readonly TIPOS_IMAGEN   = ['image/jpeg', 'image/png'];
+private readonly TAMANO_MAXIMO  = 3 * 1024 * 1024; // 3MB
+
    // ── ESTADO ──────────────────────────────────────────────────────────
   loading = false;
 
 
   // Catálogos
-  tipos:               any[] = [];
-  subtiposPermiso:     any[] = [];
-  subtiposLicencia:    any[] = [];
-  subtiposIncidencia:  any[] = [];
-  empleados:           any[] = [];
-  aniosDisponibles: any[] = [];
-  aniosFiltro: number[] = [];
-  
+tipos:              TipoSolicitud[]     = [];
+subtiposPermiso:    SubtipoPermiso[]    = [];
+subtiposLicencia:   SubtipoLicencia[]   = [];
+subtiposIncidencia: SubtipoIncidencia[] = [];
+empleados:          Empleado[]          = [];
+aniosDisponibles:   AnioDisponible[]    = [];
+saldoVacaciones:    SaldoVacaciones | null = null;
+estados: EstadoSolicitud[] = [];
 
-   // Saldo de vacaciones (se carga cuando el empleado cambia y el tipo = 4)
-  saldoVacaciones: any = null;
+
 
   // ── FORMULARIO REACTIVO ─────────────────────────────────────────────
   formulario!: FormGroup;
@@ -61,7 +68,7 @@ export class NuevaSolicitudComponent implements OnInit {
       // Comunes
       idEmpleado:        [null, Validators.required],
       idTipoSolicitud:   [null, Validators.required],
-      idEstadoSolicitud: [2],                    // 2 = Aprobada (ya viene firmada)
+       idEstadoSolicitud: [null],                    // 2 = Aprobada (ya viene firmada)
       comentarios:       [''],
 
       // Toggle: el Permiso es por horas o por día completo
@@ -144,8 +151,19 @@ export class NuevaSolicitudComponent implements OnInit {
     this._catalogosService.getSubtiposIncidencia().subscribe({
       next: (res) => this.subtiposIncidencia = res.body ?? [],
     });
-  }
 
+    this._catalogosService.getEstadosSolicitud().subscribe({
+  next: (res) => {
+    this.estados = res.body ?? [];
+    const aprobada = this.getEstadoId('aprobada');
+    this.formulario.patchValue({ idEstadoSolicitud: aprobada });
+  },
+});
+  }
+esSubtipoOtros(): boolean {
+  const id = this.formulario.value.idSubtipoPermiso;
+  return this.subtiposPermiso.find(s => s.IdSubtipoPermiso === id)?.EsOtros ?? false;
+}
     private cargarEmpleados(): void {
     this.empService.getEmpleadosActivos().subscribe({
       next: (data) => this.empleados = data ?? [],
@@ -178,7 +196,7 @@ export class NuevaSolicitudComponent implements OnInit {
     });
 
     // Si es Vacaciones y ya hay empleado, traer saldo
-   if (tipo === 4 && this.formulario.value.idEmpleado) {
+  if (tipo === this.getTipoId('vacaciones') && this.formulario.value.idEmpleado) {
     this.cargarSaldoVacaciones();
     this.cargarAniosDisponibles();
   } else {
@@ -191,7 +209,7 @@ export class NuevaSolicitudComponent implements OnInit {
   /** Cuando cambia el empleado, si es Vacaciones recargá el saldo */
   onEmpleadoChange(): void {
   const tipo = Number(this.formulario.value.idTipoSolicitud);
-  if (tipo === 4) {
+  if (tipo === this.getTipoId('vacaciones') && this.formulario.value.idEmpleado) {
     this.cargarSaldoVacaciones();
     this.cargarAniosDisponibles();    // ← agregar
   }
@@ -226,10 +244,18 @@ export class NuevaSolicitudComponent implements OnInit {
     return Number(this.formulario.value.idTipoSolicitud) || 0;
   }
 
-  esTipoPermiso():    boolean { return this.tipoSeleccionado === 1; }
-  esTipoLicencia():   boolean { return this.tipoSeleccionado === 2; }
-  esTipoIncidencia(): boolean { return this.tipoSeleccionado === 3; }
-  esTipoVacaciones(): boolean { return this.tipoSeleccionado === 4; }
+private getTipoId(alias: string): number {
+  return this.tipos.find(t => t.Alias === alias)?.IdTipoSolicitud ?? 0;
+}
+
+esTipoPermiso():    boolean { return this.tipoSeleccionado === this.getTipoId('permiso'); }
+esTipoLicencia():   boolean { return this.tipoSeleccionado === this.getTipoId('licencia'); }
+esTipoIncidencia(): boolean { return this.tipoSeleccionado === this.getTipoId('incidencia'); }
+esTipoVacaciones(): boolean { return this.tipoSeleccionado === this.getTipoId('vacaciones'); }
+
+private getEstadoId(alias: string): number {
+  return this.estados.find(e => e.Alias === alias)?.IdEstadoSolicitud ?? 0;
+}
 
   // ── GUARDAR ─────────────────────────────────────────────────────────
   async guardar(): Promise<void> {
@@ -285,21 +311,44 @@ export class NuevaSolicitudComponent implements OnInit {
     // Enviar
     this.loading = true;
     this.ghService.crearSolicitud(this.formulario.value).subscribe({
-      next: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Solicitud guardada',
-          timer: 1500, showConfirmButton: false,
+    next: (res) => {
+      const idSolicitud = res.body?.idSolicitud;
+
+      // Si hay imagen la sube después de crear
+      if (this.imagenSeleccionada && idSolicitud) {
+        this.ghService.subirImagen(idSolicitud, this.imagenSeleccionada).subscribe({
+          next: () => this.finalizarGuardado(),
+          error: () => {
+            // La solicitud se creó pero la imagen falló
+            Swal.fire({
+              icon: 'warning',
+              title: 'Solicitud creada',
+              text: 'Pero no se pudo subir la imagen. Puedes agregarla después desde el detalle.',
+            }).then(() => this.router.navigate(['/gestion-humana/solicitudes']));
+            this.loading = false;
+          },
         });
-        this.router.navigate(['/gestion-humana/solicitudes']);
-      },
-      error: (err) => {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar' });
-        this.loading = false;
-      },
-    });
-  }
+      } else {
+        this.finalizarGuardado();
+      }
+    },
+    error: (err) => {
+      console.error(err);
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar' });
+      this.loading = false;
+    },
+  });
+}
+
+private finalizarGuardado(): void {
+  this.loading = false;
+  Swal.fire({
+    icon: 'success',
+    title: 'Solicitud guardada',
+    timer: 1500, showConfirmButton: false,
+  });
+  this.router.navigate(['/gestion-humana/solicitudes']);
+}
 
   /** Validación específica según el tipo elegido. Devuelve mensaje o null. */
   private validarPorTipo(): string | null {
@@ -353,4 +402,36 @@ export class NuevaSolicitudComponent implements OnInit {
     return !!c && c.invalid && c.touched;
   }
 
+  onImagenSeleccionada(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const file  = input.files?.[0];
+
+  this.errorImagen       = '';
+  this.imagenSeleccionada = null;
+  this.imagenPreview     = null;
+
+  if (!file) return;
+
+  if (!this.TIPOS_IMAGEN.includes(file.type)) {
+    this.errorImagen = 'Solo se permiten JPG o PNG';
+    return;
+  }
+
+  if (file.size > this.TAMANO_MAXIMO) {
+    this.errorImagen = `La imagen pesa ${(file.size / 1024 / 1024).toFixed(1)}MB. Máximo 3MB`;
+    return;
+  }
+
+  this.imagenSeleccionada = file;
+
+  const reader = new FileReader();
+  reader.onload = (e) => this.imagenPreview = e.target?.result as string;
+  reader.readAsDataURL(file);
+}
+
+quitarImagen(): void {
+  this.imagenSeleccionada = null;
+  this.imagenPreview      = null;
+  this.errorImagen        = '';
+}
 }

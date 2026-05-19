@@ -6,6 +6,8 @@ import { EmpleadosService } from '../../services/empleados.service';
 import { BdayWidgetComponent } from "../../components/bday-widget/bday-widget.component";
 import { AusenciasWidgetComponent } from '../../components/ausencias-widget/ausencias-widget.component';
 import { RankingWidgetComponent } from '../../components/ranking-widget/ranking-widget.component';
+import { trigger, transition, style, animate } from '@angular/animations';
+import { SocketService } from '../../services/socket.service';
 
 type FiltroPeriodo = 'hoy' | 'semana' | 'mes' | 'personalizado';
 type PickerTab      = 'mes' | 'rango';
@@ -43,9 +45,20 @@ const DIAS_DOW    = ['L','M','X','J','V','S','D'];
   standalone: true,
   imports: [RouterLink, CommonModule, FormsModule, BdayWidgetComponent, AusenciasWidgetComponent, RankingWidgetComponent],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css'
-})
+  styleUrl: './home.component.css',
+    animations: [
+      trigger('fadeIn', [
+        transition(':enter', [
+          style({ opacity: 0, transform: 'translateY(-6px)' }),
+          animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+        ]),
+      ]),
+    ],
+  })
+  
 export class HomeComponent implements OnInit, OnDestroy {
+
+  private socketSvc = inject(SocketService);
 
   // ── Filtros periodo ───────────────────────────────────────────────────────
   filtroPeriodo: FiltroPeriodo = 'hoy';
@@ -85,8 +98,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   exteriorDias       = 0;
   exteriorEmpleados  = 0;
   metroAsignaciones    = 0;
-interiorAsignaciones = 0;
-exteriorAsignaciones = 0;
+  interiorAsignaciones = 0;
+  exteriorAsignaciones = 0;
+  disponiblesHoy       = 0; 
+  ocupadosHoy          = 0; 
+  desplieguesActivos   = 0; 
 
   // ── Zonas ─────────────────────────────────────────────────────────────────
 zonasResumen: { nombre: string; dias: number; asignaciones: number; empleados: number; color: string }[] = [];
@@ -127,7 +143,46 @@ zonasResumen: { nombre: string; dias: number; asignaciones: number; empleados: n
 
   private _svc = inject(EmpleadosService);
 
-  ngOnInit()    { this.cargarTodo(); this.buildCal(); }
+ ngOnInit(): void {
+  // ── Recibir KPIs del socket ───────────────────────────────────
+  this.socketSvc.escucharEvento('kpi:datos').subscribe((kpi: any) => {
+  if (!kpi) return;
+
+  // SEDE
+  this.sedeTareas        = kpi.TareasSede           ?? 0;
+  this.sedeEmpleados     = kpi.EmpleadosSede         ?? 0;
+
+  // METRO
+  this.metroAsignaciones = kpi.AsignacionesMetro     ?? 0;
+  this.metroDias         = kpi.DiasMetro             ?? 0;
+  this.metroEmpleados    = kpi.EmpleadosMetro        ?? 0;
+
+  // INTERIOR
+  this.interiorAsignaciones = kpi.AsignacionesInterior ?? 0;
+  this.interiorDias         = kpi.DiasInterior          ?? 0;
+  this.interiorEmpleados    = kpi.EmpleadosInterior     ?? 0;
+
+  // EXTERIOR
+  this.exteriorAsignaciones = kpi.AsignacionesExterior ?? 0;
+  this.exteriorDias         = kpi.DiasExterior          ?? 0;
+  this.exteriorEmpleados    = kpi.EmpleadosExterior     ?? 0;
+
+  // GENERAL
+  this.disponiblesHoy     = kpi.DisponiblesHoy       ?? 0;
+  this.ocupadosHoy        = kpi.OcupadosHoy          ?? 0;
+  this.desplieguesActivos = kpi.DesplieguesActivos   ?? 0;
+
+  this.cargando = false;
+});
+
+  // ── Cuando alguien guarda → refrescar todo ────────────────────
+ this.socketSvc.escucharEvento('kpi:actualizado').subscribe(() => {
+  this.cargarTodo(false);
+});
+
+  // ── Carga inicial ─────────────────────────────────────────────
+  this.cargarTodo();
+}
   ngOnDestroy() { this.cancelarClose(); }
 
   // ── Cierre del picker al hacer clic fuera ─────────────────────────────────
@@ -259,41 +314,42 @@ zonasResumen: { nombre: string; dias: number; asignaciones: number; empleados: n
   }
 
   // ── Carga de datos ────────────────────────────────────────────────────────
- private cargarTodo() {
-    this.cargando = true;
+ private cargarTodo(mostrarCarga = true) {
+  if (mostrarCarga) this.cargando = true;
     const { inicio, fin } = this.getRango();
 
 
     // KPIs principales
-    this._svc.getResumenHome(inicio, fin).subscribe({
-      next: (res) => {
-        console.log('resumenHome:', res.body); 
-        const data: any[] = res.body ?? [];
-        const g = (tipo: TipoId) => data.find((d: any) => d.IdTipo === tipo);
+     this.socketSvc.emitir('kpi:solicitar', { inicio, fin });
+    // this._svc.getResumenHome(inicio, fin).subscribe({
+    //   next: (res) => {
+    //     //console.log('resumenHome:', res.body); 
+    //     const data: any[] = res.body ?? [];
+    //     const g = (tipo: TipoId) => data.find((d: any) => d.IdTipo === tipo);
  
-        const sede = g(TIPO.SEDE);
-        this.sedeTareas    = sede?.TotalCantidad          ?? 0;
-        this.sedeEmpleados = sede?.EmpleadosInvolucrados  ?? 0;
+    //     const sede = g(TIPO.SEDE);
+    //     this.sedeTareas    = sede?.TotalCantidad          ?? 0;
+    //     this.sedeEmpleados = sede?.EmpleadosInvolucrados  ?? 0;
  
-        const metro = g(TIPO.METRO);
-        this.metroDias      = metro?.TotalDias             ?? 0;
-        this.metroEmpleados = metro?.EmpleadosInvolucrados ?? 0;
-        this.metroAsignaciones   = metro?.TotalRegistros        ?? 0;
+    //     const metro = g(TIPO.METRO);
+    //     this.metroDias      = metro?.TotalDias             ?? 0;
+    //     this.metroEmpleados = metro?.EmpleadosInvolucrados ?? 0;
+    //     this.metroAsignaciones   = metro?.TotalRegistros        ?? 0;
  
-        const interior = g(TIPO.INTERIOR);
-        this.interiorDias      = interior?.TotalDias             ?? 0;
-        this.interiorEmpleados = interior?.EmpleadosInvolucrados ?? 0;
-        this.interiorAsignaciones   = interior?.TotalRegistros        ?? 0; 
+    //     const interior = g(TIPO.INTERIOR);
+    //     this.interiorDias      = interior?.TotalDias             ?? 0;
+    //     this.interiorEmpleados = interior?.EmpleadosInvolucrados ?? 0;
+    //     this.interiorAsignaciones   = interior?.TotalRegistros        ?? 0; 
  
-        const exterior = g(TIPO.EXTERIOR);
-        this.exteriorDias      = exterior?.TotalDias             ?? 0;
-        this.exteriorEmpleados = exterior?.EmpleadosInvolucrados ?? 0;
-        this.exteriorAsignaciones   = exterior?.TotalRegistros        ?? 0;
+    //     const exterior = g(TIPO.EXTERIOR);
+    //     this.exteriorDias      = exterior?.TotalDias             ?? 0;
+    //     this.exteriorEmpleados = exterior?.EmpleadosInvolucrados ?? 0;
+    //     this.exteriorAsignaciones   = exterior?.TotalRegistros        ?? 0;
  
-        this.cargando = false;
-      },
-      error: () => (this.cargando = false)
-    });
+    //     this.cargando = false;
+    //   },
+    //   error: () => (this.cargando = false)
+    // });
  
     // Zonas Interior
     this._svc.getResumenZonas(inicio, fin).subscribe({

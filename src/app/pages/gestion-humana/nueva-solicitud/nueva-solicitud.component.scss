@@ -222,3 +222,73 @@
 
   i { font-size: 1rem; }
 }
+/* ─── UPLOAD DE IMAGEN ──────────────────────────────────── */
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+
+  i { font-size: 1.6rem; color: var(--brand); }
+
+  small { font-size: 0.72rem; color: var(--text-muted); }
+
+  &:hover {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+}
+
+.upload-error {
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upload-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+
+  img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-default);
+    object-fit: contain;
+  }
+}
+
+.upload-quitar {
+  background: none;
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--danger-soft);
+  }
+}

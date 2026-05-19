@@ -161,7 +161,7 @@
 
     <!-- ── Sede ── -->
     <div class="col">
-      <div class="kpi-card" style="--kpi-color: #2563eb; --kpi-bg: #eff6ff;">
+      <div class="kpi-card" style="--kpi-color: #2563eb; --kpi-bg: #eff6ff;" @fadeIn>
         <div class="kpi-header">
           <span class="kpi-label">Sede Central</span>
           <div class="kpi-icon" style="color:#2563eb; background:#dbeafe;"><i class="bi bi-building"></i></div>
@@ -186,7 +186,7 @@
 
     <!-- ── Metro ── -->
     <div class="col">
-      <div class="kpi-card" style="--kpi-color: #d97706; --kpi-bg: #fffbeb;">
+      <div class="kpi-card" style="--kpi-color: #d97706; --kpi-bg: #fffbeb;" @fadeIn>
         <div class="kpi-header">
           <span class="kpi-label">Rutas Metro</span>
           <div class="kpi-icon" style="color:#d97706; background:#fef3c7;"><i class="bi bi-train-front"></i></div>
@@ -212,7 +212,7 @@
 
     <!-- ── Interior ── -->
     <div class="col">
-      <div class="kpi-card kpi-card-desglose" style="--kpi-color: #16a34a; --kpi-bg: #f0fdf4;">
+      <div class="kpi-card kpi-card-desglose" style="--kpi-color: #16a34a; --kpi-bg: #f0fdf4;" @fadeIn>
         <div class="kpi-header">
           <span class="kpi-label">Interior (Zonas)</span>
           <div class="kpi-icon" style="color:#16a34a; background:#dcfce7;"><i class="bi bi-map"></i></div>
@@ -250,7 +250,7 @@
 
     <!-- ── Exterior ── -->
     <div class="col">
-  <div class="kpi-card kpi-card-desglose" style="--kpi-color: #7c3aed; --kpi-bg: #f5f3ff;">
+  <div class="kpi-card kpi-card-desglose" style="--kpi-color: #7c3aed; --kpi-bg: #f5f3ff;" @fadeIn>
     <div class="kpi-header">
       <span class="kpi-label">Exterior</span>
       <div class="kpi-icon" style="color:#7c3aed; background:#ede9fe;"><i class="bi bi-globe-americas"></i></div>
@@ -291,13 +291,13 @@
 
   <!-- ── POPOVER DE EMPLEADOS ── -->
   @if (popoverVisible && popoverTipo !== null) {
-  <div class="emp-popover"
+  <div class="emp-popover" 
        [style.top.px]="popoverTop"
        [style.left.px]="popoverLeft"
        (mouseenter)="onPopoverMouseEnter()"
        (mouseleave)="onPopoverMouseLeave()">
  
-    <div class="emp-popover-header">
+    <div class="emp-popover-header" @fadeIn>
       <i class="bi bi-people-fill"></i>
       <span>{{ getLabelTipo(popoverTipo) }}</span>
       <span class="emp-popover-periodo">{{ labelPeriodo }}</span>
@@ -306,7 +306,7 @@
     @if (empleadosActivos.length === 0) {
       <div class="emp-popover-empty">Sin empleados registrados</div>
     } @else {
-      <div class="emp-popover-list">
+      <div class="emp-popover-list" @fadeIn>
         @for (emp of empleadosActivos; track emp.IdEmpleado) {
           <div class="emp-popover-row">
             <div class="emp-avatar">{{ emp.Empleado.charAt(0) }}</div>
@@ -338,7 +338,7 @@
               }
             </div>
             <div class="emp-metrica">
-  <div class="metrica-row">
+  <div class="metrica-row" @fadeIn>
     <span class="emp-valor">
       {{ popoverTipo === TIPO_REF.SEDE ? emp.TotalCantidad : emp.TotalRegistros }}
     </span>
@@ -346,7 +346,7 @@
   </div>
 
   @if (popoverTipo !== TIPO_REF.SEDE) {
-    <div class="metrica-row">
+    <div class="metrica-row" @fadeIn>
       <span class="emp-valor">{{ emp.TotalDias }}</span>
       <span class="emp-label"> Días</span>
     </div>
@@ -364,15 +364,15 @@
   <div class="row g-3">
 
     <div class="col-12 col-lg-4">
-      <app-ausencias-widget></app-ausencias-widget>
+      <app-ausencias-widget @fadeIn></app-ausencias-widget>
     </div>
 
     <div class="col-12 col-lg-4">
-      <app-bday-widget></app-bday-widget>
+      <app-bday-widget @fadeIn></app-bday-widget>
     </div>
 
     <div class="col-12 col-lg-4">
-      <app-ranking-widget
+      <app-ranking-widget @fadeIn
         [inicio]="getRango().inicio"
         [fin]="getRango().fin">
       </app-ranking-widget>

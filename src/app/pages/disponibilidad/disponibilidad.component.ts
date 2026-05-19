@@ -1,46 +1,41 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { GestionHumanaService } from '../../services/gestion-humana.service';
+import { DisponibilidadEmpleado } from '../../interfaces/asignacion.interface';
 
-interface DisponibilidadEmpleado {
-  id: number;
-  nombre: string;
-  codigo: string;
-  ubicacion: string;
-  localidad: string;
-  cargo: string;
-  Estado: 'disponible' | 'manual' | 'ausencia' | 'asignacion';
-  Motivo: string | null;
-  FechaInicio: string | null;
-  FechaFin: string | null;
-  IdEstadoManual: number | null;
-}
+
 
 @Component({
   selector: 'app-disponibilidad',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePipe],
   templateUrl: './disponibilidad.component.html',
   styleUrl: './disponibilidad.component.scss',
 })
 export class DisponibilidadComponent implements OnInit {
 
+  public readonly FOTO_BASE = 'img/empleados/';
   loading = false;
   empleados: DisponibilidadEmpleado[] = [];
 
   filtroTexto  = '';
-  filtroEstado: 'todos' | 'disponible' | 'manual' | 'ausencia' | 'asignacion' = 'todos';
+  filtroEstado: 'todos' | 'disponible' | 'manual' | 'ausencia' | 'asignacion' | 'despliegue' = 'todos';
 
   modalAbierto = false;
   formBloqueo!: FormGroup;
   empleadosDisponibles: DisponibilidadEmpleado[] = [];
   fotoFallida = new Set<string>();
-  hoy = new Date().toISOString().split('T')[0];
+  private fechaLocalISO(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+  hoy = this.fechaLocalISO();
 
   private fb = inject(FormBuilder);
   private ghService = inject(GestionHumanaService); 
+  private datePipe = inject(DatePipe);
+  
 
   ngOnInit(): void {
     this.construirForm();
@@ -91,14 +86,14 @@ export class DisponibilidadComponent implements OnInit {
   }
 
   // ── FILTRO ──────────────────────────────────────────────────────
-  empleadosFiltrados(): DisponibilidadEmpleado[] {
-    const t = this.filtroTexto.toLowerCase().trim();
-    return this.empleados.filter(e => {
-      const okTexto = !t || e.nombre.toLowerCase().includes(t) || e.codigo.includes(t);
-      const okEst   = this.filtroEstado === 'todos' || e.Estado === this.filtroEstado;
-      return okTexto && okEst;
-    });
-  }
+  get empleadosFiltrados(): DisponibilidadEmpleado[] {
+  const t = this.filtroTexto.toLowerCase().trim();
+  return this.empleados.filter(e => {
+    const okTexto = !t || e.nombre.toLowerCase().includes(t) || e.codigo.includes(t);
+    const okEst   = this.filtroEstado === 'todos' || e.Estado === this.filtroEstado;
+    return okTexto && okEst;
+  });
+}
 
   // ── MODAL ───────────────────────────────────────────────────────
   abrirModalBloquear(prefill?: DisponibilidadEmpleado): void {
@@ -173,10 +168,8 @@ async liberar(emp: DisponibilidadEmpleado): Promise<void> {
 
   formatFechaCorta(fechaStr: string | null): string {
   if (!fechaStr) return '';
-  // Toma sólo "YYYY-MM-DD" del ISO completo
-  const [year, month, day] = fechaStr.split('T')[0].split('-').map(Number);
-  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  return `${day} ${meses[month - 1]}`;
+  const fecha = fechaStr.split('T')[0];
+  return this.datePipe.transform(fecha + 'T00:00:00', 'd MMM', undefined, 'es-DO') ?? '';
 }
 
   onImgError(codigo: string): void {
@@ -188,24 +181,26 @@ mostrarFoto(codigo: string): boolean {
 }
 
   iconoEstado(estado: string): string {
-    switch (estado) {
-      case 'disponible': return 'bi-check-circle-fill';
-      case 'manual':     return 'bi-hand-thumbs-down-fill';
-      case 'ausencia':   return 'bi-airplane-fill';
-      case 'asignacion': return 'bi-truck';
-      default:           return 'bi-question';
-    }
+  switch (estado) {
+    case 'disponible':  return 'bi-check-circle-fill';
+    case 'manual':      return 'bi-hand-thumbs-down-fill';
+    case 'ausencia':    return 'bi-airplane-fill';
+    case 'asignacion':  return 'bi-truck';
+    case 'despliegue':  return 'bi-map-fill';  // ← nuevo
+    default:            return 'bi-question';
   }
+}
 
   textoEstado(estado: string): string {
-    switch (estado) {
-      case 'disponible': return 'Disponible';
-      case 'manual':     return 'Bloqueado';
-      case 'ausencia':   return 'Ausente';
-      case 'asignacion': return 'En ruta';
-      default:           return 'Desconocido';
-    }
+  switch (estado) {
+    case 'disponible':  return 'Disponible';
+    case 'manual':      return 'Bloqueado';
+    case 'ausencia':    return 'Ausente';
+    case 'asignacion':  return 'En ruta';
+    case 'despliegue':  return 'Despliegue';  // ← nuevo
+    default:            return 'Desconocido';
   }
+}
 
   // ── MOCK DATA (sólo para preview) ────────────────────────────────
   // private generarMockData(): DisponibilidadEmpleado[] {

@@ -6,6 +6,7 @@ const NOMBRE_TIPO:  Record<number, string> = {
     2: 'Metro',
     3: 'Interior',
     4: 'Exterior',
+    5: 'Despliegue',
 };
 
 /**

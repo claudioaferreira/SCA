@@ -36,6 +36,12 @@
             <span class="nav-text">Disponibilidad</span>
           </a>
         </li>
+        <li *ngIf="auth.hasRole(1,2)">
+        <a routerLink="/despliegues" routerLinkActive="active" class="nav-link">
+          <span class="nav-icon"><i class="bi bi-map"></i></span>
+          <span class="nav-text">Despliegues</span>
+        </a>
+      </li>
       </ul>
     </div>
 
@@ -127,7 +133,7 @@
       <span class="nav-icon"><i class="bi bi-circle-half"></i></span>
       <span class="footer-label">Tema</span>
       <div class="ms-auto">
-
+          <app-theme-toggle></app-theme-toggle>
       </div>
     </div>
 
@@ -146,8 +152,8 @@
         <i class="bi bi-chevron-up chevron-up"></i>
       </a>
       <ul class="dropdown-menu dropdown-menu-dark shadow">
-        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+        <!-- <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li> -->
         <li><hr class="dropdown-divider"></li>
         <li>
           <a
@@ -165,3 +171,4 @@
   </div>
 
 </aside>
+

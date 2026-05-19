@@ -23,6 +23,8 @@ import {
 } from './alertas-asignacion.helper';
 import { GestionHumanaService } from '../../services/gestion-humana.service';
 import { CatalogosService } from '../../services/catalogos.service';
+import { Subscription } from 'rxjs';
+import { SocketService } from '../../services/socket.service';
 
 @Component({
   selector: 'app-asignaciones-semanal',
@@ -33,11 +35,21 @@ import { CatalogosService } from '../../services/catalogos.service';
 })
 export class AsignacionesSemanalComponent implements OnInit {
 
-  
+  readonly BADGE_CONFIG: Record<string, { icon: string }> = {
+  despliegue:  { icon: 'bi-map-fill'      },
+  comision:    { icon: 'bi-briefcase-fill' }, // futuro — solo agregar aquí
+  capacitacion:{ icon: 'bi-book-fill'     }, // futuro
+};
+
+iconBadge(alias: string): string {
+  return this.BADGE_CONFIG[alias]?.icon ?? 'bi-star-fill';
+}
     // ---- INJECCIÓN DE SERVICIOS ----
   private ghService = inject(GestionHumanaService);
   private _catalogosService = inject(CatalogosService);
   private _empleadosService = inject(EmpleadosService);
+  private socketSvc = inject(SocketService);
+  private socketSub!: Subscription;
   // ─── ESTADO GENERAL ─────────────────────────────────────────────────────
   popoverAbierto: number | null = null;
   loading = false;
@@ -93,7 +105,51 @@ export class AsignacionesSemanalComponent implements OnInit {
     this.cargarCentrosCedulacion();
     this.cargarAusenciasSemana();
     this.cargarRanking();
+    this.iniciarSocketSemana();
+    
   }
+
+
+private iniciarSocketSemana(): void {
+  // Anunciar al servidor qué semana se está viendo
+  const { inicio } = this.getRangoSemana();
+  this.socketSvc.emitir('semana:unirse', inicio);
+
+  // Escuchar cambios de otros usuarios
+  this.socketSub = this.socketSvc
+    .escucharEvento('asignacion:cambio')
+    .subscribe((cambio) => {
+      if (cambio.tipo === 'guardar')   this.aplicarGuardadoExterno(cambio);
+      if (cambio.tipo === 'eliminar')  this.aplicarEliminadoExterno(cambio);
+    });
+}
+
+ngOnDestroy(): void {
+  if (this.socketSub) this.socketSub.unsubscribe();
+}
+
+  // ── Objeto de configuración de badges externos ──────────────────
+// Para agregar uno nuevo en el futuro: solo añadir una línea aquí
+readonly BADGE_EXTERNO_CONFIG: Record<string, { emoji: string; deco: string }> = {
+  despliegue:   { emoji: '🗺️', deco: '📍' },
+  comision:     { emoji: '💼', deco: '✈️' },
+  capacitacion: { emoji: '📚', deco: '⭐' },
+};
+
+/** Devuelve el item externo del día (despliegue, comision, etc.) si existe */
+gestionadoItemDeDia(empId: number, dia: Date): AsignacionCelda | null {
+  const key   = this.generarLlave(empId, dia);
+  const items = this.dataTemporal[key] ?? [];
+  return items.find(i => !i.esNueva && i.esGestionadoExterno) ?? null;
+}
+
+emojiGestionado(alias: string): string {
+  return this.BADGE_EXTERNO_CONFIG[alias]?.emoji ?? '📌';
+}
+
+decoGestionado(alias: string): string {
+  return this.BADGE_EXTERNO_CONFIG[alias]?.deco ?? '✨';
+}
 
   cargarRanking(): void {
     const anioActual = new Date().getFullYear();
@@ -126,6 +182,11 @@ export class AsignacionesSemanalComponent implements OnInit {
   getScoreRanking(codigo: string): number | null {
     return this.rankingMap.get(codigo) ?? null;
   }
+
+  /** Devuelve el IdTipo del despliegue desde el catálogo — sin hardcodear */
+get tipoIdDespliegue(): number {
+  return this.tipos.find(t => t.Alias === 'despliegue')?.IdTipo ?? 0;
+}
 
   buscadorPersonalizado(term: string, item: any) {
     term = term.toLowerCase();
@@ -412,19 +473,12 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
         // Inicializa stats en 0 para empleados que no tengan historial aún
         this.empleadosMaster.forEach((emp) => {
           emp.stats = {
-            // MES
-            totalSede: 0,
-            metroMes: 0,
-            totalInterior: 0,
-            diasNorte: 0,
-            diasSur: 0,
-            diasEste: 0,
-
-            // SEMANA
-            totalSedeSemana: 0,
-            metroSemana: 0,
-            totalInteriorSemana: 0,
-          };
+          totalSede:           0,
+          metroMes:            0,
+          totalSedeSemana:     0,
+          metroSemana:         0,
+          totalInteriorSemana: 0,
+        };
         });
 
         this.ordenarListaAlfabeticamente();
@@ -492,10 +546,6 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
           if (emp.stats) {
             emp.stats.totalSede = 0;
             emp.stats.metroMes = 0;
-            emp.stats.diasNorte = 0;
-            emp.stats.diasSur = 0;
-            emp.stats.diasEste = 0;
-            emp.stats.totalInterior = 0;
           }
         });
 
@@ -514,26 +564,10 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
             case 2:
               emp.stats.metroMes = (emp.stats.metroMes || 0) + cantidad;
               break;
-            case 3:
-              if (row.ZonaGeografica === 'Norte')
-                emp.stats.diasNorte = (emp.stats.diasNorte || 0) + dias;
-              if (row.ZonaGeografica === 'Sur')
-                emp.stats.diasSur = (emp.stats.diasSur || 0) + dias;
-              if (row.ZonaGeografica === 'Este')
-                emp.stats.diasEste = (emp.stats.diasEste || 0) + dias;
-              break;
           }
         });
 
-        // totalInterior = suma de los tres zonas
-        this.empleadosMaster.forEach((emp) => {
-          if (emp.stats) {
-            emp.stats.totalInterior =
-              (emp.stats.diasNorte || 0) +
-              (emp.stats.diasSur || 0) +
-              (emp.stats.diasEste || 0);
-          }
-        });
+  
       },
       error: (err) => console.error('Error al cargar historial:', err),
     });
@@ -618,21 +652,39 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
     }, 0);
   }
 
-  getInteriorExteriorSemana(empId: number): number {
-    const idsVistos = new Set<number>();
-    return this.diasSemana.reduce((total, dia) => {
-      const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
-      const dias = items
-        .filter((i) => {
-          if (i.esNueva || (i.tipoId !== 3 && i.tipoId !== 4)) return false;
-          if (i.idAsignacion && idsVistos.has(i.idAsignacion)) return false;
-          if (i.idAsignacion) idsVistos.add(i.idAsignacion);
-          return true;
-        })
-        .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
-      return total + dias;
-    }, 0);
-  }
+  getInteriorSemana(empId: number): number {
+  const idsVistos = new Set<number>();
+  return this.diasSemana.reduce((total, dia) => {
+    const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+    const dias = items
+      .filter((i) => {
+        // Interior Y despliegue cuentan como trabajo interior
+        const esInterior = i.tipoAlias === 'interior' || i.tipoAlias === 'despliegue';
+        if (i.esNueva || !esInterior) return false;
+        if (i.idAsignacion && idsVistos.has(i.idAsignacion)) return false;
+        if (i.idAsignacion) idsVistos.add(i.idAsignacion);
+        return true;
+      })
+      .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
+    return total + dias;
+  }, 0);
+}
+
+getExteriorSemana(empId: number): number {
+  const idsVistos = new Set<number>();
+  return this.diasSemana.reduce((total, dia) => {
+    const items = this.dataTemporal[this.generarLlave(empId, dia)] ?? [];
+    const dias = items
+      .filter((i) => {
+        if (i.esNueva || i.tipoId !== 4) return false;
+        if (i.idAsignacion && idsVistos.has(i.idAsignacion)) return false;
+        if (i.idAsignacion) idsVistos.add(i.idAsignacion);
+        return true;
+      })
+      .reduce((sum, i) => sum + (Number(i.dias) || 0), 0);
+    return total + dias;
+  }, 0);
+}
 
   /** Recarga solo las asignaciones al navegar de semana (sin volver a pedir empleados) */
   private recargarSemana() {
@@ -744,7 +796,7 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
               )?.IdZonaGeo ?? null)
             : null
           : null;
-
+    const tipo = this.tipos.find(t => t.IdTipo === item.tipoId);          
     const payload = {
       idEmpleado: empId,
       fecha: fechaStr,
@@ -765,6 +817,7 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
         titulo: item.titulo || null,
         chofer: item.chofer || null,
         placa: item.placa || null,
+        equiereDetalle: tipo?.BloqueaEmpleado && tipo?.Alias !== 'sede', 
         // array de centros con su orden
         centros: item.centros.map((c, i) => ({
           idCentroCedulacion: c.idCentroCedulacion,
@@ -1016,7 +1069,7 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
       let s = 0;
       if (this.filtrosActivos.has('metro')) s += this.getMetroSemana(e.id);
       if (this.filtrosActivos.has('interior'))
-        s += this.getInteriorExteriorSemana(e.id);
+        s += this.getInteriorSemana(e.id);
       if (this.filtrosActivos.has('sede')) s += this.getSedeSemana(e.id);
       return s;
     };
@@ -1095,6 +1148,8 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
           municipio: c.Municipio,
           provincia: c.Provincia,
           zonaGeo: c.ZonaGeo,
+          esDespliegue:     !!a.IdRutaDespliegue,      
+          tituloDespliegue: a.TituloDespliegue ?? null,  
         }));
       } catch {
         centros = [];
@@ -1128,6 +1183,9 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
       chofer: a.Chofer ?? '',
       placa: a.Placa ?? '',
       centros,
+       tipoAlias:           a.TipoAlias ?? null,
+    esGestionadoExterno: !!a.EsGestionadoExterno,
+    badgeTexto:          a.BadgeTexto ?? null,
     };
   }
 
@@ -1226,4 +1284,45 @@ nombreCortoIncidencia(tipoAusencia: string | undefined): string {
     const dia = parseInt(partes[2], 10);
     return new Date(anio, mes, dia);
   }
+
+  /**
+ * Aplica localmente una asignación guardada por otro usuario.
+ * No hace ninguna query a SQL.
+ */
+private aplicarGuardadoExterno(cambio: any): void {
+  const celda = this.mapearDesdeAPI(cambio); // ✅ ahora PascalCase, funciona
+
+  const desdeStr = cambio.FechaInicio?.substring(0, 10) ?? cambio.Fecha?.substring(0, 10);
+  const hastaStr = cambio.FechaFinalizacion?.substring(0, 10) ?? cambio.Fecha?.substring(0, 10);
+
+  this.diasSemana.forEach((dia) => {
+    const diaStr = this.fechaLocalISO(dia);
+    if (diaStr < desdeStr || diaStr > hastaStr) return;
+
+    const key = this.generarLlave(cambio.IdEmpleado, dia); // ← PascalCase
+    if (this.dataTemporal[key] === undefined) return;
+
+    const yaExiste = this.dataTemporal[key].some(
+      (i) => i.idAsignacion === celda.idAsignacion
+    );
+    if (!yaExiste) {
+      this.dataTemporal[key] = [...this.dataTemporal[key], celda];
+    }
+  });
+}
+
+/**
+ * Elimina localmente una asignación borrada por otro usuario.
+ * No hace ninguna query a SQL.
+ */
+private aplicarEliminadoExterno(cambio: any): void {
+  this.diasSemana.forEach((dia) => {
+    const key = this.generarLlave(cambio.IdEmpleado, dia); // ← PascalCase
+    if (this.dataTemporal[key] === undefined) return;
+
+    this.dataTemporal[key] = this.dataTemporal[key].filter(
+      (i) => i.idAsignacion !== cambio.IdAsignacion // ← PascalCase
+    );
+  });
+}
 }

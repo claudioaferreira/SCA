@@ -26,3 +26,4 @@ app-sidebar {
   transition: margin-left var(--transition-slow);
   min-width: 0; /* evita que el contenido empuje el sidebar */
 }
+
